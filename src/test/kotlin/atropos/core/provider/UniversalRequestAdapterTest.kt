@@ -115,4 +115,46 @@ class UniversalRequestAdapterTest {
         val ollamaJson = """{"response":"val local = true"}"""
         assertEquals("val local = true", UniversalRequestAdapter.extractResponseContent("ollama", ollamaJson, ProviderNativeSchema.OLLAMA_GENERATE))
     }
+
+    @Test
+    fun removes_whisper_and_resolves_valid_chat_model_for_groq() {
+        val resolved = UniversalRequestAdapter.resolveModel("groq", "whisper-large-v3")
+        assertEquals("llama-3.3-70b-versatile", resolved)
+
+        val req = UniversalRequestAdapter.translate(
+            providerId = "groq",
+            prompt = "fix code",
+            modelOverride = "whisper-large-v3"
+        )
+        assertEquals("llama-3.3-70b-versatile", req.model)
+    }
+
+    @Test
+    fun isolates_non_chat_endpoints_jina_and_pinecone() {
+        val jinaReq = NativeProviderRequest(
+            providerId = "jina",
+            model = "default",
+            endpoint = "https://r.jina.ai",
+            headers = emptyMap(),
+            jsonPayload = "{}",
+            schemaType = ProviderNativeSchema.OPENAI_COMPATIBLE
+        )
+        val jinaRes = UniversalRequestAdapter.execute(jinaReq)
+        assertTrue(jinaRes is UniversalExecutionResult.Failure)
+        assertEquals(400, (jinaRes as UniversalExecutionResult.Failure).statusCode)
+        assertTrue(jinaRes.message.contains("Isolated non-chat endpoint"))
+
+        val pineconeReq = NativeProviderRequest(
+            providerId = "pinecone",
+            model = "default",
+            endpoint = "https://pinecone.invalid",
+            headers = emptyMap(),
+            jsonPayload = "{}",
+            schemaType = ProviderNativeSchema.OPENAI_COMPATIBLE
+        )
+        val pineconeRes = UniversalRequestAdapter.execute(pineconeReq)
+        assertTrue(pineconeRes is UniversalExecutionResult.Failure)
+        assertEquals(400, (pineconeRes as UniversalExecutionResult.Failure).statusCode)
+        assertTrue(pineconeRes.message.contains("Isolated non-chat endpoint"))
+    }
 }

@@ -82,17 +82,29 @@ object UniversalRequestAdapter {
     }
 
     fun resolveModel(providerId: String, explicitModel: String? = null): String {
-        if (!explicitModel.isNullOrBlank()) return explicitModel
         val clean = providerId.trim().lowercase(Locale.US)
+        if (!explicitModel.isNullOrBlank() && !explicitModel.contains("whisper", ignoreCase = true)) {
+            return explicitModel
+        }
 
         val live = ModelDiscoveryEngine.getLiveModels(clean)
+            .filterNot { it.contains("whisper", ignoreCase = true) || it.contains("guard", ignoreCase = true) || it.contains("tts", ignoreCase = true) || it.contains("embed", ignoreCase = true) }
+
+        if (clean == "groq") {
+            return live.firstOrNull { it == "llama-3.3-70b-versatile" || it == "qwen-2.5-coder-32b" }
+                ?: live.firstOrNull { it.contains("versatile", ignoreCase = true) || it.contains("coder", ignoreCase = true) }
+                ?: "llama-3.3-70b-versatile"
+        }
+
         if (live.isNotEmpty()) {
-            return live.first()
+            return live.firstOrNull { it.contains("chat", ignoreCase = true) || it.contains("instruct", ignoreCase = true) || it.contains("versatile", ignoreCase = true) }
+                ?: live.first()
         }
 
         val openAiSpec = OpenAiCompatibleProviderCatalog.all().firstOrNull { it.providerId == clean }
         if (openAiSpec != null) {
-            return ModelDiscoveryEngine.resolveModel(clean, openAiSpec.defaultModel)
+            val defaultM = if (clean == "groq") "llama-3.3-70b-versatile" else openAiSpec.defaultModel
+            return ModelDiscoveryEngine.resolveModel(clean, defaultM)
         }
         val nonOpenAiSpec = NonOpenAiFreeProviderCatalog.get(clean)
         if (nonOpenAiSpec != null) {
@@ -100,7 +112,7 @@ object UniversalRequestAdapter {
         }
 
         return when {
-            clean == "groq" -> ModelDiscoveryEngine.resolveModel(clean, "llama-3.3-70b-versatile")
+            clean == "groq" -> "llama-3.3-70b-versatile"
             clean == "openrouter" -> ModelDiscoveryEngine.resolveModel(clean, "meta-llama/llama-3.1-8b-instruct:free")
             clean.contains("gemini") -> ModelDiscoveryEngine.resolveModel(clean, "gemini-1.5-flash")
             clean.contains("anthropic") -> ModelDiscoveryEngine.resolveModel(clean, "claude-3-5-sonnet-latest")
@@ -233,7 +245,12 @@ object UniversalRequestAdapter {
     ): NativeProviderRequest {
         val clean = providerId.trim().lowercase(Locale.US)
         val schema = detectNativeSchema(clean)
-        val model = resolveModel(clean, modelOverride)
+        val resolvedModel = resolveModel(clean, modelOverride)
+        val model = if (clean == "groq" && (resolvedModel.contains("whisper", ignoreCase = true) || resolvedModel.isBlank())) {
+            "llama-3.3-70b-versatile"
+        } else {
+            resolvedModel
+        }
         val effectiveKey = apiKey ?: resolveApiKey(clean)
         val endpoint = resolveEndpoint(clean, model, effectiveKey)
         val headers = buildHeaders(clean, effectiveKey)
@@ -365,6 +382,15 @@ object UniversalRequestAdapter {
         request: NativeProviderRequest,
         timeoutSeconds: Long = 120L
     ): UniversalExecutionResult {
+        if (request.providerId in setOf("jina", "pinecone")) {
+            return UniversalExecutionResult.Failure(
+                providerId = request.providerId,
+                statusCode = 400,
+                message = "Isolated non-chat endpoint: ${request.providerId} is an embedding/search vector API and cannot process chat/code-repair prompts",
+                headers = emptyMap(),
+                rawBody = "{\"error\":\"isolated_non_chat_endpoint\"}"
+            )
+        }
         val started = System.currentTimeMillis()
         return try {
             val builder = HttpRequest.newBuilder()

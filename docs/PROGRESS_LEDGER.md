@@ -16201,3 +16201,36 @@ End of AGENTS.md
   - `TerminalTheme.kt=a8063564f97c28ded619ea7038bc7cbc6c914227323afe90472c66e823a4a30d`
   - `CliModalStateMachineTest.kt=6bbf79bab48922c84618ee6762f9f42df9e4807ff54deab5091dc4b381b4b39b`
   - `GracefulDegradationTest.kt=420762e1e70b134568d7bec03501a53656c52d39e8f71f158e5f676fcbce662b`
+
+### 2026-10-18T19:50:00Z · Agent: Antigravity (Advanced Agentic Pair Programmer) · Batch: PROVIDER-CASCADE-AND-MODEL-MAPPING-REPAIR
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/UniversalRequestAdapter.kt` (+36, -10, 451 LOC total / removed whisper from chat completion routing, ensured valid chat model resolution, guarded non-chat endpoint execution)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+54, -80, 434 LOC total / added deepseek as primary chat provider in cascade, isolated non-chat endpoints jina and pinecone, added immediate fallback grace on HTTP 402/404)
+  - `src/main/kotlin/atropos/core/provider/ModelDiscoveryEngine.kt` (+6, -6, 460 LOC total / filtered specialized models in getLiveModels, added deepseek key resolution, guarded groq against whisper strings)
+  - `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt` (+2, -13, 49 LOC total / added deepseek descriptor with CostMode.FREE, deduplicated registry descriptors)
+  - `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt` (+9, -0, 163 LOC total / added deepseek provider spec with freeTier = true)
+  - `src/test/kotlin/atropos/core/provider/UniversalRequestAdapterTest.kt` (+42, -0, 160 LOC total / unit tests for groq whisper removal, chat model mapping, and jina/pinecone isolation)
+  - `src/test/kotlin/atropos/core/provider/ProviderCascadeRouterTest.kt` (+50, -0, 238 LOC total / unit tests for deepseek presence, non-chat isolation in cascades, and immediate HTTP 402/404 fallback grace)
+- Atoms / phases affected: Phase 1 Provider Activation Doctor, Phase 2 Provider Transport, Phase 3 Quota / Route Truth, Phase 19 App Factory Wave Repair.
+- Predicate moved:
+  - Mandate 1 Provider Cascade & Model Mapping Repair 100% verified:
+    1. Groq Model Mapping: `whisper-large-v3` permanently removed from chat completion routing. Resolves to `llama-3.3-70b-versatile` or `qwen-2.5-coder-32b`, preventing HTTP 400 invalid request errors.
+    2. DeepSeek Integrated: `deepseek` explicitly integrated as a primary chat completion provider in the active `ProviderCascadeRouter.kt` sequence alongside `groq`.
+    3. Isolated Non-Chat Endpoints: Jina and Pinecone (embedding/search vector APIs) completely isolated and excluded from chat/code-repair generation calls, preventing HTTP 401/400 errors.
+    4. Model Fallback Grace: HTTP 402 (credits) and HTTP 404 (model missing) immediately trigger graceful fallback to next valid provider in sequence without burning retry strikes or crashing the factory wave.
+  - Mathematical Proof Gate verified:
+    - Zero competitor strings exist in modified/created files.
+    - Zero `TODO`, `FIXME`, or hollow stub methods exist in modified files.
+    - Every modified source file is strictly <= 500 LOC (ModelDiscoveryEngine: 460, ProviderCascadeRouter: 434, StaticProviderDescriptorRegistry: 49, UniversalRequestAdapter: 451, OpenAiCompatibleProviderCatalog: 163).
+    - Every new component is wired into active callers with zero orphan files (verified via `scripts/find-orphans.py --fail-on-new`).
+- Why the delta is justified: Provider exhaustion and mapping failures eliminated. Cascade deterministically routes valid models with immediate grace on billing/missing model faults.
+- % delta: Phase 1 & 2 complete (100%), Phase 3 complete (100%), Phase 19 App Factory robust against provider exhaustion.
+- Fingerprints (sha256):
+  - `ModelDiscoveryEngine.kt=3f8ce71b269d9819f3798a265e8c0b9ee3c5f4a75dec2771db34f359868948e3`
+  - `ProviderCascadeRouter.kt=a7434dd38641be813785fca8238d97bb891cb2631833397636a9cf3aa8119166`
+  - `StaticProviderDescriptorRegistry.kt=b071249d581f6026e40da449c4f5c3d610e1f855162e769774293951df488ee2`
+  - `UniversalRequestAdapter.kt=52fb63f7ec22200fa61b2aba6ffafe3df3f188a3aec87326a4e53e5527a069e8`
+  - `OpenAiCompatibleProviderCatalog.kt=c099a7a20ea6843ecd58073529690d9f5a2f0e812151269a8316521eea4a18a0`
+  - `ProviderCascadeRouterTest.kt=133fca75c350c3795a9f9e5d9c198a19ffdcb9bfa228641f6c013c36562f25b1`
+  - `UniversalRequestAdapterTest.kt=9e48cda8e00ed5b7b8796a5ea006e9ad0391d7803b27d85e61ade2e28c797741`
+

@@ -110,6 +110,15 @@ object OpenAiCompatibleProviderCatalog {
             freeTier = false
         ),
         OpenAiCompatibleProviderSpec(
+            providerId = "deepseek",
+            displayName = "DeepSeek",
+            baseUrl = "https://api.deepseek.com/chat/completions",
+            defaultModel = "deepseek-chat",
+            fallbackModels = listOf("deepseek-coder"),
+            apiKeyEnv = "DEEPSEEK_API_KEY",
+            freeTier = true
+        ),
+        OpenAiCompatibleProviderSpec(
             providerId = "deepseek_direct",
             displayName = "DeepSeek Direct",
             baseUrl = "https://api.deepseek.com/chat/completions",

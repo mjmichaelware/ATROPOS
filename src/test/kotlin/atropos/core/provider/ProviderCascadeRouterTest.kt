@@ -185,4 +185,54 @@ class ProviderCascadeRouterTest {
         assertEquals("approved", result.response)
         assertEquals(listOf("groq", "groq", "openai"), attempts)
     }
+
+    @Test
+    fun deepseek_is_present_in_active_cascade_and_non_chat_endpoints_are_isolated() {
+        val router = ProviderCascadeRouter(factory = ProviderFactory())
+        val order = router.providerOrderPreview("groq")
+        assertTrue(order.contains("deepseek"), "deepseek must be in active cascade sequence")
+        assertTrue(!order.contains("jina"), "jina must not be in active chat cascade")
+        assertTrue(!order.contains("pinecone"), "pinecone must not be in active chat cascade")
+    }
+
+    @Test
+    fun isolates_non_chat_endpoints_when_in_override_list() {
+        val router = ProviderCascadeRouter(factory = ProviderFactory())
+        val order = router.providerOrderPreview("groq", providerOrderOverride = listOf("groq", "jina", "pinecone", "deepseek"))
+        assertTrue(order.contains("groq"))
+        assertTrue(order.contains("deepseek"))
+        assertTrue(!order.contains("jina"))
+        assertTrue(!order.contains("pinecone"))
+    }
+
+    @Test
+    fun gracefully_falls_back_immediately_on_http_402_and_404_without_burning_retries() {
+        val attempts = mutableListOf<String>()
+        val router = ProviderCascadeRouter(
+            factory = ProviderFactory(),
+            providerResolver = { provider ->
+                attempts += provider
+                if (provider == "provider-402") {
+                    throw RuntimeException("HTTP 402 Payment Required: insufficient credits")
+                } else {
+                    object : AIProvider {
+                        override val name: String = provider
+                        override fun complete(prompt: String, context: String): String = "fallback success"
+                    }
+                }
+            }
+        )
+
+        val result = router.completeWithCascade(
+            requestedProvider = "provider-402",
+            prompt = "fix",
+            context = "",
+            providerOrderOverride = listOf("provider-402", "provider-fallback")
+        )
+
+        assertEquals("provider-fallback", result.providerName)
+        assertEquals("fallback success", result.response)
+        // Verify provider-402 was only called ONCE and immediately skipped (zero wasted retries)
+        assertEquals(listOf("provider-402", "provider-fallback"), attempts)
+    }
 }

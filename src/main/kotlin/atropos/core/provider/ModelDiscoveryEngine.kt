@@ -83,7 +83,7 @@ object ModelDiscoveryEngine {
         !discoveredModels[providerId.trim().lowercase(Locale.US)].isNullOrEmpty()
 
     fun getLiveModels(providerId: String): List<String> =
-        discoveredModels[providerId.trim().lowercase(Locale.US)]?.map { it.id } ?: emptyList()
+        discoveredModels[providerId.trim().lowercase(Locale.US)]?.map { it.id }?.filterNot { isSpecializedModel(it) } ?: emptyList()
 
     fun filterActiveCascade(candidates: List<String>): List<String> {
         val unpruned = candidates.filterNot { isPruned(it) }
@@ -365,7 +365,7 @@ object ModelDiscoveryEngine {
             "together" -> "TOGETHER_API_KEY"
             "fireworks" -> "FIREWORKS_API_KEY"
             "mistral" -> "MISTRAL_API_KEY"
-            "deepseek_direct" -> "DEEPSEEK_API_KEY"
+            "deepseek_direct", "deepseek" -> "DEEPSEEK_API_KEY"
             "cerebras" -> "CEREBRAS_API_KEY"
             "sambanova" -> "SAMBANOVA_API_KEY"
             else -> "${clean.uppercase(Locale.US)}_API_KEY"
@@ -434,7 +434,7 @@ object ModelDiscoveryEngine {
         if (aliasCandidates != null && aliasCandidates.isNotEmpty()) {
             return aliasCandidates.first()
         }
-        if (cleanProvider == "groq" && (lowerReq.contains("instant") || lowerReq == "default")) {
+        if (cleanProvider == "groq" && (lowerReq.contains("whisper") || lowerReq.contains("instant") || lowerReq == "default")) {
             return "llama-3.3-70b-versatile"
         }
         return if (cleanModel.isNotBlank() && cleanModel != "default") cleanModel else "llama-3.3-70b-versatile"

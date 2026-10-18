@@ -52,15 +52,11 @@ class ProviderCascadeRouter(
     fun completeWithCascade(prompt: String, envelope: ContextEnvelope): ProviderCascadeResult {
         val targetProvider = when {
             envelope.providerId.contains("groq", ignoreCase = true) -> "groq"
+            envelope.providerId.contains("deepseek", ignoreCase = true) -> "deepseek"
             envelope.providerId.contains("gemini", ignoreCase = true) -> "gemini-2.5-pro"
             else -> envelope.providerId.ifBlank { "groq" }
         }
-        return completeWithCascade(
-            requestedProvider = targetProvider,
-            prompt = prompt,
-            context = envelope.task,
-            contextEnvelope = envelope
-        )
+        return completeWithCascade(targetProvider, prompt, envelope.task, contextEnvelope = envelope)
     }
 
     fun completeWithCascade(
@@ -80,24 +76,27 @@ class ProviderCascadeRouter(
         val blocked = mutableSetOf<String>()
         val keyAttempts = mutableMapOf<String, Int>()
 
-        atropos.core.thinking.Thinking.detail(
-            "provider",
-            "cascade order: " + order.joinToString(" → ")
-        )
+        atropos.core.thinking.Thinking.detail("provider", "cascade order: " + order.joinToString(" → "))
 
         while (candidates.isNotEmpty()) {
             val provider = candidates.removeFirst().lowercase()
             if (provider in blocked) continue
+            if (provider in NON_CHAT_ENDPOINTS) {
+                atropos.core.thinking.Thinking.detail("provider", "Isolating non-chat endpoint '$provider' from chat cascade")
+                continue
+            }
 
             atropos.core.thinking.Thinking.step("provider", "evaluating $provider")
 
-            val descriptor = registry.getById(provider)
+            val descriptor = getDescriptor(provider)
+            if (descriptor != null && !descriptor.hasCapability(ApiCapability.CHAT) &&
+                !descriptor.hasCapability(ApiCapability.CODE) && !descriptor.hasCapability(ApiCapability.REPAIR)) {
+                atropos.core.thinking.Thinking.detail("provider", "Isolating non-chat provider '$provider' without chat/repair capabilities")
+                continue
+            }
+
             if (descriptor != null && descriptor.hasCapability(ApiCapability.LOCAL_TOOL) && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
-                val error = ProviderError(
-                    provider = provider,
-                    type = FailureType.CONNECTION_REFUSED,
-                    cleanMessage = "$provider unavailable"
-                )
+                val error = ProviderError(provider, FailureType.CONNECTION_REFUSED, "$provider unavailable")
                 errors += error
                 onFailure(error)
                 continue
@@ -108,10 +107,7 @@ class ProviderCascadeRouter(
 
             while (strike < MathematicalRateLimitScheduler.MAX_STRIKES) {
                 strike++
-                atropos.core.thinking.Thinking.step(
-                    "provider",
-                    "asking $provider (strike $strike of ${MathematicalRateLimitScheduler.MAX_STRIKES})"
-                )
+                atropos.core.thinking.Thinking.step("provider", "asking $provider (strike $strike of ${MathematicalRateLimitScheduler.MAX_STRIKES})")
 
                 // 1. PER-PROVIDER FORMATTING ("Each According to Its Kind")
                 val activeKey = secretReader?.invoke(provider)
@@ -119,42 +115,21 @@ class ProviderCascadeRouter(
                     ?: UniversalRequestAdapter.resolveApiKey(provider)
 
                 val adaptedPrompt = atropos.core.phase20.Phase20StructuralMetaAdapter.SHARED.adaptPrompt(provider, prompt)
-                val formatted = UniversalRequestAdapter.translate(
-                    providerId = provider,
-                    prompt = adaptedPrompt,
-                    context = context,
-                    apiKey = activeKey
-                )
+                val formatted = UniversalRequestAdapter.translate(provider, adaptedPrompt, context, apiKey = activeKey)
 
-                atropos.core.thinking.Thinking.detail(
-                    "provider",
-                    "Universal Request Adapter translated payload for $provider [schema=${formatted.schemaType}, model=${formatted.model}]"
-                )
+                atropos.core.thinking.Thinking.detail("provider", "Universal Request Adapter translated payload for $provider [schema=${formatted.schemaType}, model=${formatted.model}]")
 
                 beforeAttempt(provider)
                 ActiveProvider.set(provider)
 
-                atropos.core.thinking.Narrate.provider.lookup(
-                    store = provider,
-                    query = firstLine(adaptedPrompt),
-                    hits = 0
-                )
-                atropos.core.thinking.Thinking.detail(
-                    "provider",
-                    "$provider: sending ${adaptedPrompt.length} chars with native ${formatted.schemaType} schema"
-                )
+                atropos.core.thinking.Narrate.provider.lookup(provider, firstLine(adaptedPrompt), 0)
+                atropos.core.thinking.Thinking.detail("provider", "$provider: sending ${adaptedPrompt.length} chars with native ${formatted.schemaType} schema")
 
                 val startedAt = System.currentTimeMillis()
                 val execResult: UniversalExecutionResult = try {
                     if (providerResolver != null) {
-                        val aiProvider = providerResolver.invoke(provider)
-                        val res = aiProvider.complete(adaptedPrompt, context)
-                        UniversalExecutionResult.Success(
-                            providerId = provider,
-                            text = res,
-                            rawResponse = res,
-                            durationMs = System.currentTimeMillis() - startedAt
-                        )
+                        val res = providerResolver.invoke(provider).complete(adaptedPrompt, context)
+                        UniversalExecutionResult.Success(provider, res, res, System.currentTimeMillis() - startedAt)
                     } else {
                         UniversalRequestAdapter.execute(formatted)
                     }
@@ -176,78 +151,56 @@ class ProviderCascadeRouter(
 
                 if (execResult is UniversalExecutionResult.Success && acceptResponse(execResult.text)) {
                     val elapsed = execResult.durationMs
-                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordSuccess(
-                        provider = provider,
-                        action = "provider.chat"
-                    )
-                    atropos.core.thinking.Thinking.step(
-                        "provider",
-                        "$provider answered in ${elapsed}ms, ${execResult.text.length} characters"
-                    )
-                    atropos.core.thinking.Thinking.detail(
-                        "provider",
-                        "$provider said: ${firstLine(execResult.text)}"
-                    )
-                    return ProviderCascadeResult(
-                        providerName = provider,
-                        response = execResult.text,
-                        errors = errors,
-                        contextEnvelope = contextEnvelope
-                    )
+                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordSuccess(provider, "provider.chat")
+                    atropos.core.thinking.Thinking.step("provider", "$provider answered in ${elapsed}ms, ${execResult.text.length} characters")
+                    atropos.core.thinking.Thinking.detail("provider", "$provider said: ${firstLine(execResult.text)}")
+                    return ProviderCascadeResult(provider, execResult.text, errors, contextEnvelope)
                 }
 
                 val isInvalid = execResult is UniversalExecutionResult.Success
                 val outputText = if (isInvalid) (execResult as UniversalExecutionResult.Success).text else (execResult as UniversalExecutionResult.Failure).rawBody
-                val currentSnapshot = ExecutionSnapshot(
-                    attemptNumber = strike,
-                    output = outputText,
-                    error = if (isInvalid) "Response rejected by acceptance predicate" else (execResult as UniversalExecutionResult.Failure).message
-                )
+                val currentSnapshot = ExecutionSnapshot(strike, outputText, if (isInvalid) "Response rejected by acceptance predicate" else (execResult as UniversalExecutionResult.Failure).message)
 
                 val classifiedError = if (isInvalid) {
-                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(
-                        provider = provider,
-                        action = "provider.chat",
-                        errorType = "INVALID_RESPONSE",
-                        exactMistake = "Response rejected by acceptance predicate"
-                    )
-                    ProviderError(
-                        provider = provider,
-                        type = FailureType.INVALID_RESPONSE,
-                        cleanMessage = "$provider returned an invalid response for this request"
-                    )
+                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(provider, "provider.chat", "INVALID_RESPONSE", "Response rejected by acceptance predicate")
+                    ProviderError(provider, FailureType.INVALID_RESPONSE, "$provider returned an invalid response for this request")
                 } else {
                     val failure = execResult as UniversalExecutionResult.Failure
-                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(
-                        provider = provider,
-                        action = "provider.chat",
-                        errorType = "PROVIDER_EXECUTION_FAILURE",
-                        exactMistake = failure.message
-                    )
+                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(provider, "provider.chat", "PROVIDER_EXECUTION_FAILURE", failure.message)
                     classifier.classify(provider, failure.cause ?: RuntimeException(failure.message))
                 }
 
-                // 2. RATE-LIMIT SLEEP WITH BUFFER
-                val isRateLimit = !isInvalid && (
-                    (execResult as UniversalExecutionResult.Failure).isRateLimit ||
-                    classifiedError.type == FailureType.RATE_LIMIT
+                // 2. MODEL FALLBACK GRACE ON HTTP 402 (CREDITS) OR HTTP 404 (MODEL MISSING)
+                val failureCode = if (execResult is UniversalExecutionResult.Failure) execResult.statusCode else 200
+                val rawErr = if (execResult is UniversalExecutionResult.Failure) execResult.rawBody else ""
+                val isCreditOrMissing = !isInvalid && (
+                    failureCode == 402 || failureCode == 404 ||
+                    rawErr.contains("insufficient_quota", ignoreCase = true) ||
+                    rawErr.contains("model_not_found", ignoreCase = true) ||
+                    rawErr.contains("does not exist", ignoreCase = true) ||
+                    classifiedError.type == FailureType.MODEL_MISSING
                 )
+
+                if (isCreditOrMissing) {
+                    val reason = if (failureCode == 402) "HTTP 402 (credits exhausted)" else "HTTP 404 (model missing)"
+                    atropos.core.thinking.Thinking.step("provider", "$provider encountered $reason. Gracefully skipping immediately to next provider.")
+                    if (failureCode == 404) {
+                        ModelDiscoveryEngine.prune(provider, "HTTP 404: model missing")
+                    }
+                    errors.add(classifiedError)
+                    onFailure(classifiedError)
+                    break
+                }
+
+                // 3. RATE-LIMIT SLEEP WITH BUFFER
+                val isRateLimit = !isInvalid && ((execResult as UniversalExecutionResult.Failure).isRateLimit || classifiedError.type == FailureType.RATE_LIMIT)
 
                 if (isRateLimit) {
                     val failure = execResult as UniversalExecutionResult.Failure
-                    val retryAfterSec = MathematicalRateLimitScheduler.parseRetryAfterSeconds(
-                        headers = failure.headers,
-                        errorBody = failure.rawBody.ifBlank { failure.message }
-                    )
-                    atropos.core.thinking.Thinking.step(
-                        "provider",
-                        "HTTP 429 / OTPM rate limit on $provider: retry-after delta ${retryAfterSec}s. Sleeping ${retryAfterSec + MathematicalRateLimitScheduler.BUFFER_SECONDS}s (+10s buffer)..."
-                    )
+                    val retryAfterSec = MathematicalRateLimitScheduler.parseRetryAfterSeconds(failure.headers, failure.rawBody.ifBlank { failure.message })
+                    atropos.core.thinking.Thinking.step("provider", "HTTP 429 / OTPM rate limit on $provider: retry-after delta ${retryAfterSec}s. Sleeping ${retryAfterSec + MathematicalRateLimitScheduler.BUFFER_SECONDS}s (+10s buffer)...")
                     MathematicalRateLimitScheduler.sleepWithBuffer(retryAfterSec) { totalSec ->
-                        atropos.core.thinking.Thinking.detail(
-                            "provider",
-                            "Completed rate-limit backoff sleep of ${totalSec}s for $provider"
-                        )
+                        atropos.core.thinking.Thinking.detail("provider", "Completed rate-limit backoff sleep of ${totalSec}s for $provider")
                     }
                 }
 
@@ -339,15 +292,8 @@ class ProviderCascadeRouter(
         }
 
         val cleanAggregate: String =
-            if (errors.isEmpty()) {
-                "no provider completed the request"
-            } else {
-                val errorMessages = mutableListOf<String>()
-                for (e in errors) {
-                    errorMessages.add(e.cleanMessage)
-                }
-                errorMessages.joinToString(" | ")
-            }
+            if (errors.isEmpty()) "no provider completed the request"
+            else errors.joinToString(" | ") { it.cleanMessage }
 
         atropos.core.thinking.Thinking.step(
             "provider",
@@ -388,7 +334,7 @@ class ProviderCascadeRouter(
     ): List<String> {
         if (!providerOrderOverride.isNullOrEmpty()) {
             val candidates = providerOrderOverride.map { it.trim().lowercase() }
-                .filter { it.isNotBlank() }
+                .filter { it.isNotBlank() && it !in NON_CHAT_ENDPOINTS }
                 .filter { !localOnly() || it == "ollama" }
                 .distinct()
             val active = candidates.filter { !ModelDiscoveryEngine.isPruned(it) }
@@ -401,12 +347,17 @@ class ProviderCascadeRouter(
             ?.map { it.trim().lowercase() }
             ?.filter { it.isNotBlank() }
             ?: preferredProviderIds?.invoke().orEmpty()
-                .ifEmpty { registry.getAll().map { it.id } }
+                .ifEmpty { PRIMARY_CHAT_PROVIDERS }
 
         val activeKeyProviders = FallbackChainRegistry.getAllActiveKeys().keys.map { it.lowercase() }
+        val initialCandidates = (listOf(requestedProvider.lowercase(), "deepseek") + configured + activeKeyProviders)
 
-        val candidates = (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders)
-            .filter { registry.getById(it) != null }
+        val candidates = initialCandidates
+            .filter { it.isNotBlank() && it !in NON_CHAT_ENDPOINTS }
+            .filter { id ->
+                val desc = getDescriptor(id)
+                desc == null || desc.hasCapability(ApiCapability.CHAT) || desc.hasCapability(ApiCapability.CODE) || desc.hasCapability(ApiCapability.REPAIR)
+            }
             .filter { !localOnly() || it == "ollama" }
             .distinct()
         val active = candidates.filter { !ModelDiscoveryEngine.isPruned(it) }
@@ -418,6 +369,25 @@ class ProviderCascadeRouter(
             allowPaidProvider,
             paidGate
         )
+    }
+
+    private fun getDescriptor(id: String): ProviderDescriptor? {
+        val clean = id.trim().lowercase(java.util.Locale.US)
+        val found = registry.getById(clean)
+        if (found != null) return found
+        if (clean == "deepseek") {
+            return registry.getById("deepseek_direct")?.copy(id = "deepseek", costMode = CostMode.FREE)
+                ?: ProviderDescriptor(
+                    id = "deepseek",
+                    displayName = "DeepSeek",
+                    costMode = CostMode.FREE,
+                    quotaTier = 1,
+                    capabilities = setOf(ApiCapability.CHAT, ApiCapability.CODE, ApiCapability.REPAIR, ApiCapability.PLAN),
+                    requiredEnv = listOf("DEEPSEEK_API_KEY"),
+                    fallbackChain = listOf("groq", "gemini", "openrouter")
+                )
+        }
+        return null
     }
 
     private fun paidApprovalAfterFreeExhaustion(reason: String): ProviderApprovalCard? {
@@ -432,25 +402,30 @@ class ProviderCascadeRouter(
 
     companion object {
         const val GIST_CELLS = 100
+        val NON_CHAT_ENDPOINTS = setOf(
+            "jina", "pinecone", "supabase", "google_drive", "cloudflare_workers",
+            "github_actions", "google_cloud_free", "serpapi", "fal", "replicate"
+        )
+        val PRIMARY_CHAT_PROVIDERS = listOf("groq", "deepseek", "gemini", "openrouter", "github_models", "ollama")
 
         fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
-            val config = AtroposConfig.load()
             val vaultInstance = vault ?: TokenIsolationVault()
             return { envVar ->
                 val envValue = System.getenv(envVar)
-                if (envValue != null && envValue.isNotBlank()) envValue else {
+                if (!envValue.isNullOrBlank()) envValue else {
                     val configKeyName = envVar.lowercase()
                         .replace("_api_key", "")
                         .replace("_key", "")
                         .replace("_token", "")
+                    val conf = AtroposConfig.load().keys
                     val configValue = when (configKeyName) {
-                        "groq" -> AtroposConfig.load().keys.groq
-                        "openai" -> AtroposConfig.load().keys.openai
-                        "anthropic" -> AtroposConfig.load().keys.anthropic
-                        "xai" -> AtroposConfig.load().keys.xai
+                        "groq" -> conf.groq
+                        "openai" -> conf.openai
+                        "anthropic" -> conf.anthropic
+                        "xai" -> conf.xai
                         else -> null
                     }
-                    if (configValue != null && configValue.isNotBlank()) configValue else {
+                    if (!configValue.isNullOrBlank()) configValue else {
                         runCatching { vaultInstance.readSecret(envVar) }.getOrNull()
                     }
                 }

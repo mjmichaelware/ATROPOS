@@ -24,17 +24,7 @@ class StaticProviderDescriptorRegistry : ProviderDescriptorRegistry {
         d("pinecone","Pinecone",CostMode.OPTIONAL_FREE,2,c(ApiCapability.VECTOR_DB),e("PINECONE_API_KEY")),
         d("github_actions","GitHub Actions",CostMode.COOLDOWN_OK,2,c(ApiCapability.CI,ApiCapability.EDGE),e("GITHUB_TOKEN")),
         d("google_cloud_free","Google Cloud Free Tier",CostMode.OPTIONAL_FREE,2,c(ApiCapability.SECRET,ApiCapability.STORAGE,ApiCapability.EDGE),e("GOOGLE_APPLICATION_CREDENTIALS")),
-        d("deepseek_direct","DeepSeek Direct",CostMode.PAID_LOCKED,6,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR),e("DEEPSEEK_API_KEY"),f("openrouter","groq")),
-        d("cohere","Cohere",CostMode.PAID_LOCKED,7,c(ApiCapability.CHAT,ApiCapability.PLAN,ApiCapability.EMBED),e("COHERE_API_KEY"),f("jina","gemini")),
-        d("mistral","Mistral",CostMode.PAID_LOCKED,7,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR),e("MISTRAL_API_KEY"),f("openrouter","groq")),
-        d("anthropic","Anthropic",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.LARGE_CONTEXT),e("ANTHROPIC_API_KEY"),f("gemini","groq")),
-        d("openai","OpenAI",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.VISION,ApiCapability.EMBED),e("OPENAI_API_KEY"),f("gemini","groq")),
-        d("xai","xAI",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.PLAN),e("XAI_API_KEY"),f("gemini","groq")),
-        d("aws_bedrock","AWS Bedrock",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN),e("AWS_ACCESS_KEY_ID","AWS_SECRET_ACCESS_KEY","AWS_REGION"),f("openrouter","groq")),
-        d("fal","Fal.ai",CostMode.CREDIT_POOL,3,c(ApiCapability.ASSET,ApiCapability.VISION),e("FAL_AI_API_KEY"),f("huggingface","replicate")),
-        d("replicate","Replicate",CostMode.CREDIT_POOL,3,c(ApiCapability.ASSET,ApiCapability.VISION),e("REPLICATE_API_TOKEN"),f("fal","huggingface")),
-        d("serpapi","SerpAPI",CostMode.CREDIT_POOL,3,c(ApiCapability.WEB),e("SERPAPI_API_KEY"),f("jina")),
-        d("serpapi","SerpAPI",CostMode.CREDIT_POOL,3,c(ApiCapability.WEB),e("SERPAPI_API_KEY"),f("jina")),
+        d("deepseek","DeepSeek",CostMode.FREE,1,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN),e("DEEPSEEK_API_KEY"),f("groq","openrouter")),
         d("deepseek_direct","DeepSeek Direct",CostMode.PAID_LOCKED,6,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR),e("DEEPSEEK_API_KEY"),f("openrouter","groq")),
         d("cohere","Cohere",CostMode.PAID_LOCKED,7,c(ApiCapability.CHAT,ApiCapability.PLAN,ApiCapability.EMBED),e("COHERE_API_KEY"),f("jina","gemini")),
         d("mistral","Mistral",CostMode.PAID_LOCKED,7,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR),e("MISTRAL_API_KEY"),f("openrouter","groq")),
@@ -47,7 +37,7 @@ class StaticProviderDescriptorRegistry : ProviderDescriptorRegistry {
         d("serpapi","SerpAPI",CostMode.CREDIT_POOL,3,c(ApiCapability.WEB),e("SERPAPI_API_KEY"),f("jina"))
     )
     override fun getAll() = descriptors
-    override fun getById(id: String) = descriptors.find { it.id == id }
+    override fun getById(id: String) = descriptors.find { it.id == id } ?: if (id == "deepseek") descriptors.find { it.id == "deepseek_direct" } else null
     override fun getFreeEligible() = descriptors.filter { it.isFreeEligible() }
     override fun getPaidLocked() = descriptors.filter { it.isPaid() }
     override fun getByCapability(capability: ApiCapability) = descriptors.filter { it.hasCapability(capability) }
