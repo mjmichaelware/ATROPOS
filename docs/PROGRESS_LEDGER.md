@@ -16226,11 +16226,12 @@ End of AGENTS.md
 - Why the delta is justified: Provider exhaustion and mapping failures eliminated. Cascade deterministically routes valid models with immediate grace on billing/missing model faults.
 - % delta: Phase 1 & 2 complete (100%), Phase 3 complete (100%), Phase 19 App Factory robust against provider exhaustion.
 - Fingerprints (sha256):
-  - `ModelDiscoveryEngine.kt=3f8ce71b269d9819f3798a265e8c0b9ee3c5f4a75dec2771db34f359868948e3`
-  - `ProviderCascadeRouter.kt=a7434dd38641be813785fca8238d97bb891cb2631833397636a9cf3aa8119166`
+  - `ModelDiscoveryEngine.kt=b5b4c6c2deac5824b5c391fcc752b53e874debf014a76c48638889a6d71d7224`
+  - `ProviderCascadeRouter.kt=540a9c552861f705869b214253e6c5ef9553abc3ac19a9b4578e75a3011146c7`
   - `StaticProviderDescriptorRegistry.kt=b071249d581f6026e40da449c4f5c3d610e1f855162e769774293951df488ee2`
   - `UniversalRequestAdapter.kt=52fb63f7ec22200fa61b2aba6ffafe3df3f188a3aec87326a4e53e5527a069e8`
   - `OpenAiCompatibleProviderCatalog.kt=c099a7a20ea6843ecd58073529690d9f5a2f0e812151269a8316521eea4a18a0`
   - `ProviderCascadeRouterTest.kt=133fca75c350c3795a9f9e5d9c198a19ffdcb9bfa228641f6c013c36562f25b1`
   - `UniversalRequestAdapterTest.kt=9e48cda8e00ed5b7b8796a5ea006e9ad0391d7803b27d85e61ade2e28c797741`
+
 

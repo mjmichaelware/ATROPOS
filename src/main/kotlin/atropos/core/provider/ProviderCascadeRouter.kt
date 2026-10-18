@@ -159,7 +159,11 @@ class ProviderCascadeRouter(
 
                 val isInvalid = execResult is UniversalExecutionResult.Success
                 val outputText = if (isInvalid) (execResult as UniversalExecutionResult.Success).text else (execResult as UniversalExecutionResult.Failure).rawBody
-                val currentSnapshot = ExecutionSnapshot(strike, outputText, if (isInvalid) "Response rejected by acceptance predicate" else (execResult as UniversalExecutionResult.Failure).message)
+                val currentSnapshot = ExecutionSnapshot(
+                    attemptNumber = strike,
+                    output = outputText,
+                    error = if (isInvalid) "Response rejected by acceptance predicate" else (execResult as UniversalExecutionResult.Failure).message
+                )
 
                 val classifiedError = if (isInvalid) {
                     atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(provider, "provider.chat", "INVALID_RESPONSE", "Response rejected by acceptance predicate")

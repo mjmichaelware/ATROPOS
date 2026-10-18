@@ -388,8 +388,8 @@ object ModelDiscoveryEngine {
 
         val live = discoveredModels[cleanProvider].orEmpty().filter { it.active }.map { it.id }
 
-        // 1. If exact live match exists, return it
-        if (cleanModel.isNotBlank() && cleanModel != "default" && live.contains(cleanModel)) {
+        // 1. If exact live match exists, return it (unless specialized)
+        if (cleanModel.isNotBlank() && cleanModel != "default" && live.contains(cleanModel) && !isSpecializedModel(cleanModel)) {
             return cleanModel
         }
 
