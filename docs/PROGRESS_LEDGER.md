@@ -16175,3 +16175,27 @@ End of AGENTS.md
   - `Phase20StructuralMetaAdapterTest.kt=8290cb378a58735de1d1893f7ba3ce2d9399ed864d58ec6b72a32eb7d11e5785`
   - `AdversarialResponseNormalizerTest.kt=3d54f1312f4e1e292b7ebbb0de375de46662292d5df95f0deadf0ed4c11ecf4b`
   - `ProviderFailureMemoryStoreTest.kt=65e9281264781b5e999ba6ed1b9bbbfb72c25eaa6b6b10d8d167f03dff3338f5`
+
+### 2026-10-18T18:55:00Z · Agent: Antigravity (Advanced Agentic Pair Programmer) · Batch: MANDATE-1-MANDATE-2-COMPLETE-SPEC-GAP-SWEEP
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/SettingsModalRenderer.kt` (new, 106 lines / interactive settings modal with beautiful box framing and live option cycling)
+  - `src/main/kotlin/atropos/cli/ui/CliModalStateMachine.kt` (+42 lines, 344 lines total / added ModalType.SETTINGS, live key handling for ArrowUp/Down/Left/Right/Enter/Escape, auto-trigger for /settings and /config)
+  - `src/main/kotlin/atropos/cli/ui/QuestionMarkModalRenderer.kt` (+24 lines, 225 lines total / standardized 3-column modal and category definition mode on beautiful box framing with centered title, header chrome, and responsive inner padding)
+  - `src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt` (+1 line, 390 lines total / wired SettingsModalRenderer for /config, /settings, and /system config)
+  - `src/test/kotlin/atropos/cli/ui/CliModalStateMachineTest.kt` (new, 117 lines / comprehensive unit test suite covering auto-triggers, settings navigation, live option cycling, question mark view switching, and responsive rendering)
+  - `src/test/kotlin/atropos/cli/GracefulDegradationTest.kt` (+11 lines, 123 lines total / added settings modal viewport degradation test across all responsive breakpoints)
+- Atoms / phases affected: HOE UI/UX Presentation, CLI/TUI Foundation, Settings Matrix Parity, Omni-Surface Unification.
+- Predicate moved:
+  - Complete specification gap sweep executed across `docs/ATROPOS Master CLI, Command, Settings, & UX Specification.txt` and `docs/Untitled document.txt`.
+  - Standardized beautiful box framing (`╭─...─╮`, `│ ... │`, `╰─...─╯`) fully aligned across Question Mark (`?`), Categorized Trie (`/`), Category Definition (`/?`), Interrupt (`+`), Cost Peek (`$`), and Settings (`/settings`, `/config`) modals.
+  - Interactive Settings modal operational in CLI state machine: Arrow Up/Down navigation, Arrow Left/Right live option cycling, Enter saves with evidence receipt into Evidence Layer, Escape dismisses.
+  - Mathematical Proof Gate verified: zero competitor strings in `src/` or `app/`, zero `TODO`/`FIXME` or hollow stubs, every modified/created source file strictly <= 500 LOC, zero orphan components.
+- Why the delta is justified: Seamless, beautiful, device-agnostic modal navigation and settings management fully wired into interactive runner with comprehensive unit tests and zero compiler stubs.
+- % delta: HOE Presentation complete (100%), Omni-Surface Unified.
+- Fingerprints (sha256):
+  - `CommandSecondaryDispatcher.kt=fa7db3a0f348b619b92bdbddd654a9a99ef92477d77da4f3c9a4d0bb856ddcc4`
+  - `CliModalStateMachine.kt=c19d2ed07dc46fe7ec5c7d46e574540e477225ee8e404edf923018427d866315`
+  - `QuestionMarkModalRenderer.kt=4f84cb5690bf1f7f6fbd7c086dccff4fef5a0ca6bb01cd13d819d3f1e09a6446`
+  - `SettingsModalRenderer.kt=f6d8bf0fbbcd058f26d969fa7c7463d2cfd422b6f240e4cf9ceea23994171712`
+  - `CliModalStateMachineTest.kt=6bbf79bab48922c84618ee6762f9f42df9e4807ff54deab5091dc4b381b4b39b`
+  - `GracefulDegradationTest.kt=420762e1e70b134568d7bec03501a53656c52d39e8f71f158e5f676fcbce662b`

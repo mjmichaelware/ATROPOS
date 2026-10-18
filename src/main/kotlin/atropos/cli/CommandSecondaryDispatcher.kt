@@ -210,7 +210,8 @@ class CommandSecondaryDispatcher(
             val sub = tokens.drop(1)
             val unified = atropos.core.config.AtroposUnifiedConfig.load()
             if (sub.isEmpty()) {
-                uiEngine.renderBlock(unified.renderMatrix(uiEngine.viewportWidth).lines())
+                val renderer = atropos.cli.ui.SettingsModalRenderer(atropos.cli.ui.TerminalTheme())
+                uiEngine.renderBlock(renderer.render(unified, 0, uiEngine.viewportWidth))
             } else if (sub.first().lowercase() == "set" && sub.size >= 3) {
                 val key = sub[1]
                 val value = sub[2]
@@ -340,7 +341,8 @@ class CommandSecondaryDispatcher(
                 }
                 "config" -> {
                     val unified = atropos.core.config.AtroposUnifiedConfig.load()
-                    uiEngine.renderBlock(unified.renderMatrix(uiEngine.viewportWidth).lines())
+                    val renderer = atropos.cli.ui.SettingsModalRenderer(atropos.cli.ui.TerminalTheme())
+                    uiEngine.renderBlock(renderer.render(unified, 0, uiEngine.viewportWidth))
                 }
                 "alias" -> {
                     val mgr = atropos.cli.input.KeybindingManager()

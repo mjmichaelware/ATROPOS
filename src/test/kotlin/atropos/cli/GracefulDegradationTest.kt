@@ -106,6 +106,18 @@ class GracefulDegradationTest {
         }
     }
 
+    @Test
+    fun settings_modal_survives_narrow_and_wide_viewports() {
+        val renderer = atropos.cli.ui.SettingsModalRenderer(theme)
+        val config = atropos.core.config.AtroposUnifiedConfig()
+        val widths = listOf(50, 60, 80, 120)
+
+        for (w in widths) {
+            val lines = renderer.render(config, selectedIndex = 0, width = w)
+            assertTrue(lines.isNotEmpty(), "Settings modal must render at width $w")
+        }
+    }
+
     private fun stripAnsi(text: String): String =
         text.replace(Regex("\u001B\\[[;?0-9]*[a-zA-Z]"), "")
 }

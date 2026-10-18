@@ -3,6 +3,7 @@ package atropos.cli.ui
 
 import atropos.cli.input.KeyEvent
 import atropos.cli.ui.QuestionMarkModalRenderer.ActiveView
+import atropos.core.config.AtroposUnifiedConfig
 import java.nio.file.Path
 
 /**
@@ -19,7 +20,8 @@ class CliModalStateMachine(
         CATEGORIZED_TRIE,
         CATEGORY_INFO,
         INTERRUPT,
-        COST_PEEK
+        COST_PEEK,
+        SETTINGS
     }
 
     sealed interface ModalOutcome {
@@ -49,11 +51,14 @@ class CliModalStateMachine(
     var categorySelectedIndex: Int = 0
     var interruptSelectedIndex: Int = 0
     var interruptIsExpanded: Boolean = false
+    var settingsSelectedIndex: Int = 0
 
     private val questionRenderer = QuestionMarkModalRenderer(theme)
     private val trieRenderer = CategorizedTrieModalRenderer(theme)
     private val interruptSurface = InterruptModalSurface(theme)
     private val costPeekRenderer = CostPeekModalRenderer(theme)
+    private val settingsRenderer = SettingsModalRenderer(theme)
+    private val unifiedConfig = AtroposUnifiedConfig.load()
 
     fun checkAutoTrigger(buffer: String): Boolean {
         val trimmed = buffer.trim()
@@ -64,6 +69,7 @@ class CliModalStateMachine(
             trimmed == "/" -> ModalType.CATEGORIZED_TRIE
             trimmed == "+" -> ModalType.INTERRUPT
             trimmed == "$" -> ModalType.COST_PEEK
+            trimmed in setOf("/settings", "/config", "/preferences", "settings", "config") -> ModalType.SETTINGS
             else -> ModalType.NONE
         }
         if (activeModal != prev && activeModal != ModalType.NONE) {
@@ -88,6 +94,7 @@ class CliModalStateMachine(
         categorySelectedIndex = 0
         interruptSelectedIndex = 0
         interruptIsExpanded = false
+        settingsSelectedIndex = 0
         hintIndex = (hintIndex + 1) % rotatingHints.size
     }
 
@@ -141,6 +148,14 @@ class CliModalStateMachine(
                         interruptIsExpanded = false
                         return ModalOutcome.Redraw
                     }
+                    ModalType.SETTINGS -> {
+                        val keys = AtroposUnifiedConfig.ALLOWED_OPTIONS.keys.toList()
+                        val keyToCycle = keys.getOrNull(settingsSelectedIndex)
+                        if (keyToCycle != null) {
+                            unifiedConfig.cycleOption(keyToCycle, forward = false)
+                        }
+                        return ModalOutcome.Redraw
+                    }
                     else -> Unit
                 }
             }
@@ -175,6 +190,14 @@ class CliModalStateMachine(
                         interruptIsExpanded = !interruptIsExpanded
                         return ModalOutcome.Redraw
                     }
+                    ModalType.SETTINGS -> {
+                        val keys = AtroposUnifiedConfig.ALLOWED_OPTIONS.keys.toList()
+                        val keyToCycle = keys.getOrNull(settingsSelectedIndex)
+                        if (keyToCycle != null) {
+                            unifiedConfig.cycleOption(keyToCycle, forward = true)
+                        }
+                        return ModalOutcome.Redraw
+                    }
                     else -> Unit
                 }
             }
@@ -197,6 +220,10 @@ class CliModalStateMachine(
                         interruptSelectedIndex = (interruptSelectedIndex - 1).coerceAtLeast(0)
                         return ModalOutcome.Redraw
                     }
+                    ModalType.SETTINGS -> {
+                        settingsSelectedIndex = (settingsSelectedIndex - 1).coerceAtLeast(0)
+                        return ModalOutcome.Redraw
+                    }
                     else -> Unit
                 }
             }
@@ -217,6 +244,11 @@ class CliModalStateMachine(
                     }
                     ModalType.INTERRUPT -> {
                         interruptSelectedIndex = (interruptSelectedIndex + 1).coerceAtMost(2)
+                        return ModalOutcome.Redraw
+                    }
+                    ModalType.SETTINGS -> {
+                        val keys = AtroposUnifiedConfig.ALLOWED_OPTIONS.keys.toList()
+                        settingsSelectedIndex = (settingsSelectedIndex + 1).coerceAtMost((keys.size - 1).coerceAtLeast(0))
                         return ModalOutcome.Redraw
                     }
                     else -> Unit
@@ -245,6 +277,10 @@ class CliModalStateMachine(
                     }
                     ModalType.INTERRUPT -> {
                         ModalOutcome.Execute("+ ${interruptSelectedIndex + 1}")
+                    }
+                    ModalType.SETTINGS -> {
+                        unifiedConfig.save()
+                        ModalOutcome.Execute("/config")
                     }
                     else -> ModalOutcome.Dismiss
                 }
@@ -294,6 +330,13 @@ class CliModalStateMachine(
                     providerName = "default"
                 )
                 costPeekRenderer.render(metrics, width)
+            }
+            ModalType.SETTINGS -> {
+                settingsRenderer.render(
+                    unifiedConfig = unifiedConfig,
+                    selectedIndex = settingsSelectedIndex,
+                    width = width
+                )
             }
             ModalType.NONE -> emptyList()
         }

@@ -7,8 +7,9 @@ import atropos.cli.ui.design.Role
 /**
  * ATOM-UI-016: 3-Column Progressive Disclosure Modal (? and /?).
  *
- * Column 1: Shortcuts (all 34 mobile & desktop bindings).
- * Column 2: Commands (alphabetical trie with drill-down descriptions).
+ * Implements standardized beautiful box framing for interactive cheatsheets:
+ * Column 1: Shortcuts (canonical 34 mobile & desktop bindings).
+ * Column 2: Commands (alphabetical trie with progressive drill-down descriptions).
  * Column 3: General Information (project, conversation hash, version, branch, provider).
  */
 class QuestionMarkModalRenderer(
@@ -35,10 +36,15 @@ class QuestionMarkModalRenderer(
         isLeafExpanded: Boolean = false
     ): List<String> {
         val safeWidth = width.coerceAtLeast(60)
+        val innerWidth = safeWidth - 4
         val lines = mutableListOf<String>()
 
-        val title = theme.paint(Role.BRAND, " ATROPOS CLI — Progressive Disclosure Modal (?) ")
-        lines.add(TerminalText.padEnd(title, safeWidth))
+        val title = " ATROPOS CLI — Progressive Disclosure Modal (?) "
+        lines.add(renderBoxHeader(title, safeWidth))
+
+        val navKey = "Keyboard: ↑/↓ Navigate  ←/→ Switch View/Expand  enter Select  esc Close"
+        lines.add("│ " + theme.paint(Role.TEXT_MUTED, navKey.padEnd(innerWidth)) + " │")
+        lines.add("├" + "─".repeat(safeWidth - 2) + "┤")
 
         // Column tab bar
         val tabs = ActiveView.values().joinToString("  ") { view ->
@@ -48,27 +54,30 @@ class QuestionMarkModalRenderer(
                 theme.subdued("  ${view.title}  ")
             }
         }
-        lines.add("  $tabs")
-        lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
+        lines.add("│ " + TerminalText.ellipsize(tabs, innerWidth).padEnd(innerWidth) + " │")
+        lines.add("├" + "─".repeat(safeWidth - 2) + "┤")
 
         when (activeView) {
-            ActiveView.SHORTCUTS -> renderShortcuts(lines, selectedIndex, safeWidth)
-            ActiveView.COMMANDS -> renderCommands(lines, selectedIndex, safeWidth, isLeafExpanded)
-            ActiveView.GENERAL_INFO -> renderGeneralInfo(lines, safeWidth, project, conversationHash, version, branch, provider)
+            ActiveView.SHORTCUTS -> renderShortcuts(lines, selectedIndex, innerWidth)
+            ActiveView.COMMANDS -> renderCommands(lines, selectedIndex, innerWidth, isLeafExpanded)
+            ActiveView.GENERAL_INFO -> renderGeneralInfo(lines, innerWidth, project, conversationHash, version, branch, provider)
         }
 
-        lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
-        val navKey = "Keyboard: ↑/↓ Navigate  ←/→ Switch View/Expand  enter Select  esc Close"
-        lines.add(theme.paint(Role.TEXT_MUTED, "  $navKey"))
+        lines.add("╰" + "─".repeat(safeWidth - 2) + "╯")
         return lines
     }
 
     fun renderCategoryDefinitions(categoryQuery: String = "", selectedIndex: Int = 0, width: Int = 80): List<String> {
         val safeWidth = width.coerceAtLeast(50)
+        val innerWidth = safeWidth - 4
         val lines = mutableListOf<String>()
 
-        lines.add(theme.paint(Role.BRAND, " ATROPOS — Category Definition Mode (/?) "))
-        lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
+        val title = " ATROPOS — Category Definition Mode (/?) "
+        lines.add(renderBoxHeader(title, safeWidth))
+
+        val nav = "Keyboard: ↑/↓ Navigate  enter Step into  esc Return"
+        lines.add("│ " + theme.paint(Role.TEXT_MUTED, nav.padEnd(innerWidth)) + " │")
+        lines.add("├" + "─".repeat(safeWidth - 2) + "┤")
 
         val nodes = taxonomy.stepInto(listOf(categoryQuery).filter { it.isNotBlank() })
         if (nodes.isEmpty() || categoryQuery.isBlank()) {
@@ -80,7 +89,8 @@ class QuestionMarkModalRenderer(
                 val actionsCount = "[${node.children.size} actions]"
                 val desc = "${node.description} $actionsCount"
                 val descStyled = if (isSelected) theme.strong(desc) else theme.subdued(desc)
-                lines.add(TerminalText.ellipsize("$cursor$catStyled $descStyled", safeWidth))
+                val row = "$cursor$catStyled $descStyled"
+                lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
             }
         } else {
             nodes.forEachIndexed { index, node ->
@@ -89,16 +99,16 @@ class QuestionMarkModalRenderer(
                 val tokStyled = if (isSelected) theme.paint(Role.ACCENT_FOCUS, node.token.padEnd(16)) else theme.paint(Role.TEXT_PRIMARY, node.token.padEnd(16))
                 val desc = node.leafResolution ?: node.description
                 val descStyled = if (isSelected) theme.strong(desc) else theme.subdued(desc)
-                lines.add(TerminalText.ellipsize("$cursor$tokStyled $descStyled", safeWidth))
+                val row = "$cursor$tokStyled $descStyled"
+                lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
             }
         }
 
-        lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
-        lines.add(theme.paint(Role.TEXT_MUTED, "  Keyboard: ↑/↓ Navigate  enter Step into  esc Return"))
+        lines.add("╰" + "─".repeat(safeWidth - 2) + "╯")
         return lines
     }
 
-    private fun renderShortcuts(lines: MutableList<String>, selectedIndex: Int, safeWidth: Int) {
+    private fun renderShortcuts(lines: MutableList<String>, selectedIndex: Int, innerWidth: Int) {
         val shortcuts = listOf(
             "alt+m" to "Send with opposite Queued Messages setting",
             "alt+v, ctrl+v" to "Paste image/video/text from clipboard",
@@ -136,11 +146,12 @@ class QuestionMarkModalRenderer(
             val prefix = if (index == selectedIndex) "❯ " else "  "
             val keyStyled = theme.paint(Role.ACCENT_FOCUS, keys.padEnd(24))
             val actStyled = if (index == selectedIndex) theme.paint(Role.TEXT_PRIMARY, action) else theme.subdued(action)
-            lines.add(TerminalText.ellipsize("$prefix$keyStyled $actStyled", safeWidth))
+            val row = "$prefix$keyStyled $actStyled"
+            lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
         }
     }
 
-    private fun renderCommands(lines: MutableList<String>, selectedIndex: Int, safeWidth: Int, isLeafExpanded: Boolean = false) {
+    private fun renderCommands(lines: MutableList<String>, selectedIndex: Int, innerWidth: Int, isLeafExpanded: Boolean = false) {
         val commands = listOf(
             "/agent" to "Autonomous agent lifecycle and parallel dispatch",
             "/repo" to "CAS-backed repository inspection and atomic mutation",
@@ -161,19 +172,24 @@ class QuestionMarkModalRenderer(
             "/lint" to "Execute syntax and AST linters emitting diagnostic vectors"
         )
 
-        val rendered = mostUsedHeaderRenderer.render(commands, selectedIndex, safeWidth)
-        lines.addAll(rendered)
+        val rendered = mostUsedHeaderRenderer.render(commands, selectedIndex, innerWidth)
+        rendered.forEach { rLine ->
+            lines.add("│ " + TerminalText.ellipsize(rLine, innerWidth).padEnd(innerWidth) + " │")
+        }
 
         if (isLeafExpanded && selectedIndex in commands.indices) {
             val selectedCmd = commands[selectedIndex].first
             val leaf = atropos.cli.help.CommandLeafRegistry.getOrDefault(selectedCmd, commands[selectedIndex].second)
-            lines.addAll(atropos.cli.help.CommandLeafRegistry.render(leaf, isExpanded = true, theme = theme, width = safeWidth))
+            val leafLines = atropos.cli.help.CommandLeafRegistry.render(leaf, isExpanded = true, theme = theme, width = innerWidth)
+            leafLines.forEach { lLine ->
+                lines.add("│ " + TerminalText.ellipsize(lLine, innerWidth).padEnd(innerWidth) + " │")
+            }
         }
     }
 
     private fun renderGeneralInfo(
         lines: MutableList<String>,
-        safeWidth: Int,
+        innerWidth: Int,
         project: String,
         conversationHash: String,
         version: String,
@@ -194,7 +210,16 @@ class QuestionMarkModalRenderer(
         infoItems.forEach { (label, value) ->
             val labelStyled = theme.paint(Role.TEXT_MUTED, label.padEnd(24))
             val valueStyled = theme.paint(Role.TEXT_PRIMARY, value)
-            lines.add(TerminalText.ellipsize("  $labelStyled : $valueStyled", safeWidth))
+            val row = "$labelStyled : $valueStyled"
+            lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
         }
+    }
+
+    private fun renderBoxHeader(title: String, width: Int): String {
+        val cleanTitle = " $title "
+        val rem = (width - cleanTitle.length - 2).coerceAtLeast(2)
+        val left = rem / 2
+        val right = rem - left
+        return "╭" + "─".repeat(left) + cleanTitle + "─".repeat(right) + "╮"
     }
 }
