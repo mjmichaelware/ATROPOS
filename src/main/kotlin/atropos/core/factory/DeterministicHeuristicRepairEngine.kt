@@ -63,20 +63,16 @@ object DeterministicHeuristicRepairEngine {
 
     private fun repairMissingInitPy(targetDir: Path, failedNode: DagNode): HeuristicRepairOutcome {
         val created = mutableListOf<String>()
-        runCatching {
-            Files.walk(targetDir).use { stream ->
-                stream.filter { Files.isDirectory(it) && it != targetDir }
-                    .filter { !it.toString().contains(".git") && !it.toString().contains(".atropos") && !it.toString().contains("__pycache__") }
-                    .forEach { dir ->
-                        val hasPyFiles = Files.list(dir).use { list ->
-                            list.any { Files.isRegularFile(it) && it.fileName.toString().endsWith(".py") }
-                        }
-                        val initFile = dir.resolve("__init__.py")
-                        if (hasPyFiles && !Files.exists(initFile)) {
-                            Files.writeString(initFile, "# package marker\n")
-                            created.add(targetDir.relativize(initFile).toString().replace('\\', '/'))
-                        }
-                    }
+        val baseDir = targetDir.toFile()
+        baseDir.walkTopDown().filter { it.isDirectory && it != baseDir }.forEach { dir ->
+            val pathStr = dir.absolutePath
+            if (!pathStr.contains(".git") && !pathStr.contains(".atropos") && !pathStr.contains("__pycache__")) {
+                val hasPyFiles = dir.listFiles()?.any { it.isFile && it.name.endsWith(".py") } == true
+                val initFile = File(dir, "__init__.py")
+                if (hasPyFiles && !initFile.exists()) {
+                    initFile.writeText("# package marker\n")
+                    created.add(targetDir.relativize(initFile.toPath()).toString().replace('\\', '/'))
+                }
             }
         }
 
@@ -127,7 +123,6 @@ object DeterministicHeuristicRepairEngine {
             if (verified) {
                 return HeuristicRepairOutcome(true, "RULE_MISSING_STDLIB_IMPORT:$missingName", listOf(relPath))
             } else {
-                // Revert on verification failure to keep working tree clean
                 runCatching { Files.writeString(targetPath, originalContent) }
             }
         }
@@ -136,14 +131,10 @@ object DeterministicHeuristicRepairEngine {
     }
 
     private fun repairSyntaxErrors(targetDir: Path, failedNode: DagNode): HeuristicRepairOutcome {
-        val pyFiles = mutableListOf<Path>()
-        runCatching {
-            Files.walk(targetDir).use { stream ->
-                stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".py") }
-                    .filter { !it.toString().contains(".git") && !it.toString().contains(".atropos") }
-                    .forEach { pyFiles.add(it) }
-            }
-        }
+        val pyFiles = targetDir.toFile().walkTopDown()
+            .filter { it.isFile && it.name.endsWith(".py") && !it.absolutePath.contains(".git") && !it.absolutePath.contains(".atropos") }
+            .map { it.toPath() }
+            .toList()
 
         for (file in pyFiles) {
             val compileResult = checkPyCompile(file)
@@ -210,13 +201,7 @@ object DeterministicHeuristicRepairEngine {
         if (Files.isRegularFile(direct)) return direct
 
         val fileName = Path.of(candidatePath).fileName.toString()
-        return runCatching {
-            Files.walk(targetDir, 5).use { stream ->
-                stream.filter { Files.isRegularFile(it) && it.fileName.toString() == fileName }
-                    .findFirst()
-                    .orElse(null)
-            }
-        }.getOrNull()
+        return targetDir.toFile().walkTopDown().maxDepth(5).firstOrNull { it.isFile && it.name == fileName }?.toPath()
     }
 
     private fun runVerificationCommand(targetDir: Path, failedNode: DagNode): Boolean {

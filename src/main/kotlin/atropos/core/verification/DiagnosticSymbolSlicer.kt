@@ -117,13 +117,7 @@ object DiagnosticSymbolSlicer {
         if (Files.isRegularFile(direct)) return direct
 
         val simpleName = Path.of(candidate).fileName.toString()
-        return runCatching {
-            Files.walk(targetDir, 5).use { stream ->
-                stream.filter { Files.isRegularFile(it) && it.fileName.toString() == simpleName }
-                    .findFirst()
-                    .orElse(null)
-            }
-        }.getOrNull()
+        return targetDir.toFile().walkTopDown().maxDepth(5).firstOrNull { it.isFile && it.name == simpleName }?.toPath()
     }
 
     private fun extractCodeSlice(path: Path, failingLine: Int?): String {
