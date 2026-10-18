@@ -63,6 +63,18 @@ class CommandCompleter(
         // Use the full prefixed input for command-specific parsing
         val commandInput = prefix.trimStart()
 
+        if (commandInput.startsWith("#") || commandInput.contains('#')) {
+            val pathComp = completePath(commandInput, selectedIndex)
+            if (pathComp.options.isNotEmpty()) return pathComp
+        }
+
+        if (commandInput.startsWith("?")) {
+            return Completion(
+                preview = "Progressive Disclosure Modal (?) — shortcuts, commands, general info",
+                options = listOf("?", "/?")
+            )
+        }
+
         // Handle multi-token commands that need their arguments
         if (commandInput.startsWith("/verify ")) {
             val scopePrefix = commandInput.removePrefix("/verify ")
@@ -139,7 +151,7 @@ class CommandCompleter(
         prefix: String,
         selectedIndex: Int
     ): Completion {
-        val marker = prefix.lastIndexOf('@')
+        val marker = prefix.lastIndexOfAny(charArrayOf('@', '#'))
         if (marker < 0) return Completion()
 
         val fragment = prefix.substring(marker + 1)

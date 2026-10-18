@@ -124,9 +124,15 @@ class AppFactoryRouter(
             appGitHelper.runGit(request.targetDirectory, atropos.core.worktree.GitWorktreeOperation.REV_PARSE_HEAD)
         }.getOrNull()?.trim() ?: (result.gitCommit ?: "HEAD")
 
-        val filesMap = result.completedAtoms.associateWith { atom ->
-            val p = request.targetDirectory.resolve(atom)
-            if (java.nio.file.Files.exists(p)) java.nio.file.Files.readString(p) else ""
+        val filesMap = mutableMapOf<String, String>()
+        if (java.nio.file.Files.exists(request.targetDirectory)) {
+            java.nio.file.Files.walk(request.targetDirectory).use { paths ->
+                paths.filter { java.nio.file.Files.isRegularFile(it) && !request.targetDirectory.relativize(it).startsWith(".atropos") }
+                    .forEach { file ->
+                        val rel = request.targetDirectory.relativize(file).toString().replace('\\', '/')
+                        filesMap[rel] = java.nio.file.Files.readString(file)
+                    }
+            }
         }
         runCatching {
             behaviorGuard.requireRealBehavior(request.projectSpec, filesMap)

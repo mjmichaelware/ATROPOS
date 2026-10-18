@@ -209,7 +209,11 @@ class LSMStorageEngine:
     def flush(self) -> None:
         for k, v in self.memtable.items_sorted():
             self._disk_cache[k] = v
-        content = "".join(f"{k}\t{('__TOMBSTONE__' if v is None else v.hex())}\n" for k, v in sorted(self._disk_cache.items()))
+        lines = []
+        for k, v in sorted(self._disk_cache.items()):
+            val_str = "__TOMBSTONE__" if v is None else v.hex()
+            lines.append(k + "\\t" + val_str)
+        content = "\\n".join(lines) + ("\\n" if lines else "")
         self.sstable_file.write_text(content, encoding="utf-8")
         self.memtable.clear()
 """

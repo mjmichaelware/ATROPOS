@@ -14,9 +14,9 @@ object CommandPrefix {
 
     /**
      * The set of characters that explicitly denote a command.
-     * Currently only "/" is recognized as a command prefix.
+     * Recognizes '/', '#', and '?' as omni-surface prefixes.
      */
-    val COMMAND_PREFIX_CHARS: Set<Char> = setOf('/')
+    val COMMAND_PREFIX_CHARS: Set<Char> = setOf('/', '#', '?')
 
     /**
      * Returns the first non-whitespace character of the input, or null if none exists.

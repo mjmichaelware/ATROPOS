@@ -46,44 +46,44 @@ object KryptonStoreDagBuilder {
         )
 
         // Layer 1: Domain Contracts
-        nodes.add(node("node-l1-storage", "L1: StorageEngine Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/storage.py", emptyList(), listOf("krypton/domain/")))
-        nodes.add(node("node-l1-wal", "L1: WALManager Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/wal.py", emptyList(), listOf("krypton/domain/")))
-        nodes.add(node("node-l1-consensus", "L1: ConsensusProtocol Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/consensus.py", emptyList(), listOf("krypton/domain/")))
-        nodes.add(node("node-l1-merkle", "L1: MerkleTree Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/merkle.py", emptyList(), listOf("krypton/domain/")))
+        nodes.add(node("node-l1-storage", "L1: StorageEngine Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/storage.py", emptyList(), listOf("krypton/domain/storage.py")))
+        nodes.add(node("node-l1-wal", "L1: WALManager Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/wal.py", emptyList(), listOf("krypton/domain/wal.py")))
+        nodes.add(node("node-l1-consensus", "L1: ConsensusProtocol Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/consensus.py", emptyList(), listOf("krypton/domain/consensus.py")))
+        nodes.add(node("node-l1-merkle", "L1: MerkleTree Protocol", DagNodeAction.CREATE_FILE, "krypton/domain/merkle.py", emptyList(), listOf("krypton/domain/merkle.py")))
 
         // Layer 2: Core Models
-        nodes.add(node("node-l2-raft-state", "L2: RaftState & Roles", DagNodeAction.CREATE_FILE, "krypton/models/raft_state.py", listOf("node-l1-consensus"), listOf("krypton/models/")))
-        nodes.add(node("node-l2-log-entry", "L2: Replicated LogEntry Model", DagNodeAction.CREATE_FILE, "krypton/models/log_entry.py", listOf("node-l1-wal"), listOf("krypton/models/")))
-        nodes.add(node("node-l2-snapshot", "L2: State Snapshot Model", DagNodeAction.CREATE_FILE, "krypton/models/snapshot.py", listOf("node-l1-storage"), listOf("krypton/models/")))
-        nodes.add(node("node-l2-merkle-node", "L2: Cryptographic MerkleNode", DagNodeAction.CREATE_FILE, "krypton/models/merkle_node.py", listOf("node-l1-merkle"), listOf("krypton/models/")))
-        nodes.add(node("node-l2-rpc", "L2: AppendEntries & RequestVote RPC", DagNodeAction.CREATE_FILE, "krypton/models/rpc.py", listOf("node-l2-log-entry"), listOf("krypton/models/")))
+        nodes.add(node("node-l2-raft-state", "L2: RaftState & Roles", DagNodeAction.CREATE_FILE, "krypton/models/raft_state.py", listOf("node-l1-consensus"), listOf("krypton/models/raft_state.py")))
+        nodes.add(node("node-l2-log-entry", "L2: Replicated LogEntry Model", DagNodeAction.CREATE_FILE, "krypton/models/log_entry.py", listOf("node-l1-wal"), listOf("krypton/models/log_entry.py")))
+        nodes.add(node("node-l2-snapshot", "L2: State Snapshot Model", DagNodeAction.CREATE_FILE, "krypton/models/snapshot.py", listOf("node-l1-storage"), listOf("krypton/models/snapshot.py")))
+        nodes.add(node("node-l2-merkle-node", "L2: Cryptographic MerkleNode", DagNodeAction.CREATE_FILE, "krypton/models/merkle_node.py", listOf("node-l1-merkle"), listOf("krypton/models/merkle_node.py")))
+        nodes.add(node("node-l2-rpc", "L2: AppendEntries & RequestVote RPC", DagNodeAction.CREATE_FILE, "krypton/models/rpc.py", listOf("node-l2-log-entry"), listOf("krypton/models/rpc.py")))
 
         // Layer 3: WAL Engine
-        nodes.add(node("node-l3-frame", "L3: Binary Frame Codec & CRC32", DagNodeAction.CREATE_FILE, "krypton/wal/frame.py", listOf("node-l2-log-entry"), listOf("krypton/wal/")))
-        nodes.add(node("node-l3-segment", "L3: Rolling WAL Segment Manager", DagNodeAction.CREATE_FILE, "krypton/wal/segment.py", listOf("node-l3-frame"), listOf("krypton/wal/")))
+        nodes.add(node("node-l3-frame", "L3: Binary Frame Codec & CRC32", DagNodeAction.CREATE_FILE, "krypton/wal/frame.py", listOf("node-l2-log-entry"), listOf("krypton/wal/frame.py")))
+        nodes.add(node("node-l3-segment", "L3: Rolling WAL Segment Manager", DagNodeAction.CREATE_FILE, "krypton/wal/segment.py", listOf("node-l3-frame"), listOf("krypton/wal/segment.py")))
 
         // Layer 4: LSM/MemTable Storage
-        nodes.add(node("node-l4-memtable", "L4: In-Memory MemTable with Tombstones", DagNodeAction.CREATE_FILE, "krypton/storage/memtable.py", listOf("node-l1-storage"), listOf("krypton/storage/")))
-        nodes.add(node("node-l4-engine", "L4: LSM Storage Engine Implementation", DagNodeAction.CREATE_FILE, "krypton/storage/engine.py", listOf("node-l4-memtable"), listOf("krypton/storage/")))
+        nodes.add(node("node-l4-memtable", "L4: In-Memory MemTable with Tombstones", DagNodeAction.CREATE_FILE, "krypton/storage/memtable.py", listOf("node-l1-storage"), listOf("krypton/storage/memtable.py")))
+        nodes.add(node("node-l4-engine", "L4: LSM Storage Engine Implementation", DagNodeAction.CREATE_FILE, "krypton/storage/engine.py", listOf("node-l4-memtable"), listOf("krypton/storage/engine.py")))
 
         // Layer 5: Consensus State Machine
-        nodes.add(node("node-l5-consensus", "L5: Deterministic Raft State Machine", DagNodeAction.CREATE_FILE, "krypton/consensus/state_machine.py", listOf("node-l2-raft-state", "node-l2-rpc"), listOf("krypton/consensus/")))
+        nodes.add(node("node-l5-consensus", "L5: Deterministic Raft State Machine", DagNodeAction.CREATE_FILE, "krypton/consensus/state_machine.py", listOf("node-l2-raft-state", "node-l2-rpc"), listOf("krypton/consensus/state_machine.py")))
 
         // Layer 6: Cryptographic Ledger
-        nodes.add(node("node-l6-ledger", "L6: Merkle Tree Attestation Ledger", DagNodeAction.CREATE_FILE, "krypton/ledger/merkle_ledger.py", listOf("node-l2-merkle-node", "node-l2-log-entry"), listOf("krypton/ledger/")))
+        nodes.add(node("node-l6-ledger", "L6: Merkle Tree Attestation Ledger", DagNodeAction.CREATE_FILE, "krypton/ledger/merkle_ledger.py", listOf("node-l2-merkle-node", "node-l2-log-entry"), listOf("krypton/ledger/merkle_ledger.py")))
 
         // Layer 7: Transport Layer
-        nodes.add(node("node-l7-peering", "L7: Cluster Peering Registry", DagNodeAction.CREATE_FILE, "krypton/transport/peering.py", listOf("node-l5-consensus"), listOf("krypton/transport/")))
-        nodes.add(node("node-l7-server", "L7: Async HTTP Peering & Client Server", DagNodeAction.CREATE_FILE, "krypton/transport/server.py", listOf("node-l7-peering"), listOf("krypton/transport/")))
+        nodes.add(node("node-l7-peering", "L7: Cluster Peering Registry", DagNodeAction.CREATE_FILE, "krypton/transport/peering.py", listOf("node-l5-consensus"), listOf("krypton/transport/peering.py")))
+        nodes.add(node("node-l7-server", "L7: Async HTTP Peering & Client Server", DagNodeAction.CREATE_FILE, "krypton/transport/server.py", listOf("node-l7-peering"), listOf("krypton/transport/server.py")))
 
         // Layer 8: CLI Driver
-        nodes.add(node("node-l8-cli", "L8: Key-Value Administration CLI Driver", DagNodeAction.CREATE_FILE, "krypton/cli/driver.py", listOf("node-l4-engine"), listOf("krypton/cli/")))
+        nodes.add(node("node-l8-cli", "L8: Key-Value Administration CLI Driver", DagNodeAction.CREATE_FILE, "krypton/cli/driver.py", listOf("node-l4-engine"), listOf("krypton/cli/driver.py")))
 
         // Layer 9: Test Suite
-        nodes.add(node("node-l9-test-wal", "L9: WAL Corruption & Recovery Tests", DagNodeAction.CREATE_FILE, "tests/test_wal.py", listOf("node-l3-segment"), listOf("tests/")))
-        nodes.add(node("node-l9-test-consensus", "L9: Split-Vote & Quorum Tests", DagNodeAction.CREATE_FILE, "tests/test_consensus.py", listOf("node-l5-consensus"), listOf("tests/")))
-        nodes.add(node("node-l9-test-merkle", "L9: Merkle Root & Tamper Tests", DagNodeAction.CREATE_FILE, "tests/test_merkle.py", listOf("node-l6-ledger"), listOf("tests/")))
-        nodes.add(node("node-l9-test-storage", "L9: MemTable & LSM Storage Tests", DagNodeAction.CREATE_FILE, "tests/test_storage.py", listOf("node-l4-engine"), listOf("tests/")))
+        nodes.add(node("node-l9-test-wal", "L9: WAL Corruption & Recovery Tests", DagNodeAction.CREATE_FILE, "tests/test_wal.py", listOf("node-l3-segment"), listOf("tests/test_wal.py")))
+        nodes.add(node("node-l9-test-consensus", "L9: Split-Vote & Quorum Tests", DagNodeAction.CREATE_FILE, "tests/test_consensus.py", listOf("node-l5-consensus"), listOf("tests/test_consensus.py")))
+        nodes.add(node("node-l9-test-merkle", "L9: Merkle Root & Tamper Tests", DagNodeAction.CREATE_FILE, "tests/test_merkle.py", listOf("node-l6-ledger"), listOf("tests/test_merkle.py")))
+        nodes.add(node("node-l9-test-storage", "L9: MemTable & LSM Storage Tests", DagNodeAction.CREATE_FILE, "tests/test_storage.py", listOf("node-l4-engine"), listOf("tests/test_storage.py")))
 
         // Layer 10: Repository Assets
         val allCodeDeps = listOf("node-l8-cli", "node-l7-server", "node-l9-test-wal", "node-l9-test-consensus", "node-l9-test-merkle", "node-l9-test-storage")

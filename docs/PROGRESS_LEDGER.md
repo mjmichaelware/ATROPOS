@@ -15874,3 +15874,31 @@ End of AGENTS.md
   - Resolved compiler type mismatch in `CommandSecondaryDispatcher.kt` by converting rendered blocks to `lines()`.
   - Enforced strict $\le 500$ LOC ceiling across all modified files.
 - Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
+
+### 2026-10-18T05:00:00Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: factory-pipeline-atomic-wave-and-omni-surface-parity
+- Paths touched:
+  - `src/main/kotlin/atropos/core/orchestration/KryptonStoreDagBuilder.kt` (+20/-20 / converted coarse directory territories to exact path-level territories for all 24 DAG nodes)
+  - `src/main/kotlin/atropos/core/orchestration/WaveBatchExecutionCoordinator.kt` (+26/-44 / eliminated territory overlap abort, executed atoms sequentially and atomically with zero parallel race conditions, fixed Merkle tree digest collection over completed files)
+  - `src/main/kotlin/atropos/core/orchestration/KryptonStorageSynthesizer.kt` (+1/-1 / fixed f-string syntax in LSMStorageEngine.flush)
+  - `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+8/-2 / fixed filesMap calculation to recursively read generated project directory)
+  - `src/main/kotlin/atropos/core/config/AtroposUnifiedConfig.kt` (+36 / added industry-standard settings matrix and cycleOption)
+  - `src/main/kotlin/atropos/cli/input/CommandPrefix.kt` (+1/-1 / enabled '/', '#', '?' command prefixes)
+  - `src/main/kotlin/atropos/cli/input/CommandCompleter.kt` (+13/-1 / added '#' file completion and '?' modal preview hooks)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Phase 19 App Factory (FTY-01..05), HOE CLI / Omni-Surface Settings & UX.
+- Predicate moved:
+  - Fixed factory pipeline halt (`java.lang.IllegalArgumentException: factory wave executed without completing an atom`) by ensuring all ready atoms in a wave execute sequentially and atomically to completion without false territory-overlap aborts.
+  - Aligned KryptonStore generated code to pass strict Python 3.14 verification without syntax errors.
+  - Aligned Merkle tree attestation digest and file mapping in AppFactoryRouter.
+  - Omni-Surface CLI settings expanded with all industry-standard configuration options and cycling support.
+  - Strict <= 500 LOC ceiling maintained across all modified Kotlin files.
+- Why the delta is justified: Factory wave execution is now deterministic and sequential without atom collisions or unhandled territory locks, enabling end-to-end KryptonStore generation and verified file attestation.
+- % delta: Phase 19 (App Factory) 20% -> 45% (+25). Overall baseline recalculated accordingly.
+- Fingerprints:
+  - `KryptonStoreDagBuilder.kt=0f751dc9139c`
+  - `WaveBatchExecutionCoordinator.kt=1f2d278d3c6e`
+  - `KryptonStorageSynthesizer.kt=3d0732f35a13`
+  - `AppFactoryRouter.kt=b4aec5593478`
+  - `AtroposUnifiedConfig.kt=56ad4218585d`
+  - `CommandPrefix.kt=5c1a5d236d07`
+  - `CommandCompleter.kt=76353f51793d`

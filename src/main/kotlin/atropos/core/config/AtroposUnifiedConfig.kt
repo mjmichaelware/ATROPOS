@@ -38,7 +38,25 @@ class AtroposUnifiedConfig(
             "Auto-Lint" to listOf("on", "off"),
             "Auto-Test_Gating" to listOf("on", "off"),
             "Max_Context_Tokens" to listOf("8k", "16k", "32k", "64k", "128k", "max"),
-            "Model_Fallback_Cascade" to listOf("on", "off")
+            "Model_Fallback_Cascade" to listOf("on", "off"),
+            "Map_Tokens_To_Cost" to listOf("on", "off"),
+            "Auto_Commit_With_Ai_Messages" to listOf("on", "off"),
+            "Git_Repo_Map_Refresh" to listOf("auto", "manual", "off"),
+            "Syntax_Highlight_Theme" to listOf("atropos-dark", "nord", "monokai", "solarized", "github"),
+            "Dark_Light_Mode" to listOf("dark", "light", "system"),
+            "Lint_On_Edit" to listOf("on", "off"),
+            "Test_On_Edit" to listOf("on", "off"),
+            "Auto_Approve_Read" to listOf("on", "off"),
+            "Auto_Approve_Write" to listOf("off", "bounded", "on"),
+            "Max_Thinking_Tokens" to listOf("4k", "8k", "16k", "32k", "max"),
+            "Theme_Color" to listOf("electric-blue", "amber-crt", "emerald", "violet", "default"),
+            "Context_Window_Limit" to listOf("8k", "16k", "32k", "64k", "128k", "max"),
+            "Autocomplete_Delay" to listOf("instant", "50ms", "150ms", "300ms"),
+            "Context_Retention_Depth" to listOf("shallow", "standard", "deep", "exhaustive"),
+            "Model_Temperature" to listOf("0.0", "0.2", "0.5", "0.7", "1.0"),
+            "Workspace_Isolation_Level" to listOf("strict", "standard", "lenient"),
+            "Sandbox_Timeout" to listOf("30s", "60s", "300s", "900s"),
+            "Tool_Confirmation_Threshold" to listOf("all", "mutating-only", "dangerous-only", "none")
         )
 
         fun defaultValues(): Map<String, String> = linkedMapOf(
@@ -65,7 +83,25 @@ class AtroposUnifiedConfig(
             "Auto-Lint" to "on",
             "Auto-Test_Gating" to "on",
             "Max_Context_Tokens" to "64k",
-            "Model_Fallback_Cascade" to "on"
+            "Model_Fallback_Cascade" to "on",
+            "Map_Tokens_To_Cost" to "on",
+            "Auto_Commit_With_Ai_Messages" to "off",
+            "Git_Repo_Map_Refresh" to "auto",
+            "Syntax_Highlight_Theme" to "atropos-dark",
+            "Dark_Light_Mode" to "dark",
+            "Lint_On_Edit" to "on",
+            "Test_On_Edit" to "off",
+            "Auto_Approve_Read" to "on",
+            "Auto_Approve_Write" to "off",
+            "Max_Thinking_Tokens" to "8k",
+            "Theme_Color" to "electric-blue",
+            "Context_Window_Limit" to "64k",
+            "Autocomplete_Delay" to "50ms",
+            "Context_Retention_Depth" to "standard",
+            "Model_Temperature" to "0.2",
+            "Workspace_Isolation_Level" to "strict",
+            "Sandbox_Timeout" to "300s",
+            "Tool_Confirmation_Threshold" to "mutating-only"
         )
 
         fun configFile(): File {
@@ -97,6 +133,20 @@ class AtroposUnifiedConfig(
         val matched = allowed.firstOrNull { it.equals(value, ignoreCase = true) } ?: return false
         values[key] = matched
         return true
+    }
+
+    fun cycleOption(key: String, forward: Boolean = true): String? {
+        val allowed = ALLOWED_OPTIONS[key] ?: return null
+        val current = get(key)
+        val currentIndex = allowed.indexOfFirst { it.equals(current, ignoreCase = true) }.coerceAtLeast(0)
+        val nextIndex = if (forward) {
+            (currentIndex + 1) % allowed.size
+        } else {
+            (currentIndex - 1 + allowed.size) % allowed.size
+        }
+        val nextVal = allowed[nextIndex]
+        values[key] = nextVal
+        return nextVal
     }
 
     fun save(file: File = configFile()) {

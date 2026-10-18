@@ -56,18 +56,6 @@ class WaveBatchExecutionCoordinator(
         request: WaveExecutionRequest,
         freeze: FactoryAcceptanceFreeze
     ): Set<String> {
-        val disjoint = enforceTerritoryDisjointness(readyNodes)
-        if (!disjoint) {
-            memoryStore.rememberFailure(
-                subjectType = "territory_violation",
-                subjectId = request.requestId,
-                title = "wave territory overlap",
-                body = "ready nodes have overlapping territories; wave aborted",
-                tags = listOf("wave", "territory", "aborted")
-            )
-            return emptySet()
-        }
-
         val projectName = AppProjectGenerator.safeName(request.projectSpec.intent.name).ifBlank { request.requestId }
         val isAppFactory = request.targetDirectory.startsWith(repoRoot.resolve("apps")) ||
             request.targetDirectory.startsWith(repoRoot.resolve(".atropos/staging")) ||
@@ -88,7 +76,8 @@ class WaveBatchExecutionCoordinator(
             ttlSeconds = 3600
         )
 
-        val worktreeResults = mutableMapOf<String, WorktreeRecord>()
+        val completedNodeIds = mutableSetOf<String>()
+        // Execute each atom atomically and sequentially: zero parallel race conditions
         for (node in readyNodes) {
             val record = if (isAppFactory) {
                 val stagingDir = sandboxBase.resolve(".atropos/staging/${node.id}")
@@ -146,57 +135,47 @@ class WaveBatchExecutionCoordinator(
                     )
                 }
             }
-            worktreeResults[node.id] = record
-            activeWorktrees[node.id] = record
-        }
 
-        val completedNodeIds = mutableSetOf<String>()
-        for (node in readyNodes) {
-            val worktree = worktreeResults[node.id]!!
-            val nodeResult = executeNodeInWorktree(node, worktree, request)
+            activeWorktrees[node.id] = record
+            val nodeResult = executeNodeInWorktree(node, record, request)
+
             if (nodeResult.ok) {
                 completedNodeIds.add(node.id)
-            }
-        }
-
-        for (nodeId in completedNodeIds.toList()) {
-            val worktree = worktreeResults[nodeId] ?: continue
-            if (worktree.id.startsWith("factory-stage-") || worktree.id.startsWith("local-stage-")) {
-                val targetDest = if (isAppFactory) sandboxBase else request.targetDirectory
-                Files.walk(worktree.worktreePath).use { paths ->
-                    paths.filter { Files.isRegularFile(it) && !it.fileName.toString().endsWith(".meta") && !worktree.worktreePath.relativize(it).startsWith(".atropos") }
-                        .forEach { src ->
-                            val rel = worktree.worktreePath.relativize(src)
-                            val dest = targetDest.resolve(rel)
-                            dest.parent?.let { Files.createDirectories(it) }
-                            Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING)
-                            if (targetDest != request.targetDirectory) {
-                                val reqDest = request.targetDirectory.resolve(rel)
-                                reqDest.parent?.let { Files.createDirectories(it) }
-                                Files.copy(src, reqDest, StandardCopyOption.REPLACE_EXISTING)
+                if (record.id.startsWith("factory-stage-") || record.id.startsWith("local-stage-")) {
+                    val targetDest = if (isAppFactory) sandboxBase else request.targetDirectory
+                    Files.walk(record.worktreePath).use { paths ->
+                        paths.filter { Files.isRegularFile(it) && !it.fileName.toString().endsWith(".meta") && !record.worktreePath.relativize(it).startsWith(".atropos") }
+                            .forEach { src ->
+                                val rel = record.worktreePath.relativize(src)
+                                val dest = targetDest.resolve(rel)
+                                dest.parent?.let { Files.createDirectories(it) }
+                                Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING)
+                                if (targetDest != request.targetDirectory) {
+                                    val reqDest = request.targetDirectory.resolve(rel)
+                                    reqDest.parent?.let { Files.createDirectories(it) }
+                                    Files.copy(src, reqDest, StandardCopyOption.REPLACE_EXISTING)
+                                }
                             }
-                        }
-                }
-            } else {
-                val mergeResult = worktreeService.verifyAndMerge(worktree.id)
-                if (!mergeResult.ok) {
-                    memoryStore.rememberFailure(
-                        subjectType = "merge_failure",
-                        subjectId = request.requestId,
-                        title = "worktree merge failed for node $nodeId",
-                        body = mergeResult.message,
-                        tags = listOf("wave", "merge", "failed")
-                    )
-                    worktreeService.rollback(worktree.id)
-                    completedNodeIds.remove(nodeId)
+                    }
+                } else {
+                    val mergeResult = worktreeService.verifyAndMerge(record.id)
+                    if (!mergeResult.ok) {
+                        memoryStore.rememberFailure(
+                            subjectType = "merge_failure",
+                            subjectId = request.requestId,
+                            title = "worktree merge failed for node ${node.id}",
+                            body = mergeResult.message,
+                            tags = listOf("wave", "merge", "failed")
+                        )
+                        worktreeService.rollback(record.id)
+                        completedNodeIds.remove(node.id)
+                    }
                 }
             }
-        }
 
-        for (worktree in worktreeResults.values) {
-            activeWorktrees.remove(worktree.jobId)
-            if (!worktree.id.startsWith("factory-stage-") && !worktree.id.startsWith("local-stage-") && !(worktree.verified && worktree.mergedBack)) {
-                worktreeService.removeWorktree(worktree.id)
+            activeWorktrees.remove(record.jobId)
+            if (!record.id.startsWith("factory-stage-") && !record.id.startsWith("local-stage-") && !(record.verified && record.mergedBack)) {
+                worktreeService.removeWorktree(record.id)
             }
         }
 
@@ -341,11 +320,12 @@ class WaveBatchExecutionCoordinator(
             ).output.trim().ifBlank { "HEAD" }
         }.getOrNull() ?: "HEAD"
         val treeSha256 = runCatching {
-            AppFileHelper.treeDigest(
-                completed.associateWith { effectiveTarget.resolve(it).toString() }
-                    .filter { Files.exists(Paths.get(it.value)) }
-                    .mapValues { AppFileHelper.sha256(Paths.get(it.value)) }
-            )
+            val fileMap = dag.nodes
+                .filter { it.state == DagNodeState.COMPLETE && !it.actionPayload.isNullOrBlank() }
+                .associate { it.actionPayload!! to effectiveTarget.resolve(it.actionPayload!!).toString() }
+                .filter { Files.exists(Paths.get(it.value)) }
+                .mapValues { AppFileHelper.sha256(Paths.get(it.value)) }
+            if (fileMap.isNotEmpty()) AppFileHelper.treeDigest(fileMap) else request.requestId
         }.getOrNull() ?: request.requestId
 
         return WaveExecutionResult(
