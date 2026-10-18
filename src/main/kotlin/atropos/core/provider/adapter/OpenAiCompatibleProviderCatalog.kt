@@ -7,8 +7,8 @@ object OpenAiCompatibleProviderCatalog {
             providerId = "groq",
             displayName = "Groq",
             baseUrl = "https://api.groq.com/openai/v1/chat/completions",
-            defaultModel = "llama-3.1-8b-instant",
-            fallbackModels = listOf("llama-3.3-70b-versatile"),
+            defaultModel = "llama-3.3-70b-versatile",
+            fallbackModels = listOf("llama-3.1-8b-versatile"),
             apiKeyEnv = "GROQ_API_KEY",
             freeTier = true
         ),

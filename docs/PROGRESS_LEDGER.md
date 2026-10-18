@@ -15902,3 +15902,37 @@ End of AGENTS.md
   - `AtroposUnifiedConfig.kt=56ad4218585d`
   - `CommandPrefix.kt=5c1a5d236d07`
   - `CommandCompleter.kt=76353f51793d`
+
+### 2026-10-18T05:40:00Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: dynamic-model-discovery-engine-and-cascade-pruning
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/ModelDiscoveryEngine.kt` (+417 / new dynamic /v1/models discovery engine, fuzzy model aliasing, and dead-link pruning)
+  - `src/main/kotlin/atropos/core/provider/ProviderModelResolver.kt` (+5/-1 / integrated dynamic model resolution via ModelDiscoveryEngine)
+  - `src/main/kotlin/atropos/core/provider/ProviderDaemon.kt` (+9/-4 / added live /v1/models polling and eliminated blind credential-only health assumptions)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+2 / filtered out pruned dead providers in cascade order)
+  - `src/main/kotlin/atropos/core/provider/FallbackChainRegistry.kt` (+2/-2 / excluded pruned providers from parallel and fallback routing)
+  - `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2 / added pre-wave discovery ensure to intercept and resolve model assignments)
+  - `src/main/kotlin/atropos/Main.kt` (+1 / added boot-time model discovery and dead-link pruning)
+  - `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt` (+1/-1 / resolved chat request models dynamically)
+  - `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt` (+2/-2 / updated Groq catalog default to llama-3.3-70b-versatile)
+  - `src/main/kotlin/atropos/core/ProviderImplementations.kt` (+1/-1 / updated GroqProvider fallback default to llama-3.3-70b-versatile)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Phase 2 Provider Transport & Discovery (B-PROV-001..018), Phase 19 App Factory (FTY-01..05).
+- Predicate moved:
+  - Hardcoded model strings decoupled from engine runtime via dynamic `GET /v1/models` polling and fuzzy model family resolution.
+  - Deprecated model failure modes (e.g. Groq 404 on `llama-3.1-8b-instant`) prevented via automatic aliasing to live equivalents (`llama-3.3-70b-versatile`).
+  - Dead-link pruning automatically drops unreachable, unauthenticated, or dropped model families from the active cascade before wasting requests.
+  - Boot-time health check no longer assumes providers are healthy merely because credentials exist; live responsiveness and model discovery are enforced.
+  - Strict <= 500 LOC ceiling maintained across all modified/created Kotlin files.
+- Why the delta is justified: Provider cascade and auto-repair routing no longer collapse on deprecated vendor model retirement, with live model verification preventing blind cascade failures across waves.
+- % delta: Phase 2 (Provider Transport) 100% (strengthened live truth), Phase 19 (App Factory) 45% -> 55% (+10).
+- Fingerprints:
+  - `ModelDiscoveryEngine.kt=a83ec824b682`
+  - `ProviderModelResolver.kt=8996a882e3b9`
+  - `ProviderDaemon.kt=91c20ce32939`
+  - `ProviderCascadeRouter.kt=660b4a4d62e3`
+  - `FallbackChainRegistry.kt=dd51f3d96ec4`
+  - `AppFactoryRouter.kt=90b382b42ce0`
+  - `Main.kt=68cfae6f203f`
+  - `OpenAiCompatibleKernelAdapter.kt=b8b66b1b4084`
+  - `OpenAiCompatibleProviderCatalog.kt=4075229551ff`
+  - `ProviderImplementations.kt=d63bde6292a2`

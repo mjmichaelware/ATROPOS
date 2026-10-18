@@ -54,10 +54,15 @@ class ProviderModelResolver(
      */
     fun resolveWithSource(provider: String, catalogDefault: String): Resolution {
         env(environmentKey(provider))?.trim()?.takeIf(String::isNotBlank)?.let {
-            return Resolution(it, Source.ENVIRONMENT)
+            val dynamicallyResolved = ModelDiscoveryEngine.resolveModel(provider, it)
+            return Resolution(dynamicallyResolved, Source.ENVIRONMENT)
         }
-        workspaceFile(provider)?.let { return Resolution(it, Source.WORKSPACE_FILE) }
-        return Resolution(catalogDefault, Source.CATALOG_DEFAULT)
+        workspaceFile(provider)?.let {
+            val dynamicallyResolved = ModelDiscoveryEngine.resolveModel(provider, it)
+            return Resolution(dynamicallyResolved, Source.WORKSPACE_FILE)
+        }
+        val dynamicallyResolved = ModelDiscoveryEngine.resolveModel(provider, catalogDefault)
+        return Resolution(dynamicallyResolved, Source.CATALOG_DEFAULT)
     }
 
     fun resolve(provider: String, catalogDefault: String): String =

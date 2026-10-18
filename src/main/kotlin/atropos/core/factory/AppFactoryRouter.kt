@@ -79,6 +79,7 @@ class AppFactoryRouter(
     private val verificationHelper = AppVerificationHelper(repoRoot, atropos.core.policy.BoundedAgencyGate())
 
     fun planWave(prompt: String): WaveExecutionRequest {
+        atropos.core.provider.ModelDiscoveryEngine.ensureDiscovered()
         val factoryPlan = plan(prompt)
         BundledSpecGraph.root()
         val territory = ".atropos/generated-projects/${AppProjectGenerator.safeName(factoryPlan.projectSpec.intent.name)}-${factoryPlan.id}"
@@ -107,6 +108,7 @@ class AppFactoryRouter(
     }
 
     fun runLocal(prompt: String): FactoryPlan {
+        atropos.core.provider.ModelDiscoveryEngine.ensureDiscovered()
         val request = planWave(prompt)
         runCatching { mutationGate.requireAllowed(repoRoot, request.targetDirectory) }
         val result = orchestrator.execute(request)

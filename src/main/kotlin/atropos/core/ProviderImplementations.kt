@@ -11,7 +11,7 @@ class GroqProvider(
         val token = requireKey(key, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.groq.com/openai/v1/chat/completions",
-            model = ProviderModelResolver.DEFAULT.resolve(name, "llama-3.1-8b-instant"),
+            model = ProviderModelResolver.DEFAULT.resolve(name, "llama-3.3-70b-versatile"),
             prompt = redactionFilter.redact(prompt),
             context = redactionFilter.redact(context),
             bearerToken = token

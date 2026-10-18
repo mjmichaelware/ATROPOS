@@ -323,6 +323,7 @@ class ProviderCascadeRouter(
             return providerOrderOverride.map { it.trim().lowercase() }
                 .filter { it.isNotBlank() }
                 .filter { !localOnly() }
+                .filter { !ModelDiscoveryEngine.isPruned(it) }
                 .distinct()
                 .let { ProviderCascadeOrder.order(it, registry, allowPaidProvider, paidGate) }
         }
@@ -340,6 +341,7 @@ class ProviderCascadeRouter(
             (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders)
                 .filter { registry.getById(it) != null }
                 .filter { !localOnly() }
+                .filter { !ModelDiscoveryEngine.isPruned(it) }
                 .distinct(),
             registry,
             allowPaidProvider,

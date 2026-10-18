@@ -29,6 +29,9 @@ class ProviderDaemon(
         val startTime = Instant.now()
         val report = mutableMapOf<String, ProviderHealth>()
 
+        // Discover models and prune dead providers via live /v1/models probing
+        ModelDiscoveryEngine.discoverAndPrune(healthCheckTimeoutMs)
+
         // Get all providers that have credentials in vault
         val providersWithCreds = registry.getAll().filter { descriptor ->
             val requiredEnv = descriptor.requiredEnv
@@ -94,27 +97,31 @@ class ProviderDaemon(
             )
         }
 
-        // For free providers, we can assume healthy if creds exist
-        // (actual network validation would require async call, which we avoid at boot)
-        if (descriptor.billingClass() != BillingClass.PAID) {
+        // Never assume healthy just because credentials exist: check live discovery
+        if (ModelDiscoveryEngine.isPruned(descriptor.id)) {
+            return ProviderHealth(
+                providerId = descriptor.id,
+                state = ProviderAvailabilityState.OFFLINE
+            )
+        }
+
+        if (ModelDiscoveryEngine.hasDiscoveredModels(descriptor.id)) {
+            if (descriptor.billingClass() == BillingClass.PAID && !EmergencyPaidGate().isProviderUnlocked(descriptor.id)) {
+                return ProviderHealth(
+                    providerId = descriptor.id,
+                    state = ProviderAvailabilityState.OFFLINE
+                )
+            }
             return ProviderHealth(
                 providerId = descriptor.id,
                 state = ProviderAvailabilityState.READY
             )
         }
 
-        // Paid providers need explicit approval
-        return if (EmergencyPaidGate().isProviderUnlocked(descriptor.id)) {
-            ProviderHealth(
-                providerId = descriptor.id,
-                state = ProviderAvailabilityState.READY
-            )
-        } else {
-            ProviderHealth(
-                providerId = descriptor.id,
-                state = ProviderAvailabilityState.OFFLINE
-            )
-        }
+        return ProviderHealth(
+            providerId = descriptor.id,
+            state = ProviderAvailabilityState.OFFLINE
+        )
     }
 
     private fun hasCredentials(descriptor: ProviderDescriptor): Boolean {

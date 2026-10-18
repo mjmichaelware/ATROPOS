@@ -78,7 +78,8 @@ internal class OpenAiCompatibleKernelAdapter(
             connection.setRequestProperty("Content-Type", "application/json")
             spec.headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
 
-            val body = AdapterJson.buildChatRequest(spec.defaultModel, request.prompt, request.context)
+            val model = atropos.core.provider.ProviderModelResolver.DEFAULT.resolve(descriptor.id, spec.defaultModel)
+            val body = AdapterJson.buildChatRequest(model, request.prompt, request.context)
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
 
             val code = connection.responseCode

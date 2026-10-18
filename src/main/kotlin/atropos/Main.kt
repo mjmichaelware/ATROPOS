@@ -44,6 +44,7 @@ fun main(args: Array<String>) {
     // ALPHA-OMEGA BOOTSTRAP: Immutable credential injection BEFORE anything else
     val credentialVault = CredentialBootstrap.initialize()
     atropos.core.provider.FallbackChainRegistry.loadFromEnvironmentAndVault()
+    atropos.core.provider.ModelDiscoveryEngine.discoverAndPrune()
 
     val enrollment = SecretEnrollment(listOf(EnvironmentSecretSource(), LocalVaultSecretSource()))
         .enrollInto(RedactionFilter.defaultRegistry)
