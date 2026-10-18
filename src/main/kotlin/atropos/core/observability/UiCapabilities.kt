@@ -111,6 +111,30 @@ object VirtualizedLogEngine {
 object BoundedRenderingController {
     val suspensionLock = TerminalPasteSuspensionLock
 
+    @Volatile
+    private var activePrompt: String? = null
+    @Volatile
+    private var activeInput: String = ""
+
+    fun setActiveInteractivePrompt(prompt: String?, initialInput: String = "") {
+        activePrompt = prompt
+        activeInput = initialInput
+    }
+
+    fun updateActiveInputBuffer(buffer: String) {
+        activeInput = buffer
+    }
+
+    fun clearActiveInteractivePrompt() {
+        activePrompt = null
+        activeInput = ""
+    }
+
+    fun getActiveInteractivePrompt(): String? = activePrompt
+    fun getActiveInputBuffer(): String = activeInput
+
+    fun isInteractivePromptActive(): Boolean = activePrompt != null
+
     fun suspendForPaste() {
         TerminalPasteSuspensionLock.acquire()
     }
@@ -126,7 +150,7 @@ object BoundedRenderingController {
     }
 
     fun controlBackgroundUpdate(isActiveScreen: Boolean, updateLambda: () -> Unit): Boolean {
-        if (TerminalPasteSuspensionLock.isSuspended()) {
+        if (TerminalPasteSuspensionLock.isSuspended() || isInteractivePromptActive()) {
             return false
         }
         if (isActiveScreen) {

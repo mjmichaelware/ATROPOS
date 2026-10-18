@@ -148,7 +148,7 @@ class ComposerViewport(
         // model is stated, and stating a guess here would be worse than
         // stating nothing.
         val activeEngine = provider.takeIf { it.isNotBlank() && it != "--" && it != "unknown" }
-            ?: atropos.core.provider.ActiveProvider.get()
+            ?: runCatching { atropos.core.provider.ActiveProvider.get() }.getOrDefault("atropos")
         val model = atropos.core.provider.ProviderModelResolver.DEFAULT
             .resolveWithSource(activeEngine.lowercase(), "")
             .takeIf { it.source != atropos.core.provider.ProviderModelResolver.Source.CATALOG_DEFAULT }
@@ -157,9 +157,17 @@ class ComposerViewport(
 
         val suffix = if (model == null) "" else " · $model"
         val label = modeStyle.label.lowercase() + " - " + activeEngine.lowercase() + suffix
-        val painted = theme.paint(modeStyle.role, modeStyle.label.lowercase()) +
-            theme.subdued(" - ") + theme.metadata(activeEngine.lowercase()) +
-            (if (model == null) "" else theme.subdued(" · ") + theme.metadata(model))
+        val painted = try {
+            theme.paint(modeStyle.role, modeStyle.label.lowercase()) +
+                theme.subdued(" - ") + theme.metadata(activeEngine.lowercase()) +
+                (if (model == null) "" else theme.subdued(" · ") + theme.metadata(model))
+        } catch (_: Throwable) {
+            try {
+                theme.paint(Role.TEXT_MUTED, label)
+            } catch (_: Throwable) {
+                label
+            }
+        }
 
         // `╰─ ask - openrouter ──────╯`: corners, one lead dash, the label, then fill.
         val decoration = 2 + edge.horizontal.length + 2

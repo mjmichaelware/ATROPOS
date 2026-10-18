@@ -120,7 +120,7 @@ class BoundedGitWorktreeCommandRunner(
         }
         val feedsPatchOnStdin = operation == GitWorktreeOperation.APPLY_PATCH ||
             operation == GitWorktreeOperation.REVERSE_APPLY_PATCH
-        return processRunner(command, directory, if (feedsPatchOnStdin) input else null)
+        return processRunner(command, directory.toAbsolutePath().normalize(), if (feedsPatchOnStdin) input else null)
     }
 
     private fun requiredPath(value: String?): String =
@@ -179,9 +179,10 @@ class BoundedGitWorktreeCommandRunner(
             directory: Path,
             input: String?
         ): GitWorktreeCommandResult = runCatching {
+            val normalizedDir = directory.toAbsolutePath().normalize()
             val result = BoundedProcessRunner().run(
                 command = command,
-                directory = directory,
+                directory = normalizedDir,
                 timeoutMillis = 30_000,
                 maxOutputBytes = 1_000_000,
                 maxOutputLines = 20_000,
@@ -190,6 +191,10 @@ class BoundedGitWorktreeCommandRunner(
             val output = (result.stdout + result.stderr).trimEnd()
             GitWorktreeCommandResult(result.exitCode ?: 1, output)
         }.getOrElse { failure ->
+            atropos.core.thinking.Thinking.detail(
+                "git_exec_failure",
+                "git runProcess caught ${failure.javaClass.simpleName}: ${failure.message}"
+            )
             GitWorktreeCommandResult(1, failure.message ?: failure.javaClass.simpleName)
         }
     }

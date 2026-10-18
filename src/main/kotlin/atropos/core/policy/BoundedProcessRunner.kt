@@ -34,7 +34,7 @@ data class BoundedProcessResult(
 class BoundedProcessRunner(
     private val launcher: (List<String>, Path, Map<String, String>, Set<String>) -> Process = { command, directory, environmentVariables, removedEnvironmentKeys ->
         ProcessBuilder(command)
-            .directory(directory.toFile())
+            .directory(directory.toAbsolutePath().normalize().toFile())
             .redirectErrorStream(false)
             .apply {
                 removedEnvironmentKeys.forEach { environment().remove(it) }
@@ -83,6 +83,10 @@ class BoundedProcessRunner(
         val process = try {
             launch(command, directory, environment, removeEnvironmentKeys, inputRedirect)
         } catch (failure: Exception) {
+            val errorMsg = "${failure.javaClass.simpleName}: ${failure.message ?: "process launch failed"}"
+            if (command.firstOrNull() == "git") {
+                atropos.core.thinking.Thinking.detail("git_exec_failure", "git launch failed in $directory: $errorMsg")
+            }
             return BoundedProcessResult(
                 exitCode = null,
                 timedOut = false,
@@ -90,7 +94,7 @@ class BoundedProcessRunner(
                 stdout = "",
                 stderr = "",
                 outputTruncated = false,
-                launchError = "${failure.javaClass.simpleName}: ${failure.message ?: "process launch failed"}"
+                launchError = errorMsg
                     .also { if (shouldNarrate) atropos.core.thinking.Thinking.detail("process", "launch failed — $it") }
             )
         }
@@ -171,7 +175,7 @@ class BoundedProcessRunner(
             return launcher(command, directory, environment, removeEnvironmentKeys)
         }
         return ProcessBuilder(command)
-            .directory(directory.toFile())
+            .directory(directory.toAbsolutePath().normalize().toFile())
             .redirectInput(inputRedirect.toFile())
             .redirectErrorStream(false)
             .apply {

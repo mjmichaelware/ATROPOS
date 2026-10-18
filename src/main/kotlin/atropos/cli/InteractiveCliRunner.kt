@@ -112,6 +112,7 @@ object InteractiveCliRunner {
                         )
 
                         preserveTabState()
+                        atropos.core.observability.BoundedRenderingController.updateActiveInputBuffer(prompt.text)
 
                         ui.setTabs(
                             tabs.snapshot().tabs.map { tab ->

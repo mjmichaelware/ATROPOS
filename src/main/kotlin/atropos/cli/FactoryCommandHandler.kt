@@ -150,17 +150,7 @@ class FactoryCommandHandler(
     }
 
     private fun promptConfirmation(promptText: String): Boolean {
-        return runCatching {
-            val console = System.console()
-            if (console != null) {
-                print("$promptText ")
-                System.out.flush()
-                val line = console.readLine()?.trim()?.lowercase()
-                line == null || line.isEmpty() || line == "y" || line == "yes"
-            } else {
-                true
-            }
-        }.getOrDefault(true)
+        return uiEngine.promptInteractiveConfirmation(promptText)
     }
 
     private fun findLatestFactoryRunId(): String? = findLatestFactoryRunId(repoRoot)

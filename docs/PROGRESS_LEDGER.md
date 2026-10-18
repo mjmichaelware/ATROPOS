@@ -15786,3 +15786,43 @@ End of AGENTS.md
 - % delta: Waves 0-4 ATOMs moved from OPEN/PARTIAL to GREEN; overall estimate updated.
 - Why justified: Complete formal implementation of SD7/SD8 mathematical closure and all 18 atomic components with clean modular abstraction and strictly bounded LOC.
 - Fingerprints: Tracked across all staged commits on `origin/main`.
+
+### 2026-10-18T00:50Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: fix-mobile-ux-resize-prompt-git-paths
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/BottomStatusBar.kt` (+12 / safe provider & theme paint fallbacks)
+  - `src/main/kotlin/atropos/cli/ui/StatusBarRenderer.kt` (+15 / safeActiveProvider & runCatching styling)
+  - `src/main/kotlin/atropos/cli/ui/ComposerViewport.kt` (+8 / safe provider & theme paint fallbacks)
+  - `src/main/kotlin/atropos/cli/ui/TerminalCanvas.kt` (+12 / disableMouseTracking & enableMouseTracking)
+  - `src/main/kotlin/atropos/core/observability/UiCapabilities.kt` (+24 / active interactive prompt tracking & background update suspension)
+  - `src/main/kotlin/atropos/cli/ui/LiveThinkingRenderer.kt` (+3 / suspend L3 thinking streaming during interactive prompts)
+  - `src/main/kotlin/atropos/cli/InteractiveCliRunner.kt` (+1 / track active input buffer in BoundedRenderingController)
+  - `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+48 / resize prompt restoration & promptInteractiveConfirmation)
+  - `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (-10 / delegate promptConfirmation to uiEngine.promptInteractiveConfirmation)
+  - `src/main/kotlin/atropos/cli/ui/WorkspaceIntelligence.kt` (+2 / normalized absolute path string for git -C)
+  - `src/main/kotlin/atropos/core/factory/AppGitHelper.kt` (+16 / normalized directory, catch ProcessBuilder exceptions, emit to git_exec_failure)
+  - `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt` (+8 / normalized directory & git_exec_failure detail emission)
+  - `src/main/kotlin/atropos/core/policy/BoundedProcessRunner.kt` (+6 / normalized directory & git launch failure diagnostic emission)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Mobile UX SIGWINCH Redraw, CLI TUI Interactive Prompts, Git Process Safety, Dangling Commit Recovery.
+- Predicate moved:
+  - Interactive prompts and user partial input buffers preserved across Android Termux soft-keyboard SIGWINCH resize events and restored at new screen bottom.
+  - SGR mouse tracking disabled during stdin reads and restored upon completion, preventing mouse escape sequences (`[<...M`) leaking into stdin.
+  - Background status updates and L3 trace emissions silenced during interactive prompts.
+  - ActiveProvider state decoupled from UI thread with graceful fallbacks.
+  - `git -C <path>` passes absolute normalized path strings; ProcessBuilder launch exceptions logged to L3 Thinking stream rather than crashing.
+  - Dangling commits `bc642ce` and `53d8b90` verified as fully integrated into canonical architecture with zero duplicates and zero secrets/binaries.
+- Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`). All files strictly $\le 500$ LOC.
+
+### 2026-10-18T00:55Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: fix-compile-errors-and-web-esm
+- Paths touched:
+  - `src/test/kotlin/atropos/core/policy/BoundedProcessRunnerTest.kt` (+5 / Thinking.stream.subscribe fix)
+  - `apps/web/next.config.ts` (+4 / ESM __dirname shim via fileURLToPath)
+  - `app/src/main/java/atropos/core/EngineContracts.kt` (+11 / new Android client AtroposConfig contract)
+  - `app/src/main/java/atropos/core/agent/AgentService.kt` (+9 / new Android client AgentService contract)
+  - `apps/atropos-android/src/main/kotlin/atropos/android/bridge/DirectInProcessEngineBridge.kt` (+17 / in-process bridge)
+- Atoms / phases affected: Core Test Suite, Web Cockpit Next.js Config, Android AAR Bridge.
+- Predicate moved:
+  - Resolved `BoundedProcessRunnerTest.kt` compile error with `Thinking.stream.subscribe`.
+  - Resolved `apps/web/next.config.ts` ESM runtime crash `ReferenceError: __dirname is not defined in ES module scope` via standard Node URL shim.
+  - Resolved Android APK compile dependencies for `DirectInProcessEngineBridge.kt` with explicit in-process contract types.
+- Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`). All files strictly $\le 500$ LOC.

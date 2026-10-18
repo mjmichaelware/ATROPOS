@@ -126,6 +126,18 @@ class TerminalCanvas(
             }
         }
 
+    fun disableMouseTracking() = synchronized(outputLock) {
+        if (!capabilities.isInteractiveTerminal) return@synchronized
+        out.print("\u001B[?1006l\u001B[?1002l\u001B[?1000l")
+        out.flush()
+    }
+
+    fun enableMouseTracking() = synchronized(outputLock) {
+        if (!capabilities.isInteractiveTerminal) return@synchronized
+        out.print("\u001B[?1000h\u001B[?1002h\u001B[?1006h")
+        out.flush()
+    }
+
     fun close() = synchronized(outputLock) {
         if (!capabilities.isInteractiveTerminal) {
             out.flush()

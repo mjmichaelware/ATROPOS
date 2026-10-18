@@ -22,27 +22,27 @@ class BottomStatusBar(private val theme: TerminalTheme) {
     ): String {
         val safeWidth = width.coerceAtLeast(20)
         val compactPath = TerminalText.compactPath(workspacePath)
-        val pathStyled = theme.paint(Role.PATH, compactPath)
+        val pathStyled = try { theme.paint(Role.PATH, compactPath) } catch (_: Throwable) { compactPath }
 
         val branchStyled = if (branch.isNotBlank()) {
             val sanitized = TerminalText.sanitize(branch)
-            theme.paint(Role.TEXT_SECONDARY, "⎇ $sanitized")
+            try { theme.paint(Role.TEXT_SECONDARY, "⎇ $sanitized") } catch (_: Throwable) { "⎇ $sanitized" }
         } else {
             ""
         }
 
         val providerName = provider.ifBlank { "atropos" }.lowercase()
-        val providerStyled = theme.paint(Role.BRAND, "◆ $providerName")
+        val providerStyled = try { theme.paint(Role.BRAND, "◆ $providerName") } catch (_: Throwable) { "◆ $providerName" }
 
         val progressStyled = if (progressPercent in 0..100) {
-            theme.paint(Role.STATUS_RUNNING, "$progressPercent%")
+            try { theme.paint(Role.STATUS_RUNNING, "$progressPercent%") } catch (_: Throwable) { "$progressPercent%" }
         } else {
             ""
         }
 
         val costStyled = if (costUsd >= 0.0) {
             val formattedCost = String.format(java.util.Locale.US, "$%.4f", costUsd)
-            theme.paint(Role.STATUS_VERIFIED, formattedCost)
+            try { theme.paint(Role.STATUS_VERIFIED, formattedCost) } catch (_: Throwable) { formattedCost }
         } else {
             ""
         }
@@ -57,16 +57,25 @@ class BottomStatusBar(private val theme: TerminalTheme) {
         val rightWidth = TerminalText.cellWidth(right)
         val totalWidth = leftWidth + rightWidth
 
-        return if (totalWidth + 1 <= safeWidth) {
+        val rawOutput = if (totalWidth + 1 <= safeWidth) {
             val spaceCount = (safeWidth - totalWidth).coerceAtLeast(1)
             val padding = " ".repeat(spaceCount)
-            theme.paint(Role.SURFACE_FOOTER, TerminalText.padEnd(left + padding + right, safeWidth))
+            left + padding + right
         } else {
             val availableLeft = (safeWidth - rightWidth - 2).coerceAtLeast(5)
             val truncatedLeft = TerminalText.ellipsize(left, availableLeft)
             val remainingSpace = (safeWidth - TerminalText.cellWidth(truncatedLeft) - rightWidth).coerceAtLeast(1)
-            val line = truncatedLeft + " ".repeat(remainingSpace) + right
-            theme.paint(Role.SURFACE_FOOTER, TerminalText.padEnd(TerminalText.ellipsize(line, safeWidth), safeWidth))
+            truncatedLeft + " ".repeat(remainingSpace) + right
+        }
+        val padded = TerminalText.padEnd(TerminalText.ellipsize(rawOutput, safeWidth), safeWidth)
+        return try {
+            theme.paint(Role.SURFACE_FOOTER, padded)
+        } catch (_: Throwable) {
+            try {
+                theme.paint(Role.TEXT_MUTED, padded)
+            } catch (_: Throwable) {
+                padded
+            }
         }
     }
 }

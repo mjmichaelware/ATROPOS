@@ -10,10 +10,12 @@ class StatusBarRenderer(
     private val headerRenderer = HeaderRenderer(theme)
     private val recoveryRibbon = RecoveryTectonicRibbon()
     private val checkpointChip = CheckpointChipRenderer(theme)
+    private fun safeActiveProvider(): String =
+        runCatching { atropos.core.provider.ActiveProvider.get() }.getOrDefault("atropos")
 
     fun header(width: Int): String = headerRenderer.render(
         SessionPresentationState(
-            provider = atropos.core.provider.ActiveProvider.get(),
+            provider = safeActiveProvider(),
             mode = "ASK",
             workspace = "--",
             commands = emptyList(),
@@ -28,7 +30,7 @@ class StatusBarRenderer(
         headerRenderer.render(state, width)
 
     fun footer(
-        provider: String = atropos.core.provider.ActiveProvider.get(),
+        provider: String = safeActiveProvider(),
         mode: String,
         workspace: String,
         tracker: QuotaSessionTracker,
@@ -72,54 +74,48 @@ class StatusBarRenderer(
         // Right-hand pills, least important last so they shed first.
         val pills = buildList {
             val engine = (state.provider.takeIf { it.isNotBlank() && it != "--" && it != "unknown" }
-                ?: atropos.core.provider.ActiveProvider.get()).lowercase()
+                ?: safeActiveProvider()).lowercase()
             val mode = state.mode.lowercase()
-            add(theme.metadata("◆ ") + theme.strong("$mode - $engine"))
-            add(theme.metadata("▤ ") + theme.strong(tab))
+            add(runCatching { theme.metadata("◆ ") + theme.strong("$mode - $engine") }.getOrDefault("◆ $mode - $engine"))
+            add(runCatching { theme.metadata("▤ ") + theme.strong(tab) }.getOrDefault("▤ $tab"))
             if (state.repository.available) {
                 state.repository.branch?.let { branch ->
                     val dirty = state.repository.clean == false
                     val marker = if (dirty) "!" else "✓"
-                    add(theme.metadata("$marker ") + theme.strong(TerminalText.ellipsize(branch, 20)))
+                    add(runCatching { theme.metadata("$marker ") + theme.strong(TerminalText.ellipsize(branch, 20)) }.getOrDefault("$marker ${TerminalText.ellipsize(branch, 20)}"))
                 }
             }
             state.tokens.text().takeIf { it != "--" }?.let {
-                add(theme.metadata("⋯ ") + theme.strong("$it tok"))
+                add(runCatching { theme.metadata("⋯ ") + theme.strong("$it tok") }.getOrDefault("⋯ $it tok"))
             }
             // Cost as a shape, not only as a number.
-            //
-            // A total answers "what has this cost" and hides "what is it
-            // doing" -- a spend that doubled over the last three calls and one
-            // that has been flat read identically as a figure and completely
-            // differently as a line. Six cells is enough to tell those apart
-            // and cheap enough to shed first when the footer runs out of room.
             Sparkline.render(state.costHistory, COST_SPARK_CELLS)
                 .takeIf(String::isNotEmpty)
-                ?.let { add(theme.metadata("$ ") + theme.strong(it)) }
+                ?.let { add(runCatching { theme.metadata("$ ") + theme.strong(it) }.getOrDefault("$ $it")) }
             state.activePatchId?.takeIf { it.isNotBlank() }?.let {
-                add(theme.metadata("⊙ ") + theme.strong(TerminalText.ellipsize(it, 18)))
+                add(runCatching { theme.metadata("⊙ ") + theme.strong(TerminalText.ellipsize(it, 18)) }.getOrDefault("⊙ ${TerminalText.ellipsize(it, 18)}"))
             }
-state.activeOperation
+            state.activeOperation
                 ?.let(TerminalText::sanitize)
                 ?.takeIf(String::isNotBlank)
                 ?.let {
                     if (it.contains("recovery", ignoreCase = true)) {
-                        add(theme.warning("△ ") + theme.strong(recoveryRibbon.render(
+                        add(runCatching { theme.warning("△ ") + theme.strong(recoveryRibbon.render(
                             RecoveryTectonicRibbon.State("active", "unknown", "required"), safeWidth
-                        )))
+                        )) }.getOrDefault("△ recovery"))
                     } else {
-                        add(theme.warning("△ ") + theme.strong(it))
+                        add(runCatching { theme.warning("△ ") + theme.strong(it) }.getOrDefault("△ $it"))
                     }
                 }
             // Checkpoint chip - primary Continue action
-            add(checkpointChip.renderChip(checkpointAge, safeWidth))
-            add(theme.subdued("/help"))
+            add(runCatching { checkpointChip.renderChip(checkpointAge, safeWidth) }.getOrDefault(""))
+            add(runCatching { theme.subdued("/help") }.getOrDefault("/help"))
         }
 
         // Shed pills from the left of the right-hand group until it fits.
         var kept = pills
         var right = kept.joinToString("  ")
-        val left = theme.subdued(directory)
+        val left = runCatching { theme.subdued(directory) }.getOrDefault(directory)
         fun fits() = TerminalText.cellWidth(left) + 2 + TerminalText.cellWidth(right) <= safeWidth
         while (kept.size > 1 && !fits()) {
             kept = kept.drop(1)

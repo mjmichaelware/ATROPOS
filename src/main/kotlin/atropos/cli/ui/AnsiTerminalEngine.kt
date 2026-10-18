@@ -101,7 +101,13 @@ class AnsiTerminalEngine(
         resizePoller.scheduleAtFixedRate({
             try {
                 synchronized(this) {
-                    if (state.reactive && !boundedRendering.isPasteSuspended() && canvas.refreshGeometry()) requestFrameLocked()
+                    if (state.reactive && !boundedRendering.isPasteSuspended() && canvas.refreshGeometry()) {
+                        if (boundedRendering.isInteractivePromptActive()) {
+                            restoreInteractivePrompt()
+                        } else {
+                            requestFrameLocked()
+                        }
+                    }
                 }
             } catch (_: Throwable) {
                 // Next tick will try again.
@@ -385,6 +391,48 @@ class AnsiTerminalEngine(
     }
 
     fun clearScreen() { if (state.reactive) canvas.clearScreen() }
+
+    fun disableMouseTracking() = canvas.disableMouseTracking()
+    fun enableMouseTracking() = canvas.enableMouseTracking()
+
+    fun restoreInteractivePrompt() {
+        val prompt = boundedRendering.getActiveInteractivePrompt() ?: return
+        val buffer = boundedRendering.getActiveInputBuffer()
+        synchronized(plainOutput.lock) {
+            plainOutput.out.print("\r\n\u001B[K$prompt $buffer")
+            plainOutput.out.flush()
+        }
+    }
+
+    fun promptInteractive(promptText: String): String? {
+        disableMouseTracking()
+        boundedRendering.setActiveInteractivePrompt(promptText, "")
+        return try {
+            val console = System.console()
+            if (console != null) {
+                synchronized(plainOutput.lock) {
+                    plainOutput.out.print("\r\n$promptText ")
+                    plainOutput.out.flush()
+                }
+                console.readLine()
+            } else {
+                print("\r\n$promptText ")
+                System.out.flush()
+                val reader = java.io.BufferedReader(java.io.InputStreamReader(System.`in`))
+                reader.readLine()
+            }
+        } catch (_: Throwable) {
+            null
+        } finally {
+            boundedRendering.clearActiveInteractivePrompt()
+            enableMouseTracking()
+        }
+    }
+
+    fun promptInteractiveConfirmation(promptText: String): Boolean {
+        val line = promptInteractive(promptText)?.trim()?.lowercase()
+        return line == null || line.isEmpty() || line == "y" || line == "yes"
+    }
 
     @Synchronized
     fun cleanup() {

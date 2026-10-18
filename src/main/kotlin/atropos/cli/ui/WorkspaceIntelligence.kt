@@ -57,9 +57,10 @@ class CachingGitWorkspaceInspector(
         val directory = File(workspace)
         if (!directory.isDirectory) return RepositoryState.unknown()
 
+        val absoluteDirPath = directory.toPath().toAbsolutePath().normalize().toString()
         val result = runCatching {
             processRunner.run(
-                command = listOf("git", "-C", directory.absolutePath, "status", "--porcelain=v1", "--branch"),
+                command = listOf("git", "-C", absoluteDirPath, "status", "--porcelain=v1", "--branch"),
                 directory = Path.of("/"),
                 timeoutMillis = timeoutMillis,
                 maxOutputBytes = outputLimit.coerceAtMost(256 * 1024),

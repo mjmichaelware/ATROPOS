@@ -53,6 +53,9 @@ class LiveThinkingRenderer(
         uiEngine.startSpinner(headline)
         var first = true
         unsubscribe = stream.subscribe { thought ->
+            if (atropos.core.observability.BoundedRenderingController.isInteractivePromptActive()) {
+                return@subscribe
+            }
             // Output arrived, so the indicator is telling the truth again.
             // Marked for every thought at every depth, because the question
             // the sentinel answers is "is the engine producing anything", not

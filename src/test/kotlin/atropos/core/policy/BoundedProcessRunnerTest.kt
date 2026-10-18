@@ -75,30 +75,33 @@ class BoundedProcessRunnerTest {
     @Test
     fun silences_stty_and_non_narrated_probes_from_thinking() {
         var eventCount = 0
-        atropos.core.thinking.Thinking.subscribe { _ -> eventCount++ }
+        val unsubscribe = atropos.core.thinking.Thinking.stream.subscribe { _ -> eventCount++ }
+        try {
+            val runner = BoundedProcessRunner { _, _, _, _ ->
+                ProcessBuilder("true").start()
+            }
 
-        val runner = BoundedProcessRunner { _, _, _, _ ->
-            ProcessBuilder("true").start()
+            val initialEvents = eventCount
+            runner.run(
+                command = listOf("stty", "size"),
+                directory = Files.createTempDirectory("atropos-stty-"),
+                timeoutMillis = 1_000,
+                maxOutputBytes = 1_024,
+                maxOutputLines = 20
+            )
+            assertEquals(initialEvents, eventCount, "stty command was narrated to thinking!")
+
+            runner.run(
+                command = listOf("git", "status"),
+                directory = Files.createTempDirectory("atropos-narrate-false-"),
+                timeoutMillis = 1_000,
+                maxOutputBytes = 1_024,
+                maxOutputLines = 20,
+                narrate = false
+            )
+            assertEquals(initialEvents, eventCount, "narrate=false command was narrated to thinking!")
+        } finally {
+            unsubscribe()
         }
-
-        val initialEvents = eventCount
-        runner.run(
-            command = listOf("stty", "size"),
-            directory = Files.createTempDirectory("atropos-stty-"),
-            timeoutMillis = 1_000,
-            maxOutputBytes = 1_024,
-            maxOutputLines = 20
-        )
-        assertEquals(initialEvents, eventCount, "stty command was narrated to thinking!")
-
-        runner.run(
-            command = listOf("git", "status"),
-            directory = Files.createTempDirectory("atropos-narrate-false-"),
-            timeoutMillis = 1_000,
-            maxOutputBytes = 1_024,
-            maxOutputLines = 20,
-            narrate = false
-        )
-        assertEquals(initialEvents, eventCount, "narrate=false command was narrated to thinking!")
     }
 }
