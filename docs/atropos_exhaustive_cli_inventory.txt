@@ -1,0 +1,938 @@
+============================================================================
+PART 1: ATROPOS LOCAL REPOSITORY COMMAND EXTRACTION
+============================================================================
+
+[1. SLASH COMMANDS & CLI ROUTING]
+src/main/kotlin/atropos/cli/CommandRouter.kt:32:class CommandRouter(
+src/main/kotlin/atropos/cli/ui/design/CanonicalVerb.kt:27:enum class CanonicalVerb(
+src/main/kotlin/atropos/core/intent/IntentLayer.kt:7:enum class CanonicalVerb(val keyword: String, val description: String) {
+src/main/kotlin/atropos/core/intent/IntentLayer.kt:31:object ActionRegistry {
+      1 src/main/kotlin/atropos/cli/CommandPromptSupport.kt:138:        if (subcommand in setOf("help", "usage", "?", "/?", "/help", "/usage")) {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:254:        if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:262:        if (first in setOf("/self-host", "self-host")) {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:270:            "/exit", "/quit", "exit" -> RouterOutcome.EXIT
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:272:            "/pwd" -> shellCommand.pwd()
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:274:            "/cd" -> shellCommand.cd(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:276:            "/ls" -> shellCommand.ls(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:278:            "/git" -> shellCommand.git(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:280:            "/shell" -> shellCommand.shell(tokens.drop(1))
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:282:            "/dashboard", "/home" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:299:            "/project", "/projects" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:304:            "/tabs" -> tabCommand.list()
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:306:            "/tab" -> tabCommand.handle(tokens.drop(1))
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:308:            "/status" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:313:            "/providers" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:318:            "/github" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:323:            "/sentry" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:328:            "/mcp" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:333:            "/doctor" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:338:            "/agent" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:344:            "/paid" -> paidCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:346:            "/memory" -> memoryCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:348:            "/ci" -> ciCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:350:            "/assets" -> assetCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:352:            "/factory" -> factoryCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:354:            "/app" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:357:                    factoryCommand.execute(listOf("/factory") + tokens.drop(2))
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:359:                    factoryCommand.execute(listOf("/factory") + tokens.drop(1))
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:363:            "/verbose", "/debug" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:368:            "/use" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:379:            "/verify" -> {
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:403:                            promptSupport.announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:465:        val EXIT_COMMANDS = setOf("/exit", "/quit", "exit", "quit")
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:108:        "/ps" -> sideConversation.ask(original.trim().removePrefix("/ps").trim())
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:110:        "/shortcuts", "/keys-help" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:115:        "/security" -> securityCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:117:        "/keys" -> keysCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:119:        "/auth" -> authCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:121:        "/storage", "/gc" -> storageCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:123:        "/interrupt", "/pause", "/resume" -> interruptCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:125:        "/export" -> exportCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:127:        "/thinking" -> thinkingCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:129:        "/checkpoint" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:134:        "/copy" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:139:        "/paste" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:150:        "/voice", "/speech", "/dictate" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:162:        "/swipe", "/compose", "/input" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:175:        "/theme" -> themeCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:177:        "/tests" -> testsCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:179:        "/ops" -> opsCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:181:        "/route" -> routeCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:183:        "/dloi" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:188:        "/diff", "/changes" -> diffCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:190:        "/history", "/timeline" -> historyCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:192:        "/ast" -> astCommand.execute(tokens)
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:194:        "/director", "/territory", "/hr", "/auditor", "/custodian", "/hierarchy", "/dag" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:199:        "/snapshot", "/inspect", "/platform", "/artifact", "/autonomous" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:204:        "/swarm" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:71:        "/pipeline" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:76:        "/start", "/first-run" -> {
+      1 src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt:86:        "/scavenge" -> {
+      1 src/main/kotlin/atropos/cli/DiffCommandHandler.kt:38:        val paths = args.filter { !it.startsWith("--") && it != "/diff" }
+      1 src/main/kotlin/atropos/cli/InterruptCommandHandler.kt:100:                FactoryCommandHandler(uiEngine).execute(listOf("/factory", "resume", factoryRunId))
+      1 src/main/kotlin/atropos/cli/InterruptCommandHandler.kt:29:            "/pause" -> request(InterruptLevel.FREEZE)
+      1 src/main/kotlin/atropos/cli/InterruptCommandHandler.kt:30:            "/resume" -> resume()
+      1 src/main/kotlin/atropos/cli/SelfHostAliasTranslator.kt:15:        if (first != "/self-host" && first != "self-host") return null
+      1 src/main/kotlin/atropos/cli/SelfHostAliasTranslator.kt:20:            subcommand == null -> listOf("/agent", "self-host")
+      1 src/main/kotlin/atropos/cli/SelfHostAliasTranslator.kt:21:            subcommand in routedSubcommands -> listOf("/agent", "self-host") + remainder
+      1 src/main/kotlin/atropos/cli/SelfHostAliasTranslator.kt:22:            else -> listOf("/agent", "self-host", "run") + remainder
+      1 src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt:37:            tokens.size >= 2 && tokens[0].lowercase() == "/agent" && tokens[1].lowercase() == "self-host" -> tokens.drop(1)
+      1 src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt:10:        if (tokens.size >= 2 && tokens[0].equals("/agent", ignoreCase = true) && tokens[1].equals("self-host", ignoreCase = true)) {
+      1 src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt:16:            SelfHostUtterance.CHANGE_REQUEST -> listOf("/agent", "self-host", "run") + tokens
+      1 src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt:17:            SelfHostUtterance.CONTINUATION -> listOf("/agent", "self-host", "recover")
+      1 src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt:20:                listOf("/factory", "run") + tokens
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:104:        CommandEntry("/route", "preview routing decision"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:108:        CommandEntry("/use", "switch provider"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:10:        CommandEntry("/scavenge", "find public work people asked for help with", "System"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:110:        CommandEntry("/verbose", "toggle expandable execution and provider-stage output"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:111:        CommandEntry("/debug", "alias for verbose execution output"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:112:        CommandEntry("/verify", "verification scope"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:115:        CommandEntry("/keys", "key status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:122:            "/auth",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:139:            "/storage",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:142:            aliases = listOf("/gc"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:155:            "/interrupt",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:164:            "/pause",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:170:            "/resume",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:178:            "/thinking",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:191:            "/theme",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:203:            "/export",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:209:        CommandEntry("/factory", "factory status", aliases = listOf("/app", "/app factory")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:214:        CommandEntry("/paste", "paste text from system clipboard directly into composer", "Session"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:215:        CommandEntry("/voice", "record speech-to-text input via Termux:API", "Session", aliases = listOf("/speech", "/dictate")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:216:        CommandEntry("/swipe", "open native Android composer with swipe and voice typing enabled", "Session", aliases = listOf("/compose", "/input")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:218:            "/self-host",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:28:        CommandEntry("/start", "the first three steps, checked against this install", "System", aliases = listOf("/first-run")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:29:        CommandEntry("/dashboard", "return to dashboard"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:307:        CommandEntry("/memory", "memory status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:308:        CommandEntry("/paid", "paid emergency gate"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:30:        CommandEntry("/home", "return to dashboard"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:310:        CommandEntry("/pwd", "show shell cwd"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:311:        CommandEntry("/cd", "change shell cwd"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:312:        CommandEntry("/ls", "list files through shell bridge"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:319:        CommandEntry("/shell", "run explicit shell command"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:31:        CommandEntry("/tabs", "list open tabs"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:320:        CommandEntry("/exit", "close session"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:321:        CommandEntry("/quit", "close session"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:322:        CommandEntry("/director", "director advisory mode status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:328:        CommandEntry("/territory", "territory enforcement status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:333:        CommandEntry("/hr", "HR Router status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:336:        CommandEntry("/auditor", "auditor status and report"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:338:        CommandEntry("/custodian", "custodian status and report"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:341:        CommandEntry("/hierarchy", "agent hierarchy status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:352:        CommandEntry("/snapshot", "multimodal snapshot status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:356:        CommandEntry("/inspect", "inspection service status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:369:        CommandEntry("/platform", "platform descriptor and environment"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:373:        CommandEntry("/artifact", "artifact pipeline status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:37:        CommandEntry("/status", "session status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:380:        CommandEntry("/autonomous", "autonomous orchestrator status"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:38:        CommandEntry("/doctor", "read-only backend, provider, and MCP diagnostics"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:390:        CommandEntry("/project", "durable project registry", "Project", aliases = listOf("/projects")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:398:        CommandEntry("/tests", "run the built-in test matrix", "Verification"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:401:        CommandEntry("/security", "secret precedence and redaction status", "Security"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:404:        CommandEntry("/ci", "ci and edge execution status", "Execution"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:408:        CommandEntry("/ops", "deployment descriptor operations", "Operations"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:414:        CommandEntry("/assets", "asset generator status", "Assets"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:420:        CommandEntry("/diff", "show the current worktree diff with syntax-highlighted hunks", "Repository",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:421:            aliases = listOf("/changes"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:422:            example = "/diff",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:428:        CommandEntry("/history", "navigate the session execution timeline", "Session",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:429:            aliases = listOf("/timeline"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:430:            example = "/history",
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:45:        CommandEntry("/providers", "provider inventory"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:46:        CommandEntry("/mcp", "local MCP servers and health"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:67:        CommandEntry("/agent", "agent bridge"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:6:        CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?", "/commands")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:7:        CommandEntry("/shortcuts", "every keyboard shortcut", "System", aliases = listOf("/keys-help")),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:8:        CommandEntry("/ps", "ask a second provider without joining the queue", "Models"),
+      1 src/main/kotlin/atropos/cli/input/CommandCatalog.kt:9:        CommandEntry("/pipeline", "what ATROPOS does, stage by stage", "System"),
+      1 src/main/kotlin/atropos/cli/input/CommandHistoryStore.kt:70:        val IGNORED_COMMANDS = setOf("/exit", "/quit", "exit", "quit")
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:148:    val unboundFamilies: Set<String> = setOf("/swarm")
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:159:            "/help",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:160:            "/usage",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:162:            "/status",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:163:            "/self-host",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:165:            "/providers",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:166:            "/route",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:167:            "/use",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:168:            "/verify",
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:169:            "/exit"
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:311:            entry.command.startsWith("/factory") -> listOf("factory", "app", "application", "project", "scaffold")
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:312:            entry.command.startsWith("/providers") || entry.command.startsWith("/use") || entry.command == "/route" -> listOf("provider", "providers", "model", "route", "routing")
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:313:            entry.command.startsWith("/self-host") || entry.command.startsWith("/agent self-host") -> listOf("self-host", "self build", "phase 11", "phase11", "inside out")
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:314:            entry.command.startsWith("/build") || entry.command.startsWith("/artifact") -> listOf("build", "compile", "artifact", "package")
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:315:            entry.command.startsWith("/status") || entry.command.startsWith("/verify") -> listOf("observe", "inspection", "evidence", "check")
+      1 src/main/kotlin/atropos/cli/input/CommandRiskCatalog.kt:21:                value.startsWith("/git push") || value.startsWith("/shell") -> CommandRisk.RISKY
+      1 src/main/kotlin/atropos/cli/input/CommandRiskCatalog.kt:29:                value.startsWith("/verify wide") || value.startsWith("/tests") -> CommandRisk.MODERATE
+      1 src/main/kotlin/atropos/cli/input/PartialCommandEnterToSelect.kt:15:            "?", "/?", "/help", "/usage" -> "/help"
+      1 src/main/kotlin/atropos/cli/input/PromptHistoryLane.kt:37:        private val SHELL_COMMANDS = listOf("/shell", "/pwd", "/cd", "/ls", "/git")
+      1 src/main/kotlin/atropos/cli/input/PromptState.kt:335:        val IGNORED_HISTORY_COMMANDS = setOf("/exit", "/quit", "exit", "quit")
+      1 src/main/kotlin/atropos/cli/input/PromptSuggestionState.kt:146:            "?", "/?", "/help", "/usage", "/commands"
+      1 src/main/kotlin/atropos/cli/ui/AnsiStatusPresenter.kt:58:                commands = listOf("/agent status", "/tabs", "/status", "/verify"),
+      1 src/main/kotlin/atropos/cli/ui/AnsiStatusPresenter.kt:84:                listOf("/agent status", "/tabs", "/status", "/verify")
+      1 src/main/kotlin/atropos/cli/ui/FirstRunGuide.kt:50:                "/providers",
+      1 src/main/kotlin/atropos/cli/ui/KeyboardLegend.kt:104:            Binding("/help", "every command"),
+      1 src/main/kotlin/atropos/cli/ui/KeyboardLegend.kt:105:            Binding("/shortcuts", "this panel")
+      1 src/main/kotlin/atropos/cli/ui/KeyboardLegend.kt:98:            Binding("/tabs", "list open tabs"),
+      1 src/main/kotlin/atropos/cli/ui/LandingRenderer.kt:219:            "/status" to "providers, quota, and what is configured",
+      1 src/main/kotlin/atropos/cli/ui/LandingRenderer.kt:220:            "/shortcuts" to "every keyboard shortcut"
+      1 src/main/kotlin/atropos/cli/ui/PipelineHelpRenderer.kt:110:                listOf("/status", "/providers")
+      1 src/main/kotlin/atropos/cli/ui/PipelineHelpRenderer.kt:145:                listOf("/self-host export-evidence", "/export", "/scavenge")
+      1 src/main/kotlin/atropos/cli/ui/StatusBarRenderer.kt:112:            add(runCatching { theme.subdued("/help") }.getOrDefault("/help"))
+      1 src/main/kotlin/atropos/cli/ui/WelcomePanel.kt:21:                listOf("/help", "/status", "/use", "/verify", "/exit"),
+      1 src/main/kotlin/atropos/core/Routing.kt:47:            p.startsWith("/verify") || p == "verify" || p.contains("run build") || p.contains("run tests") -> TaskClass.VERIFY_OR_BUILD
+      1 src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt:35:        val tmpDir = Path.of(System.getProperty("java.io.tmpdir", "/tmp")).toAbsolutePath().normalize()
+      1 src/main/kotlin/atropos/core/github/GitHubApiClient.kt:197:                path = "/graphql",
+      1 src/main/kotlin/atropos/core/github/GitHubApiClient.kt:240:        require((path.startsWith("/repos/") || path.startsWith("/search/issues") || path == "/graphql") &&
+      1 src/main/kotlin/atropos/core/github/GitHubApiClient.kt:84:        if (request.readOnly) require(method == "POST" && path == "/graphql") {
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:10:    PLAN("/plan", "Formulates execution steps for an objective"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:11:    GRILL_ME("/grill-me", "Initiates interactive clarification session"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:12:    TEAMWORK_PREVIEW("/teamwork-preview", "Simulates multi-agent swarm interactions"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:13:    LEARN("/learn", "Persists learned heuristics or preferences"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:14:    INSPECT("/inspect", "Inspects code, file, or viewport for drift"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:15:    VERIFY("/verify", "Runs deterministic build and validation gates"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:16:    APPROVE("/approve", "Records operator approval of a proposed action"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:17:    REJECT("/reject", "Vetoes a proposed action or proposal"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:18:    STORAGE("/storage", "Examines or garbage collects disk storage"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:19:    HISTORY("/history", "Queries the event and provenance log"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:20:    STATUS("/status", "Displays current aggregate status and active provider")
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:45:        CanonicalVerb.STATUS to CommandMetadata(CanonicalVerb.STATUS, "/status", 0, listOf("info", "state"), emptyList())
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:8:    GOAL("/goal", "Examines or runs long-horizon target goals"),
+      1 src/main/kotlin/atropos/core/intent/IntentLayer.kt:9:    SCHEDULE("/schedule", "Schedules timer-based or cron recurring execution"),
+      1 src/main/kotlin/atropos/core/parity/SurfaceParityProbe.kt:107:        val FORBIDDEN = listOf("shell", "/cd", "exec", "bang")
+      1 src/main/kotlin/atropos/core/platform/PlatformAdapter.kt:20:            "/bin",
+      1 src/main/kotlin/atropos/core/platform/PlatformAdapter.kt:43:        val tmp = System.getProperty("java.io.tmpdir") ?: System.getenv("TMPDIR") ?: "/tmp"
+      1 src/main/kotlin/atropos/core/platform/PlatformModels.kt:66:    val tempDir: String = System.getProperty("java.io.tmpdir", "/tmp"),
+      1 src/main/kotlin/atropos/core/platform/PlatformModels.kt:67:    val homeDir: String = System.getProperty("user.home", "/root"),
+      1 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt:270:            executable == "cmd" && argument == "/c"
+      1 src/main/kotlin/atropos/core/policy/PortCommandPolicy.kt:49:    val FORBIDDEN_FAMILIES: Set<String> = setOf("/shell", "/cd", "/exec", "!")
+      1 src/main/kotlin/atropos/core/security/SourceSecretScanner.kt:122:                path.contains(".test.") || path.contains(".spec.") || path.endsWith("/fixtures")
+      1 src/main/kotlin/atropos/core/toolchain/TermuxProotShim.kt:46:            "-b", "/data",
+      1 src/main/kotlin/atropos/core/toolchain/TermuxProotShim.kt:47:            "-b", "/dev",
+      1 src/main/kotlin/atropos/core/toolchain/TermuxProotShim.kt:48:            "-b", "/proc"
+      1 src/main/kotlin/atropos/core/vis/HudRules.kt:141:            add(theme.subdued("/help"))
+
+[2. MENTIONS, HINTS, & MODIFIERS (@, #, \!, ?)]
+src/main/kotlin/atropos/core/ingest/AtMentionScanner.kt:23:object AtMentionScanner {
+src/main/kotlin/atropos/core/intent/MentionExtractor.kt:11:class MentionExtractor(private val validRoots: Set<String>) {
+src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:4:import atropos.core.ingest.AtMentionScanner
+src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:9:import atropos.core.intent.MentionExtractor
+src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:54:    private val territoryNames: MentionExtractor = MentionExtractor(
+src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:84:        AtMentionScanner.scan(raw).forEach { mention ->
+src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:141:        // [AtMentionScanner], not MentionExtractor. The two answer different
+src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:148:        AtMentionScanner.scan(canonical.canonical).forEach { mention ->
+      1 src/main/kotlin/atropos/Main.kt:"\n"
+      1 src/main/kotlin/atropos/ast/AstImportReconciler.kt:"\n"
+      1 src/main/kotlin/atropos/ast/AstSymbolGraph.kt:'\n'
+      1 src/main/kotlin/atropos/ast/AstSymbolGraph.kt:'\r'
+      7 src/main/kotlin/atropos/ast/AstSymbolGraph.kt:'\t'
+      1 src/main/kotlin/atropos/bootstrap/BootstrapAcceptanceDag.kt:"\n"
+      1 src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/bridge/BridgeConversationHandler.kt:'\n'
+      1 src/main/kotlin/atropos/bridge/BridgeConversationHandler.kt:'\t'
+      1 src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt:"\n"
+      1 src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt:'\n'
+      1 src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt:"\n"
+      1 src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt:"\t"
+      1 src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt:"\n"
+      1 src/main/kotlin/atropos/bridge/http/HttpResponseWriter.kt:"\n"
+      1 src/main/kotlin/atropos/bridge/http/JsonWriter.kt:'\n'
+      1 src/main/kotlin/atropos/bridge/http/JsonWriter.kt:'\r'
+      1 src/main/kotlin/atropos/bridge/http/JsonWriter.kt:'\t'
+      1 src/main/kotlin/atropos/cli/CommandPromptSupport.kt:'\n'
+      1 src/main/kotlin/atropos/cli/CommandRouter.kt:"\n"
+      2 src/main/kotlin/atropos/cli/FactoryCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/GitMutationCommand.kt:'\u0000'
+      1 src/main/kotlin/atropos/cli/ProviderCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ProviderCommandHandler.kt:'\n'
+      1 src/main/kotlin/atropos/cli/ProviderCommandHandler.kt:'\r'
+      1 src/main/kotlin/atropos/cli/ProviderCommandHandler.kt:'\u0000'
+      1 src/main/kotlin/atropos/cli/StorageCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ThinkingCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/AgentCommandText.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/AgentDagCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/AgentGoalCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/AgentJobCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/AgentObservationCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/AgentPolicyCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/AgentWorktreeCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/ArtifactCommandHandler.kt:"\n"
+      3 src/main/kotlin/atropos/cli/commands/AutonomousCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/DagCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/DirectorCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/HierarchyRegistryCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/HrCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/InspectCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/ProjectCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/SelfHostCommandText.kt:"\n"
+      1 src/main/kotlin/atropos/cli/commands/SnapshotCommandHandler.kt:"\n"
+      2 src/main/kotlin/atropos/cli/commands/TerritoryCommandHandler.kt:"\n"
+      1 src/main/kotlin/atropos/cli/input/CollapsedPasteRegistry.kt:'\n'
+      1 src/main/kotlin/atropos/cli/input/CommandHistoryStore.kt:"\t"
+      1 src/main/kotlin/atropos/cli/input/CommandHistoryStore.kt:'\t'
+      1 src/main/kotlin/atropos/cli/input/CommandHistoryStore.kt:'\u0000'
+      1 src/main/kotlin/atropos/cli/input/CommandRegistry.kt:"\n"
+      1 src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt:"\n"
+      1 src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt:"\u001BO"
+      1 src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt:'\n'
+      1 src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt:'\r'
+      1 src/main/kotlin/atropos/cli/input/PastedInputSplitter.kt:'\n'
+      1 src/main/kotlin/atropos/cli/input/PromptSuggestionState.kt:'\n'
+      2 src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt:"\n"
+      1 src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt:"\u0000"
+      1 src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt:'\n'
+      1 src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt:'\r'
+      1 src/main/kotlin/atropos/cli/ui/AnsiLineWrapper.kt:'\u001B'
+      1 src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt:'\u0007'
+      1 src/main/kotlin/atropos/cli/ui/ClipboardService.kt:'\n'
+      1 src/main/kotlin/atropos/cli/ui/ClipboardService.kt:'\r'
+      1 src/main/kotlin/atropos/cli/ui/ClipboardService.kt:'\t'
+      2 src/main/kotlin/atropos/cli/ui/ComposerRenderer.kt:'\n'
+      2 src/main/kotlin/atropos/cli/ui/ComposerViewport.kt:'\n'
+      1 src/main/kotlin/atropos/cli/ui/ContextAttestationRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/EvidenceMorph.kt:"\n"
+      2 src/main/kotlin/atropos/cli/ui/IntentConflictBanner.kt:"\n"
+      2 src/main/kotlin/atropos/cli/ui/MarkdownRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/MarkdownRenderer.kt:'\n'
+      1 src/main/kotlin/atropos/cli/ui/MarkdownRenderer.kt:'\r'
+      2 src/main/kotlin/atropos/cli/ui/PlainTerminalOutput.kt:'\n'
+      2 src/main/kotlin/atropos/cli/ui/ProviderCascadeFormatter.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/RailBlockFormatter.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/RailBlockFormatter.kt:'\u001B'
+      1 src/main/kotlin/atropos/cli/ui/SemanticLineColorizer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/SemanticLineColorizer.kt:'\u001B'
+      1 src/main/kotlin/atropos/cli/ui/StatusAdapterRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/StatusAssetsRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/StatusCiRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/StatusEndpointRenderer.kt:"\n"
+      2 src/main/kotlin/atropos/cli/ui/StatusMemoryRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/StatusPaidEmergencyRenderer.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/StatusProviderDescriptorRenderer.kt:"\n"
+      6 src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt:"\n"
+      4 src/main/kotlin/atropos/cli/ui/StatusSecurityRenderer.kt:"\n"
+      2 src/main/kotlin/atropos/cli/ui/TerminalText.kt:'\n'
+      1 src/main/kotlin/atropos/cli/ui/TerminalText.kt:'\t'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u2500'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u2501'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u2502'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u2503'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u250F'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u2513'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u2517'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u251B'
+      1 src/main/kotlin/atropos/cli/ui/ThreadTapestry.kt:'\u253C'
+      2 src/main/kotlin/atropos/cli/ui/UncertaintyCalibratedRecommendation.kt:"\n"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#003d6b"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#004b87"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#0063b1"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#0078d4"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#0096ff"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#030712"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#111827"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#145231"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#15803d"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#166534"
+      3 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#16a34a"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#1d4ed8"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#1e3a8a"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#1e40af"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#1f2937"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#22c55e"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#2563eb"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#374151"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#3b82f6"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#4ade80"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#4b5563"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#4c0519"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#4fb0ff"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#60a5fa"
+      3 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#6b7280"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#77cbff"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#78350f"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#7f1d1d"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#86efac"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#92400e"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#93c5fd"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#991b1b"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#9ca3af"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#a8e0ff"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#b45309"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#b91c1c"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#bbf7d0"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#bfdbfe"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#d1d5db"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#d3f0ff"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#d97706"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#dbeafe"
+      4 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#dc2626"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#dcfce7"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#e5e7eb"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#ecf9ff"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#ef4444"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#eff6ff"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#f0fdf4"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#f3f4f6"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#f59e0b"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#f87171"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#f9fafb"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fbbf24"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fca5a5"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fcd34d"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fde68a"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fecaca"
+      2 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fee2e2"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fef2f2"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fef3c7"
+      1 src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt:"#fffbeb"
+      2 src/main/kotlin/atropos/core/Provider.kt:'\b'
+      3 src/main/kotlin/atropos/core/Provider.kt:'\n'
+      3 src/main/kotlin/atropos/core/Provider.kt:'\r'
+      3 src/main/kotlin/atropos/core/Provider.kt:'\t'
+      2 src/main/kotlin/atropos/core/Provider.kt:'\u000C'
+      1 src/main/kotlin/atropos/core/ProviderHttpClient.kt:'\n'
+      1 src/main/kotlin/atropos/core/ProviderHttpClient.kt:'\r'
+      1 src/main/kotlin/atropos/core/ProviderHttpClient.kt:'\t'
+      1 src/main/kotlin/atropos/core/agent/AgentContextCollector.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/AgentContextExportStore.kt:"\n"
+      6 src/main/kotlin/atropos/core/agent/AgentEditProtocol.kt:"\n"
+      4 src/main/kotlin/atropos/core/agent/AgentEditProtocol.kt:'\n'
+      3 src/main/kotlin/atropos/core/agent/AgentEditProtocol.kt:'\r'
+      1 src/main/kotlin/atropos/core/agent/AgentEditProtocol.kt:'\u0000'
+      1 src/main/kotlin/atropos/core/agent/AgentJobStore.kt:"\n"
+      4 src/main/kotlin/atropos/core/agent/AgentLocalPatchSynthesizer.kt:"\n"
+      2 src/main/kotlin/atropos/core/agent/AgentLocalPatchSynthesizer.kt:'\n'
+      2 src/main/kotlin/atropos/core/agent/AgentLocalPatchSynthesizer.kt:'\r'
+      2 src/main/kotlin/atropos/core/agent/AgentLocalPatchSynthesizer.kt:'\u0000'
+      6 src/main/kotlin/atropos/core/agent/AgentPatchDiffNormalizer.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/AgentPatchMetadataWriter.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/AgentPatchStore.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/AgentQueueRecordCodec.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/AgentQueueStore.kt:'\n'
+      8 src/main/kotlin/atropos/core/agent/AgentQueueStore.kt:'\t'
+      1 src/main/kotlin/atropos/core/agent/AgentRepairService.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/AgentSmokeRunner.kt:'\n'
+      1 src/main/kotlin/atropos/core/agent/AgentSmokeRunner.kt:'\r'
+      1 src/main/kotlin/atropos/core/agent/AgentVerificationStore.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/CleanRoomPromptContract.kt:"\n"
+      2 src/main/kotlin/atropos/core/agent/GoalRunStore.kt:"\u0000"
+      3 src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt:"\t"
+      1 src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt:'\t'
+      1 src/main/kotlin/atropos/core/agent/SelfHostBootstrapDagFactory.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/SelfHostBootstrapDagFactory.kt:"\r"
+      5 src/main/kotlin/atropos/core/agent/SelfHostCandidateJarBuilder.kt:'\n'
+      1 src/main/kotlin/atropos/core/agent/SelfHostCandidateJarBuilder.kt:'\r'
+      1 src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt:"\r"
+      3 src/main/kotlin/atropos/core/agent/SelfHostEvidenceProvenance.kt:'\n'
+      1 src/main/kotlin/atropos/core/agent/SelfHostEvidenceTextCodec.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/SelfHostMutationVerificationGate.kt:'\n'
+      1 src/main/kotlin/atropos/core/agent/SelfHostNextAction.kt:'\n'
+      2 src/main/kotlin/atropos/core/agent/SelfHostSafetyHardFailGate.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutor.kt:"\n"
+      1 src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt:'\u0000'
+      2 src/main/kotlin/atropos/core/approval/PendingApprovalCodec.kt:"\n"
+      1 src/main/kotlin/atropos/core/approval/PendingApprovalCodec.kt:"\t"
+      1 src/main/kotlin/atropos/core/approval/PendingApprovalStore.kt:"\n"
+      2 src/main/kotlin/atropos/core/artifact/ArtifactStore.kt:"\n"
+      8 src/main/kotlin/atropos/core/artifact/ArtifactStore.kt:"\t"
+      4 src/main/kotlin/atropos/core/artifact/ArtifactStore.kt:'\n'
+      1 src/main/kotlin/atropos/core/artifact/ArtifactStore.kt:'\t'
+      1 src/main/kotlin/atropos/core/artifact/export/HandoffType.kt:"\n"
+      1 src/main/kotlin/atropos/core/assets/LocalAssetGenerator.kt:"\n"
+      1 src/main/kotlin/atropos/core/ast/TopologicalMutation.kt:"\n"
+      1 src/main/kotlin/atropos/core/auditor/AuditorService.kt:"\n"
+      1 src/main/kotlin/atropos/core/auditor/AuditorService.kt:"\u001f"
+      1 src/main/kotlin/atropos/core/auth/AuthorityFingerprint.kt:"\t"
+      1 src/main/kotlin/atropos/core/auth/AuthorityFingerprint.kt:'\t'
+      2 src/main/kotlin/atropos/core/autonomous/AutonomousBacklog.kt:"\n"
+      6 src/main/kotlin/atropos/core/autonomous/AutonomousBacklog.kt:"\t"
+      4 src/main/kotlin/atropos/core/autonomous/AutonomousBacklog.kt:'\n'
+      1 src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt:"\n"
+      1 src/main/kotlin/atropos/core/autonomous/ProviderFailoverService.kt:"\n"
+      1 src/main/kotlin/atropos/core/autonomy/RewardPenaltyStore.kt:"\n"
+      2 src/main/kotlin/atropos/core/autonomy/RewardPenaltyStore.kt:"\t"
+      1 src/main/kotlin/atropos/core/certificate/ZeroEntropyCertificateEmitter.kt:"\n"
+      1 src/main/kotlin/atropos/core/composition/DaggerComponentAssembler.kt:"@Component"
+      1 src/main/kotlin/atropos/core/composition/DaggerComponentAssembler.kt:"@Singleton"
+      1 src/main/kotlin/atropos/core/composition/DependencyInjectionAssembler.kt:"\n"
+      4 src/main/kotlin/atropos/core/dag/DagAuthorityLineCodec.kt:"\t"
+      1 src/main/kotlin/atropos/core/dag/DagAuthorityLineCodec.kt:'\n'
+      1 src/main/kotlin/atropos/core/dag/DagAuthorityLineCodec.kt:'\t'
+      1 src/main/kotlin/atropos/core/dag/DagNodeFileMutationExecutor.kt:"\n"
+      1 src/main/kotlin/atropos/core/dag/DagNodeShellExecutor.kt:"\n"
+      2 src/main/kotlin/atropos/core/dag/DagStore.kt:"\n"
+      7 src/main/kotlin/atropos/core/dag/DocumentIngestionService.kt:"\n"
+      2 src/main/kotlin/atropos/core/dag/DocumentIngestionService.kt:'\n'
+      2 src/main/kotlin/atropos/core/director/DirectorStore.kt:"\n"
+      2 src/main/kotlin/atropos/core/director/DirectorStore.kt:"\t"
+      1 src/main/kotlin/atropos/core/director/DirectorStore.kt:'\n'
+      1 src/main/kotlin/atropos/core/doctor/UiSymbolOrphanDoctor.kt:"\n"
+      1 src/main/kotlin/atropos/core/dopamine/DopamineRewardSystem.kt:'\n'
+      1 src/main/kotlin/atropos/core/evaluation/BenchmarkRunner.kt:"\t"
+      2 src/main/kotlin/atropos/core/evaluation/BenchmarkRunner.kt:'\n'
+      1 src/main/kotlin/atropos/core/evaluation/BenchmarkRunner.kt:'\r'
+      2 src/main/kotlin/atropos/core/evaluation/BenchmarkRunner.kt:'\t'
+      1 src/main/kotlin/atropos/core/evaluation/EvaluationDashboard.kt:"\n"
+      2 src/main/kotlin/atropos/core/evaluation/EvaluationHistoryStore.kt:"\n"
+      2 src/main/kotlin/atropos/core/evaluation/EvaluationHistoryStore.kt:"\t"
+      3 src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt:"\n"
+      1 src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt:"\ntimeout"
+      2 src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt:'\n'
+      2 src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt:'\r'
+      2 src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt:'\t'
+      1 src/main/kotlin/atropos/core/factory/AppGeneratedBehaviorGuard.kt:"@test"
+      3 src/main/kotlin/atropos/core/factory/AppVerificationHelper.kt:"\n"
+      1 src/main/kotlin/atropos/core/factory/CanonicalAtomRecord.kt:"\n"
+      1 src/main/kotlin/atropos/core/factory/CanonicalAtomRecord.kt:"\t"
+      1 src/main/kotlin/atropos/core/factory/CanonicalAtomRecord.kt:'\t'
+      1 src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt:"\n"
+      6 src/main/kotlin/atropos/core/factory/FactoryClarificationRequest.kt:"\n"
+      2 src/main/kotlin/atropos/core/factory/FactoryClarificationRequest.kt:'\n'
+      2 src/main/kotlin/atropos/core/factory/FactoryClarificationRequest.kt:'\r'
+      1 src/main/kotlin/atropos/core/factory/FactoryLanguageContract.kt:"@test"
+      2 src/main/kotlin/atropos/core/factory/FactoryLanguageContract.kt:"\n"
+      1 src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt:"\n"
+      1 src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt:'\t'
+      1 src/main/kotlin/atropos/core/factory/RepoScaffold.kt:"#about"
+      1 src/main/kotlin/atropos/core/factory/RepoScaffold.kt:"#features"
+      1 src/main/kotlin/atropos/core/factory/RepoScaffold.kt:"#home"
+      2 src/main/kotlin/atropos/core/factory/RepoScaffold.kt:"\n"
+      4 src/main/kotlin/atropos/core/factory/SpecGraphAtomizer.kt:"\t"
+      3 src/main/kotlin/atropos/core/factory/SpecGraphAtomizer.kt:'\t'
+      1 src/main/kotlin/atropos/core/github/GitHubApiClient.kt:"\n"
+      1 src/main/kotlin/atropos/core/github/GitHubApiClient.kt:"\r"
+      1 src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt:'\u0000'
+      1 src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt:"\n"
+      2 src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt:"\t"
+      1 src/main/kotlin/atropos/core/hr/HrRouterService.kt:"\n"
+      1 src/main/kotlin/atropos/core/ingest/DocxTextExtractor.kt:"#X"
+      1 src/main/kotlin/atropos/core/ingest/DocxTextExtractor.kt:"#x"
+      2 src/main/kotlin/atropos/core/ingest/DocxTextExtractor.kt:"\n"
+      5 src/main/kotlin/atropos/core/ingest/DocxTextExtractor.kt:'\n'
+      1 src/main/kotlin/atropos/core/ingest/IngestTerritory.kt:"\n"
+      1 src/main/kotlin/atropos/core/ingest/MentionIngest.kt:"\n"
+      1 src/main/kotlin/atropos/core/ingest/PdfTextExtractor.kt:"\n"
+      5 src/main/kotlin/atropos/core/ingest/PdfTextExtractor.kt:'\n'
+      2 src/main/kotlin/atropos/core/ingest/PdfTextExtractor.kt:'\r'
+      1 src/main/kotlin/atropos/core/ingest/PdfTextExtractor.kt:'\t'
+      1 src/main/kotlin/atropos/core/integration/AdversarialValidator.kt:"\n"
+      1 src/main/kotlin/atropos/core/integration/AgplPerimeter.kt:"\n"
+      4 src/main/kotlin/atropos/core/integration/GenericMcpHostManager.kt:"\n"
+      1 src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt:"\n"
+      1 src/main/kotlin/atropos/core/integration/McpConfigParser.kt:'\b'
+      1 src/main/kotlin/atropos/core/integration/McpConfigParser.kt:'\n'
+      1 src/main/kotlin/atropos/core/integration/McpConfigParser.kt:'\r'
+      1 src/main/kotlin/atropos/core/integration/McpConfigParser.kt:'\t'
+      1 src/main/kotlin/atropos/core/integration/McpConfigParser.kt:'\u0000'
+      1 src/main/kotlin/atropos/core/integration/McpConfigParser.kt:'\u000C'
+      1 src/main/kotlin/atropos/core/integration/McpEvidenceAndAuthorityPolicy.kt:"\n"
+      4 src/main/kotlin/atropos/core/integration/McpHostManager.kt:"\n"
+      1 src/main/kotlin/atropos/core/integration/McpHostManager.kt:"\r"
+      4 src/main/kotlin/atropos/core/integration/McpHostManager.kt:'\n'
+      2 src/main/kotlin/atropos/core/integration/McpHostManager.kt:'\t'
+      1 src/main/kotlin/atropos/core/interrupt/FrozenRunStore.kt:'\t'
+      2 src/main/kotlin/atropos/core/journal/EventJournalModels.kt:"\n"
+      2 src/main/kotlin/atropos/core/journal/EventJournalModels.kt:"\t"
+     14 src/main/kotlin/atropos/core/journal/EventJournalModels.kt:'\t'
+      1 src/main/kotlin/atropos/core/journal/EventJournalService.kt:"\n"
+      1 src/main/kotlin/atropos/core/json/JsonParserHelpers.kt:'\b'
+      1 src/main/kotlin/atropos/core/json/JsonParserHelpers.kt:'\n'
+      1 src/main/kotlin/atropos/core/json/JsonParserHelpers.kt:'\r'
+      1 src/main/kotlin/atropos/core/json/JsonParserHelpers.kt:'\t'
+      1 src/main/kotlin/atropos/core/json/JsonParserHelpers.kt:'\u000C'
+      1 src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt:"\n"
+      2 src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt:"\t"
+      1 src/main/kotlin/atropos/core/mcp/McpIntegrationRegistry.kt:"\n"
+      4 src/main/kotlin/atropos/core/memory/LocalMemoryRecaller.kt:'\n'
+      2 src/main/kotlin/atropos/core/memory/MemoryFileStore.kt:"\n"
+      1 src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt:"\u001e"
+      1 src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt:"\u001f"
+      2 src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt:'\n'
+      2 src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt:'\r'
+      2 src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt:'\t'
+      1 src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt:"\t"
+      1 src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt:"\u0000"
+      1 src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt:'\t'
+      2 src/main/kotlin/atropos/core/multimodal/SnapshotService.kt:"\n"
+      2 src/main/kotlin/atropos/core/multimodal/SnapshotService.kt:"\t"
+      1 src/main/kotlin/atropos/core/multimodal/SnapshotService.kt:'\n'
+      1 src/main/kotlin/atropos/core/multimodal/SnapshotService.kt:'\t'
+      1 src/main/kotlin/atropos/core/neurosymbolic/HoareLogicAnnotationScanner.kt:"\n"
+      1 src/main/kotlin/atropos/core/nl/NlCanonicalizer.kt:"\n"
+      1 src/main/kotlin/atropos/core/nl/NlCanonicalizer.kt:'\n'
+      1 src/main/kotlin/atropos/core/nl/NlCanonicalizer.kt:'\t'
+      2 src/main/kotlin/atropos/core/nl/NlEntryPipeline.kt:"\n"
+      1 src/main/kotlin/atropos/core/observability/ExecutionEventCodec.kt:'\u0001'
+      1 src/main/kotlin/atropos/core/observability/ExecutionEventCodec.kt:'\u0002'
+      1 src/main/kotlin/atropos/core/observability/HistoryIndex.kt:"\t"
+      1 src/main/kotlin/atropos/core/observability/HistoryIndex.kt:'\n'
+      2 src/main/kotlin/atropos/core/observability/HistoryIndex.kt:'\t'
+      1 src/main/kotlin/atropos/core/observability/JsonExporter.kt:'\b'
+      1 src/main/kotlin/atropos/core/observability/JsonExporter.kt:'\n'
+      1 src/main/kotlin/atropos/core/observability/JsonExporter.kt:'\r'
+      1 src/main/kotlin/atropos/core/observability/JsonExporter.kt:'\t'
+      2 src/main/kotlin/atropos/core/observability/MarkdownExporter.kt:"\n"
+      1 src/main/kotlin/atropos/core/observability/RunObserver.kt:"\n"
+      2 src/main/kotlin/atropos/core/ops/DeploymentOps.kt:"\n"
+      1 src/main/kotlin/atropos/core/ops/DeploymentOps.kt:'\n'
+      1 src/main/kotlin/atropos/core/ops/DeploymentOps.kt:'\r'
+      1 src/main/kotlin/atropos/core/ops/DeploymentOps.kt:'\t'
+      1 src/main/kotlin/atropos/core/orchestration/KryptonSourceSynthesizer.kt:"\n"
+      2 src/main/kotlin/atropos/core/orchestration/KryptonStorageSynthesizer.kt:"\t"
+      1 src/main/kotlin/atropos/core/orchestration/KryptonTestAssetSynthesizer.kt:'\n"
+      3 src/main/kotlin/atropos/core/paid/EmergencyPaidGate.kt:"\n"
+      4 src/main/kotlin/atropos/core/paid/EmergencyPaidGate.kt:"\t"
+     17 src/main/kotlin/atropos/core/parser/KotlinLexicalMasker.kt:'\n'
+      2 src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt:'\n'
+      1 src/main/kotlin/atropos/core/phase20/GovernanceLedger.kt:"\n"
+      5 src/main/kotlin/atropos/core/phase20/GovernanceLedger.kt:'\n'
+      2 src/main/kotlin/atropos/core/phase20/GovernanceLedgerCodec.kt:"\n"
+      1 src/main/kotlin/atropos/core/phase20/GovernanceLedgerCodec.kt:"\t"
+      2 src/main/kotlin/atropos/core/phase20/LakehouseLedgers.kt:"\n"
+      1 src/main/kotlin/atropos/core/phase20/ProposalGenerator.kt:"\n"
+      1 src/main/kotlin/atropos/core/phase20/ReproducibilityGate.kt:"\n"
+      1 src/main/kotlin/atropos/core/phase20/ReproducibilityGate.kt:'\u0000'
+      2 src/main/kotlin/atropos/core/phase20/SelfImprovementLoop.kt:"\u0000"
+      2 src/main/kotlin/atropos/core/phase20/SuperiorityAddendum.kt:'\u001B'
+      2 src/main/kotlin/atropos/core/planning/InternalExecutionDagSynthesizer.kt:"\n"
+      2 src/main/kotlin/atropos/core/planning/InternalIngestionService.kt:"\n"
+      2 src/main/kotlin/atropos/core/planning/InternalPlanningGraphPlugin.kt:'\n'
+      3 src/main/kotlin/atropos/core/planning/InternalPlanningGraphPlugin.kt:'\t'
+      1 src/main/kotlin/atropos/core/platform/PlatformAdapter.kt:"\n"
+      1 src/main/kotlin/atropos/core/policy/AutonomyPolicyExtensions.kt:"\t"
+      1 src/main/kotlin/atropos/core/policy/AutonomyPolicyExtensions.kt:'\n'
+      8 src/main/kotlin/atropos/core/policy/AutonomyPolicyExtensions.kt:'\t'
+      2 src/main/kotlin/atropos/core/policy/BoundedProcessRunner.kt:'\n'
+      1 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt:"\n"
+      1 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt:'\n'
+      1 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt:'\r'
+      4 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt:'\t'
+      2 src/main/kotlin/atropos/core/project/ProjectRegistry.kt:"\n"
+      4 src/main/kotlin/atropos/core/project/ProjectRegistry.kt:"\t"
+      2 src/main/kotlin/atropos/core/provider/ContextEnvelopeSerializer.kt:"\n"
+      2 src/main/kotlin/atropos/core/provider/ContextEnvelopeSerializer.kt:"\r"
+      1 src/main/kotlin/atropos/core/provider/GitRepositoryMetadataReader.kt:'\n'
+      1 src/main/kotlin/atropos/core/provider/LocalRoot.kt:"\n"
+      1 src/main/kotlin/atropos/core/provider/LocalRoot.kt:'\n'
+      1 src/main/kotlin/atropos/core/provider/LocalRoot.kt:'\r'
+      1 src/main/kotlin/atropos/core/provider/LocalRoot.kt:'\t'
+      1 src/main/kotlin/atropos/core/provider/ProviderDescriptorReport.kt:"\n"
+      1 src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt:"\n"
+      1 src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt:'\n'
+      1 src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt:'\r'
+      1 src/main/kotlin/atropos/core/provider/ProviderResponseContextParser.kt:'\n'
+      4 src/main/kotlin/atropos/core/provider/QuotaLedger.kt:"\n"
+      3 src/main/kotlin/atropos/core/provider/QuotaLedger.kt:"\t"
+      1 src/main/kotlin/atropos/core/provider/QuotaLedger.kt:'\n'
+      1 src/main/kotlin/atropos/core/provider/QuotaLedger.kt:'\r'
+      1 src/main/kotlin/atropos/core/provider/QuotaLedger.kt:'\t'
+      1 src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt:"\n"
+      2 src/main/kotlin/atropos/core/provider/adapter/AdapterJson.kt:'\n'
+      2 src/main/kotlin/atropos/core/provider/adapter/AdapterJson.kt:'\r'
+      2 src/main/kotlin/atropos/core/provider/adapter/AdapterJson.kt:'\t'
+      1 src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt:"\n"
+      1 src/main/kotlin/atropos/core/provider/adapter/AssetProviderJson.kt:"\n"
+      1 src/main/kotlin/atropos/core/provider/adapter/AssetProviderJson.kt:"\r"
+      1 src/main/kotlin/atropos/core/provider/adapter/AssetProviderJson.kt:"\t"
+      1 src/main/kotlin/atropos/core/provider/adapter/AssetProviderJson.kt:'\n'
+      1 src/main/kotlin/atropos/core/provider/adapter/AssetProviderJson.kt:'\r'
+      1 src/main/kotlin/atropos/core/provider/adapter/AssetProviderJson.kt:'\t'
+      2 src/main/kotlin/atropos/core/provider/adapter/AwsSigV4.kt:"\n"
+      4 src/main/kotlin/atropos/core/provider/adapter/AwsSigV4.kt:'\n'
+      2 src/main/kotlin/atropos/core/provider/adapter/BedrockKernelAdapter.kt:"\n"
+      1 src/main/kotlin/atropos/core/provider/adapter/DataInfraJson.kt:'\n'
+      1 src/main/kotlin/atropos/core/provider/adapter/DataInfraJson.kt:'\r'
+      1 src/main/kotlin/atropos/core/provider/adapter/DataInfraJson.kt:'\t'
+      2 src/main/kotlin/atropos/core/provider/adapter/NonOpenAiJson.kt:'\n'
+      2 src/main/kotlin/atropos/core/provider/adapter/NonOpenAiJson.kt:'\r'
+      2 src/main/kotlin/atropos/core/provider/adapter/NonOpenAiJson.kt:'\t'
+      1 src/main/kotlin/atropos/core/recovery/RestartCoordinator.kt:"\n"
+      2 src/main/kotlin/atropos/core/recovery/RestartCoordinator.kt:"\u0000"
+      1 src/main/kotlin/atropos/core/recovery/RestartCoordinator.kt:'\n'
+      2 src/main/kotlin/atropos/core/research/PromptArtifactRoot.kt:"\n"
+      2 src/main/kotlin/atropos/core/research/PromptArtifactRoot.kt:"\r"
+      2 src/main/kotlin/atropos/core/research/PromptArtifactRoot.kt:"\t"
+      1 src/main/kotlin/atropos/core/research/ResearchOrchestrator.kt:"\n"
+      1 src/main/kotlin/atropos/core/research/ResearchOrchestrator.kt:"\r"
+      1 src/main/kotlin/atropos/core/research/ResearchOrchestrator.kt:"\t"
+      1 src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt:"\n"
+      1 src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt:"\r"
+      1 src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt:"\t"
+      2 src/main/kotlin/atropos/core/security/SecretSource.kt:"\n"
+      1 src/main/kotlin/atropos/core/security/SourceSecretScanner.kt:'\n'
+      1 src/main/kotlin/atropos/core/sentry/SentryApiClient.kt:"\n"
+      1 src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/BenchmarkHarness.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/BitLevelAuditLog.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/CapabilityAttenuation.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/CoalitionalStability.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/CounterfactualReplay.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/CrossProjectInvariants.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/DeadlineAwareScheduling.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/HypothesisRegistry.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/MDLPatchPreference.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/NegativeResultMemory.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/ProviderArbitrageEngine.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/QuotaFutures.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/RegretMinimization.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/ResourceAuction.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/SubAgentIncentives.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/SuperiorityInvariants.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/SuperiorityRegressions.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/SurfaceContractTests.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/TimeTravelReplay.kt:"\n"
+      1 src/main/kotlin/atropos/core/supremacy/VectorClocks.kt:"\n"
+      1 src/main/kotlin/atropos/core/synthesis/AstSurgicalPatcher.kt:"\n"
+      2 src/main/kotlin/atropos/core/synthesis/CompilerDiagnosticRepairLoop.kt:"\n"
+      1 src/main/kotlin/atropos/core/synthesis/DecoupledWorkerSynthesizer.kt:"\n"
+      3 src/main/kotlin/atropos/core/territory/TerritoryStore.kt:"\n"
+      4 src/main/kotlin/atropos/core/territory/TerritoryStore.kt:"\t"
+      1 src/main/kotlin/atropos/core/territory/TerritoryStore.kt:'\t'
+      2 src/main/kotlin/atropos/core/testing/AtroposTestMatrix.kt:"\n"
+      1 src/main/kotlin/atropos/core/toolchain/drivers/AndroidSdkDriver.kt:"\n"
+      1 src/main/kotlin/atropos/core/toolchain/drivers/GoToolchainDriver.kt:"\n"
+      1 src/main/kotlin/atropos/core/toolchain/drivers/KotlinGradleDriver.kt:"\n"
+      2 src/main/kotlin/atropos/core/toolchain/drivers/PythonFastApiDriver.kt:"\n"
+      1 src/main/kotlin/atropos/core/toolchain/drivers/RustCargoDriver.kt:"\n"
+      1 src/main/kotlin/atropos/core/toolchain/drivers/TypescriptNodeDriver.kt:"\n"
+      1 src/main/kotlin/atropos/core/util/CodeFenceExtractor.kt:'\n'
+      6 src/main/kotlin/atropos/core/verification/ArchitectureSourceMasker.kt:'\n'
+      6 src/main/kotlin/atropos/core/verification/ArchitectureSourceMasker.kt:'\r'
+      2 src/main/kotlin/atropos/core/verification/CompletionGateChecks.kt:"\n"
+      1 src/main/kotlin/atropos/core/verification/FactoryCompletionVerifier.kt:"\n"
+      1 src/main/kotlin/atropos/core/verification/FactorySha256Hasher.kt:'\n'
+      1 src/main/kotlin/atropos/core/verification/FileAtomicityConstitution.kt:"\n"
+      1 src/main/kotlin/atropos/core/verification/FuzzDomainGenerators.kt:"\uFEFFBOM"
+      1 src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt:'\u0000'
+      1 src/main/kotlin/atropos/core/verification/GovernedCompileGateModels.kt:'\n'
+      1 src/main/kotlin/atropos/core/verification/IntegrityProofs.kt:"\n"
+      1 src/main/kotlin/atropos/core/verification/SourceDoc2Rules.kt:"\n"
+      1 src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt:"\n"
+      1 src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt:'\n'
+      1 src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt:'\r'
+      1 src/main/kotlin/atropos/data/cache/CodebaseDeltaTreeTracker.kt:'\u0000'
+      2 src/main/kotlin/atropos/data/lakehouse/LakehousePathRetrieve.kt:"\t"
+      1 src/main/kotlin/atropos/dloi/DloiJsonReader.kt:'\b'
+      1 src/main/kotlin/atropos/dloi/DloiJsonReader.kt:'\n'
+      1 src/main/kotlin/atropos/dloi/DloiJsonReader.kt:'\r'
+      1 src/main/kotlin/atropos/dloi/DloiJsonReader.kt:'\t'
+      1 src/main/kotlin/atropos/dloi/DloiJsonReader.kt:'\u000C'
+      1 src/main/kotlin/atropos/dloi/DloiLineIndexer.kt:"\n"
+      1 src/main/kotlin/atropos/dloi/DloiLineIndexer.kt:'\n'
+      1 src/main/kotlin/atropos/dloi/DloiLineIndexer.kt:'\u000C'
+      1 src/main/kotlin/atropos/dloi/DloiService.kt:"\n"
+      5 src/main/kotlin/atropos/dloi/DloiSourceIndexer.kt:"\n"
+      1 src/main/kotlin/atropos/dloi/DloiSourceIndexer.kt:"\t"
+      3 src/main/kotlin/atropos/dloi/SourceAuthorityIndexer.kt:"\n"
+      2 src/main/kotlin/atropos/dloi/SourceAuthorityIndexer.kt:"\r"
+      1 src/main/kotlin/atropos/dloi/SourceAuthorityIndexer.kt:"\t"
+
+[3. KEYBINDINGS, TERMINAL SHORTCUTS, & ANSI ESCAPES]
+
+============================================================================
+PART 2: TOP 5 SWE CLIs - EXHAUSTIVE COMMAND & SETTINGS RESEARCH
+============================================================================
+
+----------------------------------------------------------------------------
+1. CLAUDE CODE (Anthropic)
+----------------------------------------------------------------------------
+[SLASH COMMANDS]
+/add-dir [path]          - Add external working directories to context.
+/agent [name]            - Specify an agent for the current session.
+/agents                  - Manage/fork custom AI subagents dynamically.
+/autofix-pr              - Watch active PR and push automated CI/lint fixes.
+/bashes                  - List and manage active background shell tasks.
+/batch                   - Orchestrate large-scale changes in parallel lanes.
+/branch [name], /fork    - Fork conversation state without losing history.
+/btw                     - Ask side-questions bypassing context history.
+/clear [name], /reset    - Hard reset, start new conversation with empty context.
+/compact [instructions]  - LLM-summarize current conversation to reclaim token space.
+/context                 - Visualize current context window usage as colored grid.
+/copy [N]                - Copy Nth-latest response to clipboard.
+/cost                    - Display session token spending statistics.
+/diff                    - Open interactive viewer showing session changes.
+/doctor, /checkup        - Audit installation and environment health.
+/effort [level]          - Set reasoning tokens (low, medium, high, xhigh, max).
+/export [filename]       - Export session transcript.
+/fast [on|off]           - Toggle latency-optimized output.
+/feedback                - Report bug with session context attached.
+/goal [condition|clear]  - Set high-level objective Claude works toward across turns.
+/help                    - Render all active commands.
+/hooks                   - Manage Git/lifecycle event handlers.
+/init                    - Bootstrap project with CLAUDE.md memory files.
+/loop [interval]         - Execute prompt repeatedly on a chronometer.
+/mcp                     - Manage MCP server connections (e.g., /mcp__github).
+/memory                  - Edit persistent project memory parameters.
+/model [model]           - Switch active LLM mid-session (sonnet, opus, haiku).
+/output-style            - Set response formatting heuristics.
+/permissions             - Adjust Bash, Read, and Edit tool permissions.
+/plan [description]      - Enter read-only plan mode before making file changes.
+/plugin                  - Manage third-party integrations (list, install, enable).
+/pr-comments             - Fetch and inject pull request feedback.
+/remote-control, /rc     - Control session from web/mobile app.
+/resume, /continue       - Reload historical conversation.
+/review                  - Request automated code review.
+/rewind                  - Roll back code, conversation, or both to a checkpoint.
+/sandbox                 - Enforce strict bash isolation.
+/security-review         - Execute security audit on pending Git changes.
+/simplify [focus]        - Refactor recent changes for algorithmic efficiency.
+/statusline              - Customize CLI UI rendering.
+/teleport, /tp           - Pull web session into terminal.
+/theme                   - Adjust UI color palette.
+
+[MODIFIERS & KEYBINDINGS]
+\! [command]             - Execute native bash command and pipe output to context.
+#                        - Quick memory addition.
+Ctrl+C                   - Interrupt generation / Clear stashed prompt.
+Ctrl+D                   - EOF / Exit.
+Ctrl+R                   - Reverse search command history.
+Ctrl+Z                   - Suspend process to background.
+Tab / Shift+Tab          - Autocomplete / Cycle tool permission modes.
+Esc + Esc                - Trigger interactive rewind mode.
+
+[CONFIGURATIONS (.claude.json / Global Settings)]
+--add-dir <path>         - Grants file access to external directory.
+--allowed-tools <tools>  - Tools that execute without prompting.
+--append-system-prompt   - Append to default system prompt.
+--autocompact <size>     - Set auto-compact window threshold.
+--ax-screen-reader       - Render screen-reader friendly flat text output.
+theme                    - light, dark, system.
+auto_updater             - enable, disable.
+verbose_logging          - bool flag for stdout debug emissions.
+
+----------------------------------------------------------------------------
+2. AIDER (Paul Gauthier)
+----------------------------------------------------------------------------
+[SLASH COMMANDS]
+/add                     - Add a file to the active context for editing.
+/architect               - Switch to architect (planning) mode.
+/ask                     - Questions about codebase without making changes.
+/chat-mode               - Switch global chat mode.
+/clear                   - Clear the chat history (keeps files in context).
+/code                    - Switch to code (editing) mode.
+/commit                  - Commit current changes with AI-generated message.
+/copy-context            - Export context as Markdown for web UI pasting.
+/diff                    - Show the current uncommitted diff.
+/drop                    - Remove a file from the active context.
+/edit, /editor           - Open $EDITOR (vim/nano) to draft complex prompts.
+/editor-model            - Switch the secondary Editor LLM.
+/git                     - Run raw Git command (output excluded from LLM context).
+/lint                    - Run configured linter on current files.
+/load                    - Execute sequential commands from a local script file.
+/ls                      - List files currently in context.
+/map                     - Print current semantic repository map.
+/map-refresh             - Force ctags refresh of repo map.
+/model                   - Switch model mid-session.
+/models                  - Search and list API-accessible LLMs.
+/multiline-mode          - Toggle Meta+Enter vs Enter execution behavior.
+/paste                   - Inject image or clipboard text directly into chat.
+/read, /read-only        - Add a file as read-only context (not editable).
+/reasoning-effort        - Adjust LLM inference compute (low/medium/high).
+/report                  - Open a GitHub Issue with session debug logs.
+/reset                   - Clear chat history and drop all files from context.
+/run, \!                 - Run shell command and optionally add output to context.
+/save                    - Export commands required to reconstruct current session state.
+/settings                - Print active configuration.
+/test                    - Run configured test command (injects output ONLY if exit code != 0).
+/think-tokens            - Hard-cap thinking token budget.
+/tokens                  - Report active context utilization.
+/undo                    - Undo the last git commit made by Aider.
+/voice                   - Record and transcribe local microphone input.
+/weak-model              - Switch the fallback/fast LLM.
+/web                     - Scrape target URL, convert to Markdown, embed in chat.
+
+[SETTINGS / FLAGS / .aider.conf.yml]
+model: <model_name>      - Primary LLM (e.g., claude-3-5-sonnet-20241022).
+edit-format: <str>       - diff, whole, udiff.
+auto-commits: <bool>     - Commit automatically after successful edits.
+attribute-author: <bool> - Credit Aider in Git author.
+auto-lint: <bool>        - Lint files after editing.
+lint-cmd: <list>         - Array of linters (e.g., "typescript: npm run typecheck").
+test-cmd: <cmd>          - Command executed via /test.
+read: <file>             - Load file read-only on boot (e.g., CONVENTIONS.md).
+--yes-always             - Scripting flag: suppress all confirmations.
+max_tokens: <int>        - Model specific setting (e.g., 8192).
+temperature: <float>     - Model specific setting (e.g., 0.1).
+
+----------------------------------------------------------------------------
+3. CURSOR (Integrated Editor & CLI)
+----------------------------------------------------------------------------
+[CLI COMMANDS]
+cursor .                 - Open current directory in workspace.
+cursor --install-extension <ext> - Headless extension management.
+cursor --disable-extensions - Launch in safe mode.
+
+[IN-CHAT / COMPOSER MENTIONS & COMMANDS (@)]
+@Files                   - Contextualize specific local files.
+@Folders                 - Contextualize directory structures.
+@Codebase                - Trigger vector-search/embedding retrieval across entire repo.
+@Docs                    - Crawl and inject external documentation URLs.
+@Web                     - Trigger real-time web search for API references.
+@Git                     - Contextualize diffs, commits, and PRs.
+@Lint                    - Feed workspace linter errors directly to agent.
+/edit                    - Trigger inline editor prompt from chat window.
+/terminal                - Ask agent to formulate terminal commands.
+
+[SHORTCUTS]
+Cmd+K (Ctrl+K)           - Inline generation and editing.
+Cmd+L (Ctrl+L)           - Standard chat interface.
+Cmd+I (Ctrl+I)           - Composer mode (multi-file orchestration).
+Cmd+Enter                - Accept inline diffs.
+
+[SETTINGS (.cursorrules & Cursorignore)]
+.cursorrules             - Repository-wide global prompt injection (e.g., "Always use Tailwind").
+.cursorignore            - Exclude files from @Codebase embeddings.
+Settings -> Models       - Toggle API endpoints, override base URLs, input custom OpenAI/Anthropic keys.
+Settings -> Features     - Toggle Cursor Tab, Composer, Terminal Cmd+K, Shadow Workspace.
+
+----------------------------------------------------------------------------
+4. GOOSE (Block)
+----------------------------------------------------------------------------
+[CLI COMMANDS]
+goose session start      - Initiate new agent loop.
+goose session list       - View all active/historical sessions.
+goose session resume     - Re-attach to session.
+goose session remove     - Delete session data.
+goose session --edit     - Opens session conversation YAML in $VISUAL to manually splice/trim context.
+goose configure          - Interactive settings wizard.
+goose info               - Agent status and telemetry.
+goose skills list        - Render installed skills.
+goose mcp                - Manage MCP integrations.
+goose local-models search- Search Hugging Face for compatible GGUF/MLX models.
+goose local-models download - Download and register a model.
+goose schedule add       - Add cron-based background job.
+goose schedule list      - List active cron jobs.
+
+[CLI FLAGS & OPTIONS]
+-n, --name <string>      - Named sessions.
+-r, --regex <pattern>    - Regex filtering for session retrieval/deletion.
+-i, --instructions <path>- Stream prompt from file or stdin (-).
+--recipe <file>          - Load a custom YAML recipe in current session.
+--params <k=v>           - Key-value injection for parameterized recipes.
+--with-extension <cmd>   - Add stdio MCP extensions.
+--with-builtin <tool>    - Enable native tools (developer, computercontroller, github).
+
+----------------------------------------------------------------------------
+5. SWE-AGENT (Princeton NLP)
+----------------------------------------------------------------------------
+[CLI COMMANDS]
+sweagent run             - Execute the agent evaluation/resolution loop.
+
+[CLI FLAGS & ARGUMENTS]
+-o, --output <dir>       - Output directory.
+-m, --model <name>       - Model to use.
+-c, --config <file>      - Path to a config file (default: config/default.yaml).
+-w, --workers <int>      - Number of worker threads for parallel processing.
+--slice <spec>           - Slice specification (e.g., 0:5 for first 5 instances).
+--environment-class      - Environment type to use (docker or singularity).
+
+[YAML UNION TYPE CONFIGURATIONS]
+--agent.model.name=<str> - Model identifier (e.g., claude-3-5-sonnet).
+--env.post_startup_commands='["cmd"]' - Commands to run before starting the agent (e.g., '["pip install -e ."]').
+--env.deployment.image   - Docker container image (e.g., python:3.12).
+--env.repo.github_url    - URL of repository to pull (GithubRepoConfig).
+--problem_statement.type - Explicit union type target.
+--actions.apply_patch_locally - Apply successful patch to local files.
+--actions.open_pr        - Automatically open a Pull Request upon solution.

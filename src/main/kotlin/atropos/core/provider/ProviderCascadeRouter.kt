@@ -213,7 +213,7 @@ class ProviderCascadeRouter(
                 // 2. RATE-LIMIT SLEEP WITH BUFFER
                 val isRateLimit = !isInvalid && (
                     (execResult as UniversalExecutionResult.Failure).isRateLimit ||
-                    classifiedError.type == FailureType.RATE_LIMITED
+                    classifiedError.type == FailureType.RATE_LIMIT
                 )
 
                 if (isRateLimit) {

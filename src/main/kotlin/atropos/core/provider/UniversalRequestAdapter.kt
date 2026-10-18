@@ -51,7 +51,7 @@ sealed class UniversalExecutionResult {
         val headers: Map<String, List<String>> = emptyMap(),
         val rawBody: String = "",
         val isRateLimit: Boolean = false,
-        val cause: Throwable? = null
+        val cause: Exception? = null
     ) : UniversalExecutionResult()
 }
 
