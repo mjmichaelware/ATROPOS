@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.provider
 
 import atropos.core.provider.ProviderCascadeRouter
@@ -41,7 +42,8 @@ class ProviderCascadeRouterTest {
 
         assertEquals("provider-two", result.providerName)
         assertEquals("STATE_MODEL", result.response)
-        assertEquals(listOf("provider-one", "provider-two"), attempts)
+        // Strike 1 on provider-one fails, strike 2 retried on provider-one (no progress), then cascades to provider-two
+        assertEquals(listOf("provider-one", "provider-one", "provider-two"), attempts)
         assertTrue(result.errors.any { it.provider == "provider-one" && it.type == atropos.core.FailureType.INVALID_RESPONSE })
     }
 
@@ -69,12 +71,45 @@ class ProviderCascadeRouterTest {
 
         assertEquals("provider-two", result.providerName)
         assertEquals("hello from provider two", result.response)
-        assertEquals(listOf("provider-one", "provider-two"), attempts)
+        assertEquals(listOf("provider-one", "provider-one", "provider-two"), attempts)
         assertTrue(
             result.errors.any {
                 it.provider == "provider-one" && it.type == atropos.core.FailureType.INVALID_RESPONSE
             }
         )
+    }
+
+    @Test
+    fun mathematical_progress_grants_third_retry_strike_before_success() {
+        var callCount = 0
+        val router = ProviderCascadeRouter(
+            factory = ProviderFactory(),
+            providerResolver = { provider ->
+                object : AIProvider {
+                    override val name: String = provider
+                    override fun complete(prompt: String, context: String): String {
+                        callCount++
+                        return when (callCount) {
+                            1 -> "" // Strike 1: blank / fail
+                            2 -> "fun partial() {" // Strike 2: valid code + AST depth > 0 (mathematical progress > 0)
+                            else -> "fun partial() { val complete = true }" // Strike 3: complete!
+                        }
+                    }
+                }
+            }
+        )
+
+        val result = router.completeWithCascade(
+            requestedProvider = "provider-one",
+            prompt = "generate code",
+            context = "",
+            providerOrderOverride = listOf("provider-one", "provider-two"),
+            acceptResponse = { it.contains("complete") }
+        )
+
+        assertEquals("provider-one", result.providerName)
+        assertEquals(3, callCount)
+        assertTrue(result.response.contains("complete = true"))
     }
 
     @Test
@@ -148,6 +183,6 @@ class ProviderCascadeRouterTest {
         )
         assertEquals("openai", result.providerName)
         assertEquals("approved", result.response)
-        assertEquals(listOf("groq", "openai"), attempts)
+        assertEquals(listOf("groq", "groq", "openai"), attempts)
     }
 }

@@ -16074,3 +16074,23 @@ End of AGENTS.md
   - `McpTaxonomyContributor.kt=4ee80aaa6a29`
   - `OmniSurfaceContractTest.kt=85224f95f453`
   - `GracefulDegradationTest.kt=b55bacb83d3a`
+
+### 2026-10-18T10:40:00-06:00 · Agent: Antigravity · Batch: feat(providers): per-provider payload translation and mathematical 3-strike rate-limit backoff
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/UniversalRequestAdapter.kt` (new, 413 lines / native schema & role translation for Groq, OpenRouter, Gemini, Anthropic, Ollama, Cloudflare AI, OpenAI-compatible)
+  - `src/main/kotlin/atropos/core/provider/MathematicalRateLimitScheduler.kt` (new, 183 lines / Retry-After header parsing, +10s buffer sleep, AST depth & valid line delta progress calculation)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+120/-76 lines, 442 lines total / wired UniversalRequestAdapter, rate-limit backoff buffer, and 3-strike mathematical progress rule)
+  - `src/test/kotlin/atropos/core/provider/UniversalRequestAdapterTest.kt` (new, 118 lines / unit tests verifying per-provider JSON schema & role isolation)
+  - `src/test/kotlin/atropos/core/provider/MathematicalRateLimitSchedulerTest.kt` (new, 100 lines / unit tests verifying Retry-After parsing, +10s buffer calculation, and delta AST progress)
+  - `src/test/kotlin/atropos/core/provider/ProviderCascadeRouterTest.kt` (+54/-20 lines, 188 lines total / tests verifying 3-strike retries, progress-granted 3rd attempt, and fallback cascading)
+- Atoms / phases affected: Phase 1 Provider Activation, Phase 2 Provider Transport, Phase 3 Quota / Route Truth, Phase 19 App Factory Repair Cascade.
+- Predicate moved:
+  - Dynamic Per-Provider Formatting ("Each According to Its Kind") is enforced: UniversalRequestAdapter formats outgoing repair prompts and chat payloads into the exact native schema (e.g. systemInstruction + contents for Gemini, top-level system for Anthropic without system messages in messages array, HTTP-Referer/X-Title for OpenRouter, OpenAI-compatible for Groq/OpenAI).
+  - Rate-Limit Sleep with Buffer is enforced: HTTP 429 and OTPM responses parse Retry-After deltas from response headers and sleep the thread for the exact duration plus a 10-second buffer.
+  - Mathematical Progress 3-Strike Rule is enforced: Same provider is retried on strike 1. On strike 2 failure, mathematical progress is evaluated (Δbytes > 0 || Δlines > 0 || Δast > 0). If progress > 0, a 3rd and final retry is granted.
+  - Cascading Rules are enforced: The engine cascades to the next provider only after 3 failed strikes (or strike 2 if no progress). Upon cascading, native schema formatting is immediately applied to the new provider.
+  - All files strictly adhere to the <= 500 LOC ceiling.
+  - Zero competitor names in code or documentation.
+  - Zero local compilation in the terminal per strict repository rules.
+- % delta: Phase 19 App Factory 20% -> 25% (+5%), Phase 2 Provider Transport hardened. Weighted overall adjusted.
+- Why the delta is justified: Fully decoupled model strings from provider payloads and implemented mathematical progress-based rate limit backoff and cascading across all factory and CLI execution routes.

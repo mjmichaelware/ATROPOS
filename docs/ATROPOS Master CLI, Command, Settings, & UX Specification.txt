@@ -1,0 +1,221 @@
+﻿[SYS_MODE: DHE_ADAM]
+[TARGET: EXHAUSTIVE OMNI-SURFACE CLI COMMANDS, SETTINGS, & UX MASTER SPECIFICATION]
+[SCOPE: EXHAUSTIVE COMPETITIVE RESEARCH, DEDUPLICATED VARIANTS, ATROPOS ROUTING, 4-TIER TRIE, MODAL UX, HARDWARE ABSTRACTION]
+
+
+================================================================================
+SECTION 1: EXHAUSTIVE COMPETITIVE CLI RESEARCH (CLAUDE, AIDER, GOOSE, SWE-AGENT, ANTI-GRAVITY)
+================================================================================
+
+
+[1. CLAUDE CODE (Anthropic)]
+COMMANDS: /add-dir /advisor /agent /agents /autofix-pr /bashes /batch /branch /fork /btw /claude-api /clear /reset /compact /context /copy /cost /debug /diff /doctor /checkup /effort /exit /export /fast /feedback /goal /heapdump /help /hooks /ide /init /install-github-app /loop /mcp /memory /model /output-style /permissions /plan /plugin /pr-comments /rate-limit-options /rc /remote-control /rename /resume /continue /review /rewind /sandbox /schedule /security-review /simplify /statusline /teleport /tp /terminal-setup /theme /todos /ultraplan /usage /vim
+MODIFIERS: ! (shell_pipe) # (memory_add)
+SETTINGS_JSON: theme, auto_updater, verbose_logging, preferred_model, max_tokens, temperature, tools_allowed, bash_allowed, --allow-dangerously-skip-permissions, --append-subagent-system-prompt, --append-system-prompt, --autocompact, --ax-screen-reader
+
+
+[2. AIDER (Paul Gauthier)]
+COMMANDS: /add /architect /ask /chat-mode /clear /code /commit /copy-context /diff /drop /edit /editor /editor-model /git /help /lint /load /ls /map /map-refresh /model /models /multiline-mode /ok /paste /read /read-only /reasoning-effort /report /reset /run ! /save /settings /test /think-tokens /tokens /undo /voice /weak-model /web
+MODIFIERS: ! (shell_inject)
+SETTINGS_YAML: model, edit-format, auto-commits, attribute-author, attribute-committer, auto-lint, lint-cmd, test-cmd, read, yes-always, max_tokens, temperature, extra_params, env-vars
+
+
+[3. GOOSE (Block)]
+COMMANDS: session_start session_list session_resume session_remove session_edit configure info skills_list mcp local-models_search local-models_download local-models_list local-models_delete schedule_add schedule_list schedule_remove schedule_run-now schedule_cron-help
+MODIFIERS: --name --regex --limit --format --working_dir --instructions --text --verbose --ascending --session-id --path --system --recipe --params --sub-recipe --with-extension --with-streamable-http-extension --with-builtin
+SETTINGS_ENV: GOOSE_DISABLE_KEYRING, OPENAI_API_KEY, ANTHROPIC_API_KEY, DATADIR, LOG_LEVEL
+
+
+[4. SWE-AGENT (Princeton NLP)]
+COMMANDS: sweagent_run
+MODIFIERS: --output --model --config --workers --slice --filter --shuffle --redo-existing --environment-class --model-class
+SETTINGS_YAML: agent.model.name, env.post_startup_commands, env.deployment.type, env.deployment.image, env.repo.github_url, env.repo.path, problem_statement.type, problem_statement.github_url, problem_statement.path, problem_statement.text, actions.apply_patch_locally, actions.open_pr
+
+
+[5. CURSOR / ANTI-GRAVITY (Google Internal / Gemini)]
+COMMANDS: cursor ., cursor --install-extension, @Files, @Folders, @Codebase, @Docs, @Web, @Git, @Lint, /edit, /terminal, /config, /settings, /quit, /help, /model, /plan, /agent, /status, /tabs, /verify
+MODIFIERS: ! (shell_toggle)
+SETTINGS_UI: Agent_Mode, Animation_Speed, Artifact_Review, Color_Scheme, Conversation_Picker_Grouping, Copy_on_Select, Editor, Editor_Mode, Enable_Telemetry, Non-Workspace_Access, Notifications, Queued_Messages, Rendering_Mode, Sandbox_Mode, Show_Active_Tasks, Show_Feedback_Survey, Show_Tips, Tool_Permission, Use_AI_Credits, Verbosity, Auto-Lint, Auto-Test_Gating, Max_Context_Tokens, Model_Fallback_Cascade
+
+
+================================================================================
+SECTION 2: ATROPOS DEDUPLICATED COMMAND VARIANT MAPPING
+================================================================================
+
+
+[ROUTING ENGINE: SYNONYM TRIE RESOLUTION]
+ATROPOS_COMMAND -> [COMPETITIVE_VARIANTS_MAPPED_TO_ATROPOS]
+/session status -> usage, cost, tokens, context, info, stats, telemetry
+/repo diff -> changes, patch, uncommitted, diff-view
+/agent interrupt -> pause, freeze, halt, stop, suspend
+/agent resume -> continue, unpause, thaw
+/system storage -> gc, compact, clear, purge, prune, reclaim
+/memory inspect -> context-store, recall, learned, codebase-query
+/session history -> timeline, trajectory, log, session-list
+/toolchain doctor -> checkup, probe, health, diagnostics
+/verify run -> test, lint, validate, check, test-matrix
+/system verbosity -> debug, trace-level, log-level
+/system theme -> color-scheme, palette, colors
+/agent ask-isolated -> btw, side-query, parallel-ask
+/session compact -> squash, condense, summarize
+/agent batch -> parallel, fan-out, multi-lane
+/session fork -> branch, split, duplicate
+/repo rollback -> rewind, undo, revert, restore
+/github pr-fix -> autofix-pr, review-pr, pr-lint
+/agent architect -> dual-model, plan-execute, ultraplan
+/surface teleport -> tp, web-lift, mirror-open
+/agent simplify -> clean, refactor, de-duplicate
+/system grep -> search, find-text, rg, code-search
+/system alias -> bind-cmd, shortcut-set
+/system config -> settings, preferences, set, get, configure
+
+
+================================================================================
+SECTION 3: ATROPOS CONFIGURATION & SETTINGS MAP (atropos.config.json)
+================================================================================
+
+
+[GLOBAL SETTINGS MATRIX]
+Agent_Mode            : autonomous | supervised | plan-only
+Animation_Speed       : instant | fast | medium | off
+Artifact_Review       : auto-accept | ask-review | strict-gate
+Color_Scheme          : atropos-dark | electric-blue | amber-crt | solarized | terminal
+Conversation_Grouping : by-project | by-date | flat
+Copy_on_Select        : on | off
+Editor                : auto ($EDITOR) | vim | nano | custom
+Editor_Mode           : inline | modal | split-view
+Enable_Telemetry      : on | off | local-only
+Non-Workspace_Access  : blocked | prompt | allowed
+Notifications         : terminal-bell | os-toast | off
+Queued_Messages       : queue | interrupt | discard
+Rendering_Mode        : native-terminal (inline) | alternate-screen | headless
+Sandbox_Mode          : ephemeral-vfs | chroot | off
+Show_Active_Tasks     : on | off
+Show_Feedback_Survey  : on | off
+Show_Tips             : on | off | unread-only
+Tool_Permission       : confirm-all | bounded-auto | always-proceed | strict
+Use_AI_Credits        : off | emergency-only | unlimited
+Verbosity             : L1-compact | L2-standard | L3-detailed | L4-internal
+Auto-Lint             : on | off
+Auto-Test_Gating      : on | off
+Max_Context_Tokens    : 8k | 16k | 32k | 64k | 128k | max
+Model_Fallback_Cascade: on | off
+
+
+================================================================================
+SECTION 4: 4-TIER TRIE COMMAND TAXONOMY & SUBCATEGORIZATION ENGINE
+================================================================================
+
+
+DOMAIN(TIER_1) -> SUBCATEGORY(TIER_2, IF >= 8 ITEMS) -> ACTION/TARGET(TIER_3) -> DOCUMENTATION_LEAF(TIER_4)
+AGENT -> LIFECYCLE -> START -> Spawns autonomous daemon run
+AGENT -> LIFECYCLE -> STOP -> Halts running execution loop
+AGENT -> LIFECYCLE -> PAUSE -> Freezes execution state to CAS
+AGENT -> LIFECYCLE -> RESUME -> Restores loop from CAS token
+AGENT -> DISPATCH -> ASK -> Queries provider with context
+AGENT -> DISPATCH -> PATCH -> Generates atomic unified diff
+AGENT -> DISPATCH -> REPAIR -> Executes bounded AST repair
+AGENT -> DISPATCH -> ARCHITECT -> Activates 2-model planner gate
+AGENT -> DISPATCH -> BATCH -> Schedules parallel wave lanes
+AGENT->DISPATCH->SIMPLIFY->Refactors AST for complexity
+REPO->INSPECTION->STATUS->Verifies SSD against CAS root
+REPO->INSPECTION->DIFF->Shows syntax-colored hunks
+REPO->INSPECTION->LOG->Sequential commit provenance
+REPO->MUTATION->INIT->Initializes local git tree
+REPO->MUTATION->COMMIT->Authoritative CAS write gate
+REPO->MUTATION->ROLLBACK->Reverts tree to target CAS hash
+REPO->MUTATION->STAGE->Stages files to write boundary
+MEMORY->INSPECTION->SEARCH->Vector & lexical recall query
+MEMORY->INSPECTION->STATS->Displays active memory bounds
+MEMORY->MAINTENANCE->COMPACT->Deduplicates stored episodes
+MEMORY->MAINTENANCE->PRUNE->Removes expired working context
+MEMORY->GOVERNANCE->DLOI->Queries DLOI index lattice
+MEMORY->GOVERNANCE->LEARN->Commits verified heuristic
+GOVERNANCE->POLICY->AUDIT->Scans secrets and territories
+GOVERNANCE->POLICY->TERRITORY->Verifies prefix boundaries
+GOVERNANCE->POLICY->HR->Inspects cross-boundary risk
+GOVERNANCE->POLICY->PAID->Checks emergency unlock budget
+GOVERNANCE->LIFECYCLE->CUSTODIAN->Sweeps compiler temp artifacts
+GOVERNANCE->LIFECYCLE->AMEND->Applies formal authority rule
+TOOLCHAIN->LOCAL->DOCTOR->Audits compiler environments
+TOOLCHAIN->LOCAL->TEST->Runs local test suite runner
+TOOLCHAIN->LOCAL->LINT->Executes syntax and AST linters
+TOOLCHAIN->INTEGRATIONS->MCP->Audits active MCP server states
+TOOLCHAIN->INTEGRATIONS->SENTRY->Ingests crash frame diagnostics
+SESSION->CONTEXT->CLEAR->Purges context buffer
+SESSION->CONTEXT->COMPACT->Executes LLM context reduction
+SESSION->CONTEXT->EXPORT->Dumps transcript to file/json
+SESSION->CONTEXT->HISTORY->Traverses turn execution tree
+SESSION->IO->COPY->Yanks response to clipboard
+SESSION->IO->PASTE->Injects clipboard into composer
+SESSION->IO->VOICE->Records speech-to-text input
+SESSION->IO->TELEPORT->Binds terminal to web socket
+SYSTEM->ENVIRONMENT->CONFIG->Live parameter inspector/setter
+SYSTEM->ENVIRONMENT->THEME->Selects terminal ANSI palette
+SYSTEM->ENVIRONMENT->VERBOSITY->Adjusts L1/L2/L3 output trace
+SYSTEM->SHELL->GREP->Executes bounded regex search
+SYSTEM->SHELL->ALIAS->Registers user runtime macros
+SYSTEM->SHELL->CLEAR->Emits ANSI screen clear sequence
+SYSTEM->SHELL->EXIT->Terminates CLI process cleanly
+
+
+================================================================================
+SECTION 5: UX MODAL, HINT, & KEYBINDING MECHANICS
+================================================================================
+
+
+[QUESTION MARK (?) HINT MECHANIC]
+TRIGGER: '?' entered at command line.
+ACTION: Auto-popups 3-column modal panel (Shortcuts | Commands | General Info). Colors bound to Color_Scheme. Nav: ↑/↓ Navigate, ←/→ Switch View, esc Close.
+
+
+[SLASH-QUESTION MARK (/? ) CATEGORY HINT MECHANIC]
+TRIGGER: '/?' entered at command line.
+ACTION: Replaces standard command list with Category Information Mode. Scrolling categories renders scope definitions instead of executing. Nav: ↑/↓ Navigate.
+
+
+[SLASH (/) CATEGORIZED COMMAND TRIE]
+TRIGGER: '/' entered at command line.
+ACTION: Opens large, persistent, beautiful command box (responsive to Web/APK/CLI). Tier 1 categories displayed alphabetically. Hovering category renders sub-box with category scope. Arrow Right drills down or opens Tier 4 doc leaf.
+
+
+[HASHTAG (#) MENTION MECHANIC]
+TRIGGER: '#' entered at command line.
+ACTION: Pulls files from active CLI root alphabetically. Arrow Down selects. Arrow Right horizontally expands truncated/long file names.
+
+
+[NUMBER SIGN (#) MACRO KEYBINDING MECHANIC]
+TRIGGER: '#<MACRO>' entered at command line (e.g. #ABC).
+ACTION: Maps to custom user-defined keyboard shortcut or command alias. Configuration via `/keybinding` to bypass mobile hardware key limitations.
+
+
+================================================================================
+SECTION 6: MEMORY LAYERS, EXECUTION GATES, & HARDWARE ABSTRACTION
+================================================================================
+
+
+[MEMORY LAYERS]
+TEMPORARY_MEMORY: Session working memory cleared on restart.
+CONVERSATION_MEMORY: Chat history and active context window.
+PROJECT_MEMORY: Project-scoped state, files, and work history.
+WORKSPACE_MEMORY: User settings, preferences, and theme configurations.
+KNOWLEDGE_LAYER: Learned patterns and domain models (Read-Only).
+AUTHORITY_AND_POLICY: Access policies, safety constraints, and verification gates (Rank L0-L3).
+LEARNING_OBSERVATIONS: Performance metrics and optimization opportunities.
+EVIDENCE_LAYER: Verified artifacts, SHA-256 checksums, and tamper-evident receipts in `cas_evidence.jsonl`.
+
+
+[EXECUTION GATES]
+TOIG: Test Oracle Inversion Gate.
+MUTATION_TESTING_ORACLE: Evaluates test suites against synthetic AST mutants (>= 85% kill rate).
+GOVERNED_COMPILE_GATE: Hard exit-code-0 build verification.
+CAPABILITY_ATTENUATION_SANDBOX: Disjoint model vs write capabilities ($\text{Cap}(P_\theta) \cap \text{Cap}(A_{write}) = \emptyset$).
+REPRODUCIBILITY_CERTIFICATE_ENGINE: SSD byte hashing against authoritative CAS Merkle leaves.
+
+
+[OMNI-SURFACE UNIFICATION & HARDWARE AGNOSTICISM]
+CLI_ENGINE: 4-tier trie taxonomy with ANSI color inheritance.
+WEB_COCKPIT: OpenCode-style local terminal-to-browser mirroring via embedded binary WebSocket server (`TerminalMirrorSocketServer` on port 8787).
+ANDROID_APK: Direct in-process ART binding via compiled Android Archive (`atropos-core.aar`), linking `AgentService` and `ExecutionPolicyEngine` directly to Jetpack Compose via Kotlin `StateFlow`.
+FILESYSTEM_ABSTRACTION: Zero hardcoded absolute paths (`/data/data/com.termux/` eliminated). Native pathing resolved via `System.getProperty("user.home")`, `System.getProperty("java.io.tmpdir")`, and `okio.Path`.
+BINARY_DISCOVERY: System executables (`git`, `kotlinc`, `cargo`, `python`) resolved dynamically via `System.getenv("PATH")` scan through `PlatformAdapterRegistry.current().resolveToolPath()`.

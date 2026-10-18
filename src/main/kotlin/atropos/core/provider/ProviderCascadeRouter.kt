@@ -1,19 +1,11 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.provider
 
-import atropos.core.provider.ContextEnvelope
-import atropos.core.provider.ProviderDescriptorRegistry
-import atropos.core.provider.StaticProviderDescriptorRegistry
-import atropos.core.provider.ApiCapability
-import atropos.core.provider.ProviderCascadeOrder
 import atropos.core.AtroposConfig
 import atropos.core.OllamaHealthProbe
-import atropos.core.provider.FallbackChain
-import atropos.core.provider.FallbackChainRegistry
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.ProviderApprovalCard
 import atropos.core.provider.ProviderPolicyGate
-import atropos.core.provider.FreeModeGuard
 import atropos.core.security.TokenIsolationVault
 import atropos.core.ProviderError
 import atropos.core.ProviderFactory
@@ -32,6 +24,10 @@ data class ProviderCascadeResult(
     val paidApproval: ProviderApprovalCard? = null
 )
 
+/**
+ * Orchestrates multi-provider fallback cascading with native payload formatting,
+ * rate-limit backoff with buffer, and a mathematical 3-strike progress evaluation rule.
+ */
 class ProviderCascadeRouter(
     private val factory: ProviderFactory,
     private val classifier: ProviderFailureClassifier = ProviderFailureClassifier(),
@@ -53,15 +49,6 @@ class ProviderCascadeRouter(
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)
 
-    /**
-     * SD7-T2-011: Complete with cascade taking prompt and ContextEnvelope.
-     * Enforces the heterogeneous provider matrix:
-     * - Groq for high-velocity code workers
-     * - Gemini 2.5 Pro for large-context planning/spec
-     * - DLOI topological planning strictly deterministic via DloiService
-     * - Cosine-similarity RAG is formally banned HIG=0.000
-     * - Soft-Fail Law on 429 timeouts: RecordSkip(REASON) rather than crash
-     */
     fun completeWithCascade(prompt: String, envelope: ContextEnvelope): ProviderCascadeResult {
         val targetProvider = when {
             envelope.providerId.contains("groq", ignoreCase = true) -> "groq"
@@ -93,9 +80,6 @@ class ProviderCascadeRouter(
         val blocked = mutableSetOf<String>()
         val keyAttempts = mutableMapOf<String, Int>()
 
-        // Which providers will be tried, and in what order. A run that waits
-        // on a model has to say what it is waiting on -- an operator watching
-        // a silent minute cannot tell a slow provider from a hung one.
         atropos.core.thinking.Thinking.detail(
             "provider",
             "cascade order: " + order.joinToString(" → ")
@@ -105,7 +89,7 @@ class ProviderCascadeRouter(
             val provider = candidates.removeFirst().lowercase()
             if (provider in blocked) continue
 
-            atropos.core.thinking.Thinking.step("provider", "asking $provider")
+            atropos.core.thinking.Thinking.step("provider", "evaluating $provider")
 
             val descriptor = registry.getById(provider)
             if (descriptor != null && descriptor.hasCapability(ApiCapability.LOCAL_TOOL) && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
@@ -119,17 +103,36 @@ class ProviderCascadeRouter(
                 continue
             }
 
-            try {
-                ActiveProvider.set(provider)
-                beforeAttempt(provider)
-                val aiProvider = providerResolver?.invoke(provider) ?: factory.getProvider(provider)
+            var strike = 0
+            var prevSnapshot: ExecutionSnapshot? = null
 
-                // What was asked, in the operator's words rather than in the
-                // engine's. A trace that says "asking anthropic" and then goes
-                // quiet for ninety seconds has told the operator nothing they
-                // could not see from the spinner; a trace that says what the
-                // question was, and then what came back, is the run explaining
-                // itself.
+            while (strike < MathematicalRateLimitScheduler.MAX_STRIKES) {
+                strike++
+                atropos.core.thinking.Thinking.step(
+                    "provider",
+                    "asking $provider (strike $strike of ${MathematicalRateLimitScheduler.MAX_STRIKES})"
+                )
+
+                // 1. PER-PROVIDER FORMATTING ("Each According to Its Kind")
+                val activeKey = secretReader?.invoke(provider)
+                    ?: FallbackChainRegistry.getActiveKey(provider)
+                    ?: UniversalRequestAdapter.resolveApiKey(provider)
+
+                val formatted = UniversalRequestAdapter.translate(
+                    providerId = provider,
+                    prompt = prompt,
+                    context = context,
+                    apiKey = activeKey
+                )
+
+                atropos.core.thinking.Thinking.detail(
+                    "provider",
+                    "Universal Request Adapter translated payload for $provider [schema=${formatted.schemaType}, model=${formatted.model}]"
+                )
+
+                beforeAttempt(provider)
+                ActiveProvider.set(provider)
+
                 atropos.core.thinking.Narrate.provider.lookup(
                     store = provider,
                     query = firstLine(prompt),
@@ -137,128 +140,183 @@ class ProviderCascadeRouter(
                 )
                 atropos.core.thinking.Thinking.detail(
                     "provider",
-                    "$provider: sending ${prompt.length} characters" +
-                        (context?.let { " with ${it.length} characters of context" } ?: " with no extra context")
+                    "$provider: sending ${prompt.length} chars with native ${formatted.schemaType} schema"
                 )
 
                 val startedAt = System.currentTimeMillis()
-                val response = aiProvider.complete(prompt, context)
-                val elapsed = System.currentTimeMillis() - startedAt
+                val execResult: UniversalExecutionResult = try {
+                    if (providerResolver != null) {
+                        val aiProvider = providerResolver.invoke(provider)
+                        val res = aiProvider.complete(prompt, context)
+                        UniversalExecutionResult.Success(
+                            providerId = provider,
+                            text = res,
+                            rawResponse = res,
+                            durationMs = System.currentTimeMillis() - startedAt
+                        )
+                    } else {
+                        UniversalRequestAdapter.execute(formatted)
+                    }
+                } catch (failure: Exception) {
+                    val universalError = UniversalErrorParser.parseAny(failure)
+                    val is429 = universalError.category == UniversalErrorCategory.RATE_LIMIT_OVERLOAD ||
+                        failure.message?.contains("429") == true ||
+                        failure.message?.contains("rate limit", ignoreCase = true) == true
+                    UniversalExecutionResult.Failure(
+                        providerId = provider,
+                        statusCode = universalError.httpCode ?: if (is429) 429 else 500,
+                        message = failure.message ?: "$provider call failed",
+                        headers = emptyMap(),
+                        rawBody = universalError.raw,
+                        isRateLimit = is429,
+                        cause = failure
+                    )
+                }
 
-                if (!acceptResponse(response)) {
-                    val error = ProviderError(
+                if (execResult is UniversalExecutionResult.Success && acceptResponse(execResult.text)) {
+                    val elapsed = execResult.durationMs
+                    atropos.core.thinking.Thinking.step(
+                        "provider",
+                        "$provider answered in ${elapsed}ms, ${execResult.text.length} characters"
+                    )
+                    atropos.core.thinking.Thinking.detail(
+                        "provider",
+                        "$provider said: ${firstLine(execResult.text)}"
+                    )
+                    return ProviderCascadeResult(
+                        providerName = provider,
+                        response = execResult.text,
+                        errors = errors,
+                        contextEnvelope = contextEnvelope
+                    )
+                }
+
+                val isInvalid = execResult is UniversalExecutionResult.Success
+                val outputText = if (isInvalid) (execResult as UniversalExecutionResult.Success).text else (execResult as UniversalExecutionResult.Failure).rawBody
+                val currentSnapshot = ExecutionSnapshot(
+                    attemptNumber = strike,
+                    output = outputText,
+                    error = if (isInvalid) "Response rejected by acceptance predicate" else (execResult as UniversalExecutionResult.Failure).message
+                )
+
+                val classifiedError = if (isInvalid) {
+                    ProviderError(
                         provider = provider,
                         type = FailureType.INVALID_RESPONSE,
                         cleanMessage = "$provider returned an invalid response for this request"
                     )
-                    errors += error
-                    onFailure(error)
+                } else {
+                    val failure = execResult as UniversalExecutionResult.Failure
+                    classifier.classify(provider, failure.cause ?: RuntimeException(failure.message))
+                }
+
+                // 2. RATE-LIMIT SLEEP WITH BUFFER
+                val isRateLimit = !isInvalid && (
+                    (execResult as UniversalExecutionResult.Failure).isRateLimit ||
+                    classifiedError.type == FailureType.RATE_LIMITED
+                )
+
+                if (isRateLimit) {
+                    val failure = execResult as UniversalExecutionResult.Failure
+                    val retryAfterSec = MathematicalRateLimitScheduler.parseRetryAfterSeconds(
+                        headers = failure.headers,
+                        errorBody = failure.rawBody.ifBlank { failure.message }
+                    )
                     atropos.core.thinking.Thinking.step(
                         "provider",
-                        "$provider response rejected; trying the next eligible provider"
+                        "HTTP 429 / OTPM rate limit on $provider: retry-after delta ${retryAfterSec}s. Sleeping ${retryAfterSec + MathematicalRateLimitScheduler.BUFFER_SECONDS}s (+10s buffer)..."
                     )
-                    continue
-                }
-
-                atropos.core.thinking.Thinking.step(
-                    "provider",
-                    "$provider answered in ${elapsed}ms, ${response.length} characters"
-                )
-                atropos.core.thinking.Thinking.detail(
-                    "provider",
-                    "$provider said: ${firstLine(response)}"
-                )
-
-                return ProviderCascadeResult(
-                    providerName = provider,
-                    response = response,
-                    errors = errors,
-                    contextEnvelope = contextEnvelope
-                )
-            } catch (failure: Exception) {
-                val universalError = UniversalErrorParser.parseAny(failure)
-                atropos.core.thinking.Thinking.stream.emit(
-                    atropos.core.thinking.ThinkingDepth.L3,
-                    "provider $provider failed [${universalError.category}]: ${universalError.message} (raw=${universalError.raw})"
-                )
-
-                val classifiedError: ProviderError = classifier.classify(provider, failure)
-                errors.add(classifiedError)
-                onFailure(classifiedError)
-                val errorType: FailureType = classifiedError.type
-                val errorCleanMessage: String = classifiedError.cleanMessage
-                atropos.core.thinking.Thinking.step(
-                    "provider",
-                    "$provider did not answer ($errorType): $errorCleanMessage"
-                )
-
-                val parsedError = FallbackChainRegistry.parseError(failure)
-                var decision = FallbackChainRegistry.routeNext(provider, parsedError, candidates.toList())
-
-                if (universalError.category == UniversalErrorCategory.CONTEXT_EXCEEDED && decision.action != RoutingAction.ROUTE_HIGH_CONTEXT) {
-                    atropos.core.thinking.Thinking.stream.emit(
-                        atropos.core.thinking.ThinkingDepth.L3,
-                        "UniversalErrorParser detected CONTEXT_EXCEEDED on $provider — overriding route to ROUTE_HIGH_CONTEXT"
-                    )
-                    decision = RoutingDecision(
-                        action = RoutingAction.ROUTE_HIGH_CONTEXT,
-                        targetProvider = "gemini",
-                        reason = "UniversalErrorParser: context window exceeded"
-                    )
-                }
-
-                atropos.core.thinking.Thinking.detail(
-                    "provider",
-                    "routing decision: ${decision.action} (${decision.reason})"
-                )
-
-                when (decision.action) {
-                    RoutingAction.ROUTE_HIGH_CONTEXT -> {
-                        candidates.removeAll { it.lowercase() in FallbackChainRegistry.LOW_CONTEXT_MODELS }
-                        blocked.add(provider)
-                        val frontier = decision.targetProvider ?: "gemini"
-                        if (frontier !in blocked) {
-                            candidates.remove(frontier)
-                            candidates.addFirst(frontier)
-                            ActiveProvider.set(frontier)
-                        }
-                    }
-                    RoutingAction.ROTATE_KEY -> {
-                        val attempts = keyAttempts.getOrDefault(provider, 0) + 1
-                        keyAttempts[provider] = attempts
-                        if (attempts < 10 && FallbackChainRegistry.getActiveKey(provider) != null) {
-                            candidates.addFirst(provider)
-                        } else {
-                            blocked.add(provider)
-                        }
-                    }
-                    RoutingAction.NEXT_PARALLEL_PROVIDER -> {
-                        blocked.add(provider)
-                        decision.targetProvider?.let { next ->
-                            if (next !in blocked) {
-                                candidates.remove(next)
-                                candidates.addFirst(next)
-                                ActiveProvider.set(next)
-                            }
-                        }
-                    }
-                    RoutingAction.RELIABLE_FALLBACK -> {
-                        blocked.add(provider)
-                        decision.targetProvider?.let { next ->
-                            if (next !in blocked && !candidates.contains(next)) {
-                                candidates.addFirst(next)
-                                ActiveProvider.set(next)
-                            }
-                        }
-                    }
-                    RoutingAction.PIPELINE_EXHAUSTED -> {
-                        blocked.add(provider)
-                        candidates.clear()
-                        atropos.core.thinking.Thinking.step(
+                    MathematicalRateLimitScheduler.sleepWithBuffer(retryAfterSec) { totalSec ->
+                        atropos.core.thinking.Thinking.detail(
                             "provider",
-                            "total pipeline failure: all configured API keys and fallback providers exhausted"
+                            "Completed rate-limit backoff sleep of ${totalSec}s for $provider"
                         )
                     }
+                }
+
+                // 3. MATHEMATICAL PROGRESS 3-STRIKE RULE
+                if (strike == 1) {
+                    prevSnapshot = currentSnapshot
+                    atropos.core.thinking.Thinking.step(
+                        "provider",
+                        "Strike 1 failed on $provider ($classifiedError). Retrying SAME provider for strike 2..."
+                    )
+                    continue
+                } else if (strike == 2) {
+                    val progress = MathematicalRateLimitScheduler.computeProgress(
+                        previous = prevSnapshot ?: ExecutionSnapshot(1),
+                        current = currentSnapshot
+                    )
+                    atropos.core.thinking.Thinking.detail(
+                        "provider",
+                        "Strike 2 evaluation for $provider: ${progress.progressFormulaSummary}"
+                    )
+                    if (progress.hasProgress) {
+                        atropos.core.thinking.Thinking.step(
+                            "provider",
+                            "Mathematical progress detected (> 0) on $provider. Granting third and final retry strike."
+                        )
+                        prevSnapshot = currentSnapshot
+                        continue
+                    } else {
+                        atropos.core.thinking.Thinking.step(
+                            "provider",
+                            "No mathematical progress detected (Δ <= 0) on $provider after 2 strikes. Provider exhausted."
+                        )
+                        errors.add(classifiedError)
+                        onFailure(classifiedError)
+                        break
+                    }
+                } else {
+                    atropos.core.thinking.Thinking.step(
+                        "provider",
+                        "Strike 3 failed on $provider. All 3 strikes exhausted."
+                    )
+                    errors.add(classifiedError)
+                    onFailure(classifiedError)
+                    break
+                }
+            }
+
+            // 4. CASCADING RULES: Only cascade to the next provider after 3 failed strikes
+            blocked.add(provider)
+            val lastErr = errors.lastOrNull()
+            val parsedError = FallbackChainRegistry.parseError(lastErr?.cleanMessage.orEmpty())
+            var decision = FallbackChainRegistry.routeNext(provider, parsedError, candidates.toList())
+
+            when (decision.action) {
+                RoutingAction.ROUTE_HIGH_CONTEXT -> {
+                    candidates.removeAll { it.lowercase() in FallbackChainRegistry.LOW_CONTEXT_MODELS }
+                    val frontier = decision.targetProvider ?: "gemini"
+                    if (frontier !in blocked) {
+                        candidates.remove(frontier)
+                        candidates.addFirst(frontier)
+                        ActiveProvider.set(frontier)
+                    }
+                }
+                RoutingAction.ROTATE_KEY -> {
+                    val attempts = keyAttempts.getOrDefault(provider, 0) + 1
+                    keyAttempts[provider] = attempts
+                    if (attempts < 10 && FallbackChainRegistry.getActiveKey(provider) != null) {
+                        blocked.remove(provider)
+                        candidates.addFirst(provider)
+                    }
+                }
+                RoutingAction.NEXT_PARALLEL_PROVIDER,
+                RoutingAction.RELIABLE_FALLBACK -> {
+                    decision.targetProvider?.let { next ->
+                        if (next !in blocked && !candidates.contains(next)) {
+                            candidates.addFirst(next)
+                            ActiveProvider.set(next)
+                        }
+                    }
+                }
+                RoutingAction.PIPELINE_EXHAUSTED -> {
+                    candidates.clear()
+                    atropos.core.thinking.Thinking.step(
+                        "provider",
+                        "total pipeline failure: all configured fallback providers exhausted"
+                    )
                 }
             }
         }
@@ -282,7 +340,6 @@ class ProviderCascadeRouter(
         val paidApproval: ProviderApprovalCard? = paidApprovalAfterFreeExhaustion(cleanAggregate)
         val providerNameResult: String = if (paidApproval == null) "local_queue" else "paid_approval_required"
         val queueReasonResult: String = paidApproval?.render() ?: cleanAggregate
-        // Return a meaningful error response instead of empty string so the operator sees what happened
         val errorResponse = "No provider answered. All configured providers failed:\n$cleanAggregate\n\nIf you need a paid provider, approve it first. Otherwise check your API keys and network."
         return ProviderCascadeResult(
             providerName = providerNameResult,
@@ -296,13 +353,6 @@ class ProviderCascadeRouter(
         )
     }
 
-    /**
-     * The gist of a prompt or an answer for the trace.
-     *
-     * The first non-blank line, clipped. Narrating a whole prompt would put a
-     * research brief into the terminal and narrating a whole answer would put
-     * the run's output there twice.
-     */
     private fun firstLine(text: String): String {
         val line = text.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
         return if (line.length <= GIST_CELLS) line else line.take(GIST_CELLS) + "…"
@@ -364,18 +414,14 @@ class ProviderCascadeRouter(
     }
 
     companion object {
-        /** How much of a prompt or an answer one narrated line carries. */
         const val GIST_CELLS = 100
 
-        /** Creates a secret reader that checks environment variables, config, AND the vault. */
         fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
             val config = AtroposConfig.load()
             val vaultInstance = vault ?: TokenIsolationVault()
             return { envVar ->
-                // 1. Environment variables (highest priority)
                 val envValue = System.getenv(envVar)
                 if (envValue != null && envValue.isNotBlank()) envValue else {
-                    // 2. AtroposConfig keys (from ~/.atropos/config.json)
                     val configKeyName = envVar.lowercase()
                         .replace("_api_key", "")
                         .replace("_key", "")
@@ -388,7 +434,6 @@ class ProviderCascadeRouter(
                         else -> null
                     }
                     if (configValue != null && configValue.isNotBlank()) configValue else {
-                        // 3. Vault (encrypted files)
                         runCatching { vaultInstance.readSecret(envVar) }.getOrNull()
                     }
                 }
