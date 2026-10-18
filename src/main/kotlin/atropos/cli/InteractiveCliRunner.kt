@@ -151,11 +151,34 @@ object InteractiveCliRunner {
                         }
                     }
 
+                    val modalStateMachine = atropos.cli.ui.CliModalStateMachine(atropos.cli.ui.TerminalTheme(capabilities))
                     redraw()
 
                     inputLoop@ while (true) {
                         if (commands.hasExited()) break@inputLoop
                         val key = keys.readKey() ?: break
+
+                        if (modalStateMachine.isModalActive()) {
+                            when (val outcome = modalStateMachine.handleKey(key, ui.viewportWidth)) {
+                                is atropos.cli.ui.CliModalStateMachine.ModalOutcome.Redraw -> {
+                                    ui.renderBlock(modalStateMachine.render(ui.viewportWidth))
+                                    continue@inputLoop
+                                }
+                                is atropos.cli.ui.CliModalStateMachine.ModalOutcome.Dismiss -> {
+                                    prompt.clear()
+                                    redraw()
+                                    continue@inputLoop
+                                }
+                                is atropos.cli.ui.CliModalStateMachine.ModalOutcome.Execute -> {
+                                    prompt.clear()
+                                    ui.commitPrompt(outcome.command, prompt.mode.name)
+                                    commands.submit(outcome.command)
+                                    redraw()
+                                    continue@inputLoop
+                                }
+                                is atropos.cli.ui.CliModalStateMachine.ModalOutcome.None -> Unit
+                            }
+                        }
 
                         try {
                             if (key == KeyEvent.Enter && !prompt.isPaletteGroupLevel()) {
@@ -239,7 +262,13 @@ object InteractiveCliRunner {
                                     redraw()
                                 }
 
-                                else -> redraw()
+                                else -> {
+                                    if (modalStateMachine.checkAutoTrigger(prompt.text)) {
+                                        ui.renderBlock(modalStateMachine.render(ui.viewportWidth))
+                                    } else {
+                                        redraw()
+                                    }
+                                }
                             }
                         } catch (failure: Exception) {
                             ui.renderError(

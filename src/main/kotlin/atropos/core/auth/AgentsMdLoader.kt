@@ -84,8 +84,8 @@ class AgentsMdLoader(
             "AGENTS.md",
             "Agents.md",
             "agents.md",
-            "CLAUDE.md",
-            ".cursorrules"
+            "ATROPOS.md",
+            ".atroposrules"
         )
     }
 }

@@ -68,6 +68,7 @@ class CommandRouter(
     )
 
     private val theme = TerminalTheme(atropos.cli.config.ConfigurationManager())
+    private val frequencyStore: atropos.cli.taxonomy.FrequencyStore = atropos.cli.taxonomy.CommandFrequencyRankingStore()
     private val dashboardRenderer = DashboardRenderer(theme)
     private val dialogRenderer = DialogRenderer(theme)
     private val commandRegistryRenderer = CommandRegistryRenderer(theme)
@@ -221,6 +222,17 @@ class CommandRouter(
             }
         }
 
+        val prefixOutcome = ByteZeroPrefixInterceptor.intercept(
+            input = input,
+            uiEngine = uiEngine,
+            theme = theme,
+            repoRoot = AtroposRepoRootLocator.resolve(),
+            currentProviderName = { currentProviderName },
+            tracker = sessionTracker,
+            shellCommand = shellCommand
+        )
+        if (prefixOutcome != null) return prefixOutcome
+
         val intercepted = ShellCommandIntercept.intercept(input.trim())
         if (intercepted != input.trim() && intercepted.startsWith("/")) {
             return handleSingleInput(intercepted)
@@ -257,6 +269,7 @@ class CommandRouter(
         }
 
         val first = routedTokens.first().lowercase()
+        frequencyStore.recordUsage(first)
         if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
             if (first == "?") {
                 val modal = atropos.cli.ui.QuestionMarkModalRenderer(theme)
@@ -404,31 +417,22 @@ class CommandRouter(
                     )
                 } else {
                     val trimmed = original.trimStart()
-                    val isMentionContext = trimmed.startsWith("@")
-                    if (!isMentionContext) {
-                        naturalLanguageRiskGuard.classify(trimmed)?.let { risk ->
-                            promptSupport.pendingRiskyNaturalLanguage = trimmed
-                            promptSupport.renderRiskConfirmation(risk.name.lowercase(), trimmed)
-                            return RouterOutcome.CONTINUE
-                        }
-                        if (tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true)) {
-                            promptSupport.announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
-                            uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
-                        } else {
-                            providerChatDispatcher.dispatch(trimmed, currentProviderName)
-                        }
+                    if (ByteZeroPrefixInterceptor.isInterceptableByteZero(trimmed)) {
+                        uiEngine.renderNotice("local modifier intercepted: ${trimmed.first()}")
                         return RouterOutcome.CONTINUE
                     }
-                    val entry = nlEntryPipeline.accept(original, atropos.core.nl.NlSource.CLI_PROMPT)
-                    entry.notice()?.let(uiEngine::renderNotice)
-                    val canonical = entry.envelope.canonical
-
-                    naturalLanguageRiskGuard.classify(canonical)?.let { risk ->
-                        promptSupport.pendingRiskyNaturalLanguage = canonical
-                        promptSupport.renderRiskConfirmation(risk.name.lowercase(), canonical)
+                    naturalLanguageRiskGuard.classify(trimmed)?.let { risk ->
+                        promptSupport.pendingRiskyNaturalLanguage = trimmed
+                        promptSupport.renderRiskConfirmation(risk.name.lowercase(), trimmed)
                         return RouterOutcome.CONTINUE
                     }
-                    providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
+                    if (tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true)) {
+                        promptSupport.announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
+                        uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                    } else {
+                        providerChatDispatcher.dispatch(trimmed, currentProviderName)
+                    }
+                    return RouterOutcome.CONTINUE
                 }
                 RouterOutcome.CONTINUE
             }

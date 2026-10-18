@@ -436,6 +436,9 @@ object CommandCatalog {
         CommandEntry("/batch", "schedule parallel wave lanes with disjoint locks", "Agent"),
         CommandEntry("/simplify", "refactor AST for complexity reduction", "Agent"),
         CommandEntry("/map", "semantic repository map across AST symbol lattices", "Repository"),
-        CommandEntry("/lint", "execute syntax and AST linters emitting diagnostic vectors", "Verification")
+        CommandEntry("/lint", "execute syntax and AST linters emitting diagnostic vectors", "Verification"),
+        CommandEntry("/rewind", "revert repository tree to target CAS hash or checkpoint", "Repository", aliases = listOf("/rollback"), example = "/rewind HEAD~1"),
+        CommandEntry("/test", "run local test suite runner with timeout bounding", "Verification", aliases = listOf("/tests"), example = "/test"),
+        CommandEntry("/keybinding", "interactive binder for custom user-defined keyboard macros", "Session", aliases = listOf("/keybindings"), example = "/keybinding")
     )
 }

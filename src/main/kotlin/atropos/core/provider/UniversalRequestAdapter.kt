@@ -107,7 +107,11 @@ object UniversalRequestAdapter {
             clean == "openai" -> ModelDiscoveryEngine.resolveModel(clean, "gpt-4o-mini")
             clean == "xai" -> "grok-2-latest"
             clean == "sambanova" -> "Meta-Llama-3.3-70B-Instruct"
-            clean == "deepseek_direct" -> "deepseek-chat"
+            clean == "deepseek_direct" || clean == "deepseek" -> "deepseek-chat"
+            clean == "together" -> "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+            clean == "cerebras" -> "llama3.1-70b"
+            clean == "nvidia" -> "meta/llama-3.1-70b-instruct"
+            clean == "mistral" -> "mistral-large-latest"
             clean == "ollama" -> System.getenv("OLLAMA_MODEL") ?: "llama3.2:1b"
             else -> ProviderModelResolver.DEFAULT.resolve(clean, "default-model")
         }
@@ -127,7 +131,11 @@ object UniversalRequestAdapter {
             "github_models" -> listOf("GITHUB_MODELS_TOKEN")
             "cloudflare_ai" -> listOf("CLOUDFLARE_API_TOKEN")
             "sambanova" -> listOf("SAMBANOVA_API_KEY")
-            "deepseek_direct" -> listOf("DEEPSEEK_API_KEY")
+            "deepseek_direct", "deepseek" -> listOf("DEEPSEEK_API_KEY")
+            "together" -> listOf("TOGETHER_API_KEY")
+            "cerebras" -> listOf("CEREBRAS_API_KEY")
+            "nvidia" -> listOf("NVIDIA_API_KEY")
+            "mistral" -> listOf("MISTRAL_API_KEY")
             else -> listOf("${clean.uppercase(Locale.US)}_API_KEY", "${clean.uppercase(Locale.US)}_KEY")
         }
         for (k in envKeys) {
@@ -174,7 +182,11 @@ object UniversalRequestAdapter {
             "xai" -> "https://api.x.ai/v1/chat/completions"
             "github_models" -> "https://models.inference.ai.azure.com/chat/completions"
             "sambanova" -> "https://api.sambanova.ai/v1/chat/completions"
-            "deepseek_direct" -> "https://api.deepseek.com/chat/completions"
+            "deepseek_direct", "deepseek" -> "https://api.deepseek.com/chat/completions"
+            "together" -> "https://api.together.xyz/v1/chat/completions"
+            "cerebras" -> "https://api.cerebras.ai/v1/chat/completions"
+            "nvidia" -> "https://integrate.api.nvidia.com/v1/chat/completions"
+            "mistral" -> "https://api.mistral.ai/v1/chat/completions"
             "ollama" -> (System.getenv("OLLAMA_HOST") ?: "http://127.0.0.1:11434").trimEnd('/') + "/api/generate"
             else -> "https://api.openai.com/v1/chat/completions"
         }

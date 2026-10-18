@@ -51,7 +51,7 @@ class BeautifulBoxSystem(
 
     companion object {
         const val NAVIGATION_CHROME_DEFAULT =
-            "Keyboard: ↑/↓ Navigate  ←/→ Expand/Switch  enter Select  esc Close"
+            "Keyboard: ↑/↓ Navigate  ←/→ Expand/Switch  Tab Cycle  Enter Select  Esc Close"
     }
 
     fun renderBox(

@@ -13,6 +13,8 @@ import java.security.MessageDigest
  * commands, provides alphabetical remainder, supports global and per-project
  * scoping, and emits cryptographic evidence receipts on mutation.
  */
+typealias FrequencyStore = CommandFrequencyRankingStore
+
 class CommandFrequencyRankingStore(
     private val memoryLattice: MemoryLayerLattice = MemoryLayerLattice()
 ) {

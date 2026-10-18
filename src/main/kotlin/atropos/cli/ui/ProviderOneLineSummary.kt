@@ -12,8 +12,8 @@ package atropos.cli.ui
  * the operator needs, and a line showing only one of the pair hides a
  * mis-route completely.
  *
- * When one name contains the other — `sonnet` resolving to
- * `claude-3-5-sonnet` — only the resolved form is shown. Repeating a substring
+ * When one name contains the other — `llama` resolving to
+ * `llama-3.3-70b` — only the resolved form is shown. Repeating a substring
  * of the answer next to the answer spends characters to say nothing.
  *
  * Cost and quota shed first as the width tightens, because both are available

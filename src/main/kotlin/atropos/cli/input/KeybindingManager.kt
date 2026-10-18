@@ -140,28 +140,33 @@ class KeybindingManager(
     }
 
     fun renderMenu(width: Int = 80): String {
-        val sb = StringBuilder()
-        sb.append("┌─ ATROPOS KEYBINDINGS & MOBILE NUMBER-SIGN MACROS ────────┐\n")
-        sb.append("│ Keyboard: ↑/↓ Navigate   ←/→ Switch View   esc Close    │\n")
-        sb.append("├──────────────────────────────────────────────────────────┤\n")
-        sb.append("│ CANONICAL SHORTCUTS (34 items):                          │\n")
+        val safeWidth = width.coerceAtLeast(60)
+        val innerWidth = safeWidth - 4
+        val content = mutableListOf<String>()
+        content.add("CANONICAL SHORTCUTS (34 items):")
         for (sc in CANONICAL_SHORTCUTS) {
             val keyCol = sc.key.padEnd(16)
-            val descCol = sc.description.take(width - 24)
-            sb.append("│  $keyCol $descCol\n")
+            val descCol = sc.description.take((innerWidth - 18).coerceAtLeast(10))
+            content.add("  $keyCol $descCol")
         }
-        sb.append("├──────────────────────────────────────────────────────────┤\n")
-        sb.append("│ ACTIVE MOBILE MACROS (#<ABC> -> ACTION):                 │\n")
+        content.add("─".repeat(innerWidth))
+        content.add("ACTIVE MOBILE MACROS (#<ABC> -> ACTION):")
         val active = listBindings()
         if (active.isEmpty()) {
-            sb.append("│  (no custom macros registered; use /keybinding bind #...)│\n")
+            content.add("  (no custom macros registered; use /keybinding bind #...)")
         } else {
             for ((k, v) in active) {
-                sb.append("│  #${k.padEnd(14)} -> $v\n")
+                content.add("  #${k.padEnd(14)} -> $v")
             }
         }
-        sb.append("└──────────────────────────────────────────────────────────┘\n")
-        return sb.toString()
+        val box = atropos.cli.ui.BeautifulBoxSystem().renderBox(
+            title = "ATROPOS KEYBINDINGS & MOBILE NUMBER-SIGN MACROS",
+            contentLines = content,
+            width = safeWidth,
+            borderStyle = atropos.cli.ui.BeautifulBoxSystem.BorderStyle.ROUNDED,
+            navigationChrome = "Keyboard: ↑/↓ Navigate  ←/→ Expand/Switch  Tab Cycle  Enter Select  Esc Close"
+        )
+        return box.joinToString("\n")
     }
 
     private fun loadCustomBindings() {

@@ -252,7 +252,7 @@ class AgentCommand(
 
     private fun importContext(arguments: List<String>): AgentCommandOutcome {
         if (arguments.firstOrNull()?.lowercase() != "import" || arguments.size != 2) {
-            return invalid("usage: /agent context import <cursor-rules-or-copilot-instructions-file>")
+            return invalid("usage: /agent context import <atropos-rules-or-instruction-file>")
         }
         return importedInstructionPacks.import(arguments[1]).fold(
             onSuccess = { pack -> AgentCommandOutcome.Completed(
