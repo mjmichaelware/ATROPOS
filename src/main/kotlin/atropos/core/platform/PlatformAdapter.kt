@@ -4,13 +4,18 @@ import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
+sealed class ToolResolutionResult {
+    data class Found(val path: Path) : ToolResolutionResult()
+    data class Missing(val binaryName: String, val searchedDirs: List<String>) : ToolResolutionResult()
+}
+
 interface PlatformAdapter {
     val targetPlatform: RuntimePlatform
     fun adapt(abstraction: PlatformAbstraction): PlatformAbstraction
     fun isAvailable(): Boolean
     val displayName: String
 
-    fun resolveToolPath(binaryName: String): Path {
+    fun resolveTool(binaryName: String): ToolResolutionResult {
         val pathEnv = System.getenv("PATH").orEmpty()
         val pathEntries = pathEnv.split(java.io.File.pathSeparator).filter { it.isNotBlank() }.toMutableList()
         val extraSearchDirs = listOf(
@@ -26,12 +31,19 @@ interface PlatformAdapter {
             }
         }
         for (dir in pathEntries) {
-            val candidate = Path.of(dir, binaryName)
-            if (java.nio.file.Files.isExecutable(candidate) || java.nio.file.Files.exists(candidate)) {
-                return candidate
+            val candidate = java.io.File(dir, binaryName)
+            if (candidate.canExecute() || (candidate.exists() && candidate.isFile)) {
+                return ToolResolutionResult.Found(candidate.toPath())
             }
         }
-        return Path.of(binaryName)
+        return ToolResolutionResult.Missing(binaryName, pathEntries)
+    }
+
+    fun resolveToolPath(binaryName: String): Path {
+        return when (val res = resolveTool(binaryName)) {
+            is ToolResolutionResult.Found -> res.path
+            is ToolResolutionResult.Missing -> Path.of(binaryName)
+        }
     }
 
     fun getHomeDirectory(): Path {

@@ -15860,3 +15860,17 @@ End of AGENTS.md
   - Implemented 5-Stage Execution Gate Pipeline (`TOIG`, `MUTATION_TESTING`, `GOVERNED_COMPILE`, `CAPABILITY_ATTENUATION`, `REPRODUCIBILITY_CERTIFICATE`) with `FakeSuccessException`.
   - Enforced strict $\le 500$ LOC ceiling across all modified/created Kotlin files.
 - Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
+
+### 2026-10-18T03:11Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: batch-4-5-hardware-binary-discovery-and-unified-runtime-matrix
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt` (+2/-2 / fixed List<String> renderBlock calls for /config and /keybinding)
+  - `src/main/kotlin/atropos/core/config/AtroposUnifiedConfig.kt` (+12/-12 / aligned exact Batch 5 defaults and option matrices)
+  - `src/main/kotlin/atropos/core/platform/PlatformAdapter.kt` (+18/-7 / added ToolResolutionResult Found/Missing and canExecute check)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Batch 4 Hardware Agnosticism & Binary Discovery, Batch 5 Unified Shortcut & Config Runtime.
+- Predicate moved:
+  - Implemented `ToolResolutionResult` (`Found`/`Missing`) and executable bit verification (`canExecute()`) in `PlatformAdapter.resolveTool()` ensuring dynamic PATH scanning without throwing fatal exceptions on missing binaries.
+  - Configured canonical defaults for `atropos.config.json` per Batch 5 specifications (`Agent_Mode=supervised`, `Animation_Speed=fast`, `Color_Scheme=atropos-dark`, `Enable_Telemetry=local-only`, `Non-Workspace_Access=prompt`, `Notifications=terminal-bell`, `Max_Context_Tokens=64k`, `Show_Tips=unread-only`).
+  - Resolved compiler type mismatch in `CommandSecondaryDispatcher.kt` by converting rendered blocks to `lines()`.
+  - Enforced strict $\le 500$ LOC ceiling across all modified files.
+- Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
