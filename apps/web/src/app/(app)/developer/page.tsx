@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
+'use client';
 
 import { SpecGraphPage } from './specgraph/page';
 import { EvidenceLedgerBrowser } from '@/components/evidence/evidence-ledger-browser';

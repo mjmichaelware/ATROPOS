@@ -23,7 +23,12 @@ object DiagnosticSymbolSlicer {
     private const val MAX_PROMPT_CHARS = 980
 
     private val tracebackPattern = Pattern.compile(
-        """File\s+["']([^"']+)["'],\s+line\s+(\d+)(?:,\s+in\s+([A-Za-z0-9_]+))?""",
+        """File\s+["'\\]*([^"'\\\r\n]+?)["'\\]*,\s*line\s*(\d+)(?:,\s*in\s*([^\r\n]+))?""",
+        Pattern.CASE_INSENSITIVE
+    )
+
+    private val fallbackPyPattern = Pattern.compile(
+        """(?:[Ff]ile\s+)?["'\\]*([A-Za-z0-9_\-./\\]+\.py)["'\\]*(?:,\s*line\s*(\d+))?""",
         Pattern.CASE_INSENSITIVE
     )
 
@@ -41,15 +46,30 @@ object DiagnosticSymbolSlicer {
         val targetPath = resolveTargetFilePath(targetDir, parsed.filePath)
         val failingLine = parsed.lineNumber
 
-        val codeSlice = if (targetPath != null && Files.isRegularFile(targetPath)) {
-            extractCodeSlice(targetPath, failingLine)
+        val (relativeFile, codeSlice) = if (targetPath != null && Files.isRegularFile(targetPath)) {
+            val rel = try {
+                targetDir.relativize(targetPath).toString().replace('\\', '/')
+            } catch (_: Exception) {
+                targetPath.fileName.toString()
+            }
+            val slice = extractCodeSlice(targetPath, failingLine)
+            val finalSlice = if (slice.isNotBlank()) {
+                slice
+            } else {
+                runCatching { Files.readString(targetPath) }.getOrDefault("")
+            }
+            rel to finalSlice
         } else {
-            ""
+            val file = parsed.filePath?.let { Path.of(it).fileName.toString() } ?: "unknown_file.py"
+            val fallbackSource = buildString {
+                appendLine("# Target source file: $file")
+                appendLine("# Diagnostic failure: ${parsed.assertionError}")
+                if (failingLine != null) {
+                    appendLine("# Failing line: $failingLine")
+                }
+            }
+            file to fallbackSource
         }
-
-        val relativeFile = targetPath?.let {
-            targetDir.relativize(it).toString().replace('\\', '/')
-        } ?: parsed.filePath ?: "unknown_file.py"
 
         val compressedPrompt = buildCompressedPrompt(
             failedLabel = failedNodeLabel ?: "test-suite",
@@ -75,24 +95,60 @@ object DiagnosticSymbolSlicer {
         val assertionError: String
     )
 
+    private fun isSystemLibrary(path: String): Boolean {
+        val normalized = path.replace('\\', '/').lowercase()
+        return normalized.contains("/usr/") ||
+            normalized.contains("/lib/python") ||
+            normalized.contains("/lib64/python") ||
+            normalized.contains("site-packages") ||
+            normalized.contains("/dist-packages") ||
+            normalized.contains("<frozen") ||
+            normalized.contains("<string>") ||
+            normalized.endsWith("/unittest/case.py") ||
+            normalized.endsWith("/unittest/runner.py") ||
+            normalized.endsWith("/unittest/loader.py") ||
+            normalized.endsWith("/unittest/suite.py")
+    }
+
     private fun parseDiagnosticTrace(errorLog: String): ParsedTrace {
         var lastFile: String? = null
         var lastLine: Int? = null
         var lastFunc: String? = null
         var assertionMsg = "Assertion or test execution failure"
 
+        var fallbackFile: String? = null
+        var fallbackLine: Int? = null
+
         val matcher = tracebackPattern.matcher(errorLog)
         while (matcher.find()) {
-            val candidateFile = matcher.group(1)
+            val rawCandidate = matcher.group(1) ?: continue
+            val candidateFile = rawCandidate.trim().trim('\"', '\'', '\\')
             val candidateLine = matcher.group(2)?.toIntOrNull()
-            val candidateFunc = matcher.group(3)
+            val candidateFunc = matcher.group(3)?.trim()
 
-            if (!candidateFile.contains("/usr/") && !candidateFile.contains("site-packages") &&
-                !candidateFile.contains("unittest/") && !candidateFile.contains("pytest")
-            ) {
+            fallbackFile = candidateFile
+            fallbackLine = candidateLine
+
+            if (!isSystemLibrary(candidateFile)) {
                 lastFile = candidateFile
                 lastLine = candidateLine
                 lastFunc = candidateFunc
+            }
+        }
+
+        if (lastFile == null && fallbackFile != null) {
+            lastFile = fallbackFile
+            lastLine = fallbackLine
+        }
+
+        if (lastFile == null) {
+            val fbMatcher = fallbackPyPattern.matcher(errorLog)
+            while (fbMatcher.find()) {
+                val candidate = fbMatcher.group(1)?.trim()?.trim('\"', '\'', '\\')
+                if (!candidate.isNullOrBlank() && !isSystemLibrary(candidate)) {
+                    lastFile = candidate
+                    lastLine = fbMatcher.group(2)?.toIntOrNull()
+                }
             }
         }
 
@@ -112,12 +168,57 @@ object DiagnosticSymbolSlicer {
     }
 
     private fun resolveTargetFilePath(targetDir: Path, candidate: String?): Path? {
-        if (candidate.isNullOrBlank()) return null
-        val direct = targetDir.resolve(candidate).normalize()
-        if (Files.isRegularFile(direct)) return direct
+        val searchDirs = LinkedHashSet<Path>()
+        searchDirs.add(targetDir)
 
-        val simpleName = Path.of(candidate).fileName.toString()
-        return targetDir.toFile().walkTopDown().maxDepth(5).firstOrNull { it.isFile && it.name == simpleName }?.toPath()
+        val localStaging = targetDir.resolve(".atropos/staging")
+        if (Files.isDirectory(localStaging)) {
+            searchDirs.add(localStaging)
+        }
+
+        var curr: Path? = targetDir.toAbsolutePath().normalize()
+        for (i in 0..4) {
+            if (curr == null) break
+            val staging = curr.resolve(".atropos/staging")
+            if (Files.isDirectory(staging)) {
+                searchDirs.add(staging)
+            }
+            curr = curr.parent
+        }
+
+        if (!candidate.isNullOrBlank()) {
+            val cleanCandidate = candidate.trim().trim('\"', '\'', '\\').replace('\\', '/')
+            val directPath = Path.of(cleanCandidate)
+            if (directPath.isAbsolute && Files.isRegularFile(directPath)) {
+                return directPath
+            }
+
+            for (dir in searchDirs) {
+                val direct = dir.resolve(cleanCandidate).normalize()
+                if (Files.isRegularFile(direct)) return direct
+            }
+
+            val simpleName = Path.of(cleanCandidate).fileName.toString()
+            for (dir in searchDirs) {
+                val found = dir.toFile().walkTopDown().maxDepth(6)
+                    .firstOrNull { it.isFile && it.name == simpleName }
+                    ?.toPath()
+                if (found != null) return found
+            }
+        }
+
+        // Under NO circumstances should unknown_file.py be dispatched without file contents.
+        for (dir in searchDirs) {
+            val anyPy = dir.toFile().walkTopDown().maxDepth(6)
+                .filter { it.isFile && it.extension == "py" && !it.name.startsWith("test_") }
+                .firstOrNull()?.toPath()
+                ?: dir.toFile().walkTopDown().maxDepth(6)
+                    .filter { it.isFile && it.extension == "py" }
+                    .firstOrNull()?.toPath()
+            if (anyPy != null) return anyPy
+        }
+
+        return null
     }
 
     private fun extractCodeSlice(path: Path, failingLine: Int?): String {

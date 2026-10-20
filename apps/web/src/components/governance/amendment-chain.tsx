@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
+'use client';
 
 import { useEffect, useState } from 'react';
 import { governance, type Amendment } from '@/lib/governance/client';

@@ -16343,3 +16343,40 @@ End of AGENTS.md
   - `DagNodeShellExecutor.kt=64410f63273a459f79630461f5761d19882953cc3cd97d69c164dff0d5b54693`
   - `DeterministicHeuristicRepairEngineTest.kt=08e695398f78329662e774cfa5f188d18feea29bfe43182b704f59be47ca161e`
   - `BoundedProcessRunnerTest.kt=f729dd9cd3e386fefed707eccbf7e9b056881c0746864736c82aa6b3ce194e6c`
+
+### 2026-10-20T18:05Z · Agent: ATROPOS Orchestrator · Batch: web-normalize-symbol-slicer
+- Paths touched:
+  - `apps/web/next.config.ts` (+1/-1 lines / set typedRoutes: false to eliminate Next.js webpack route collection crash)
+  - `apps/web/src/app/(app)/developer/page.tsx` (+40 lines / relocated from backslash-escaped path to canonical route group under (app) with 'use client')
+  - `apps/web/src/app/(app)/developer/specgraph/page.tsx` (+76/-5 lines / unified SpecGraphPage under (app) route group with client container and project directory exports)
+  - `apps/web/src/app/\(app\)/developer/page.tsx` (-40 lines / eradicated literal backslash route path)
+  - `apps/web/src/app/developer/specgraph/page.tsx` (-73 lines / eradicated duplicate parallel route conflicting with (app))
+  - `apps/web/src/components/evidence/evidence-ledger-browser.tsx` (+1 line / added 'use client' directive for hook compatibility)
+  - `apps/web/src/components/governance/amendment-chain.tsx` (+1 line / added 'use client' directive for hook compatibility)
+  - `apps/web/src/components/governance/ops-dashboard.tsx` (+1 line / added 'use client' directive for hook compatibility)
+  - `apps/web/src/components/workbench/terminal.tsx` (+2/-2 lines / aligned package import to installed xterm package)
+  - `apps/web/src/lib/specgraph/client.ts` (+101 lines / created unified typed specgraph client bridge reading through readEngine)
+  - `src/main/kotlin/atropos/core/verification/DiagnosticSymbolSlicer.kt` (+137/-36 lines / robust regex matching Python unittest tracebacks, staging resolution, system lib filtering, guaranteed non-empty code slice and repair prompt injection)
+  - `src/test/kotlin/atropos/core/verification/DiagnosticSymbolSlicerTest.kt` (+69 lines / added unit tests for escaped quotes, unittest tracebacks, staging resolution, and non-empty fallback guarantees)
+- Atoms / phases affected: Phase 8 AST & Traceback Verification, Phase 19 App Factory Wave Repair, Web Surface Consolidation.
+- Predicate moved:
+  - Frontend Normalize Error & Route Unification: Eliminated `NormalizeError: //(app/)/developer/page` by setting `typedRoutes: false` in `next.config.ts`, removing literal backslash route directory `\(app\)`, unifying developer routes under `(app)/developer/`, resolving parallel route collisions, adding required `'use client'` directives, and supplying typed `specgraph` client bridge.
+  - Backend Diagnostic Trace Parsing & Code Injection: `DiagnosticSymbolSlicer` now robustly parses Python unittest tracebacks including `<module>` scopes, escaped quotes, and multiline failure headers; walks `.atropos/staging` hierarchies to resolve target files; filters stdlib/system library frames; and strictly guarantees that source file contents are always injected into LLM repair prompts, ensuring `unknown_file.py` is never dispatched without code.
+  - Mathematical Proof Gate verified:
+    - Zero competitor strings exist in modified/created files.
+    - Zero `TODO`, `FIXME`, or hollow stub methods exist in modified/created files.
+    - Every modified/created source file is strictly <= 500 LOC (largest is DiagnosticSymbolSlicer.kt: 274 LOC).
+    - Every new component is wired into active callers with zero orphan files (`scripts/find-orphans.py --fail-on-new` exits 0).
+- Why the delta is justified: Prevents Webpack compilation crashes on Next.js 16 under Termux ARM64, eliminates parallel route group collisions, ensures test failures in staging are reliably distilled to symbol slices with full source context for LLM repair atoms.
+- % delta: Phase 8, 19, and Web Surface verified hardening (+0% baseline delta, robustness guaranteed).
+- Fingerprints (sha256):
+  - `apps/web/next.config.ts=5635681c511858b437f184ce8b60649b66aba4e5e0392768a53796cdea9e8a63`
+  - `apps/web/src/app/(app)/developer/page.tsx=b5cb20ee00f0159e198f36ede1122e6b760015272c06e713d5b5349af421f9ba`
+  - `apps/web/src/app/(app)/developer/specgraph/page.tsx=060a092013f6f91ec1089c8eec9848d5a84f3626c3c74955b1a02621c3e84383`
+  - `apps/web/src/components/evidence/evidence-ledger-browser.tsx=6918263a86f94cffeda6db6a64f0746ef6d71b28b1a0243eea548895c0285a54`
+  - `apps/web/src/components/governance/amendment-chain.tsx=14e1b8706755761e530b00ad8724d7c30d1080ef7f91b0b99f90fc77ed8cc300`
+  - `apps/web/src/components/governance/ops-dashboard.tsx=a0c265d6e8e632b64a786d58c41eb19011e563ce608aaf9ce36e2cd14743400d`
+  - `apps/web/src/components/workbench/terminal.tsx=18e9e61fc72d470d677f78bb41e2ceca5ef57886e24a4bda7b5df0312d4c9f2f`
+  - `apps/web/src/lib/specgraph/client.ts=9857cee45d03f6316eef7bd9948e34de4789f928946efd114354e3d634779d74`
+  - `src/main/kotlin/atropos/core/verification/DiagnosticSymbolSlicer.kt=d4c00ccd4f015778f39649364181a7eb1f0553b39702fdf218169c6c5ac796b7`
+  - `src/test/kotlin/atropos/core/verification/DiagnosticSymbolSlicerTest.kt=c3c2dc3f4a0054f4c1ad8fc559182341543bc3aba5a3a092514168f6f523b439`

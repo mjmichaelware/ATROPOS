@@ -12,11 +12,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { SerializeAddon } from '@xterm/addon-serialize';
-import '@xterm/xterm/css/xterm.css';
+import 'xterm/css/xterm.css';
 
 interface TerminalProps {
   /** Optional project ID for scoping the terminal session. */

@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   reactStrictMode: true,
-  typedRoutes: true,
+  typedRoutes: false,
   productionBrowserSourceMaps: false,
   images: {
     remotePatterns: [],
