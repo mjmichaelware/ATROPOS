@@ -16,6 +16,7 @@ import atropos.core.provider.AdversarialResponseNormalizer
 import atropos.core.provider.PatchApplicationResult
 import atropos.core.thinking.Thinking
 import atropos.core.verification.DiagnosticSymbolSlicer
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant

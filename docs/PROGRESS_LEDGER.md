@@ -16429,7 +16429,7 @@ End of AGENTS.md
 - % delta: Phase 19 robustness (+0% baseline delta, zero crash guarantee).
 - Fingerprints (sha256):
   - `AppFactoryRouter.kt=91e6529357ca33098a02e04365c70bcbdfe3d927b513a15aa83d6db220965aa0`
-  - `FactoryRepairRouter.kt=5d5027eb87c09739358bf1a88959ab06f84f453fdace7890424f3bd292626f10`
+  - `FactoryRepairRouter.kt=cb8a510c84016ec763c91af6ad0ed7ef081d442662e6b97186be2114ec3f5195`
   - `FactoryRunOrchestrator.kt=e886d5fcb76fd5b003e54989e491d48454eaf5de9315128165617af63f937234`
   - `FactoryCompletionVerifier.kt=51446b0fc2dd544c69cd20b2edf0d37f99d0d0e2900447be77c8a029e1689760`
   - `AppFactoryRouterTest.kt=10c9e4dfe98dd3276f348aaa2afdfda3b64b934ed971a86fae7da5188ac276ad`
