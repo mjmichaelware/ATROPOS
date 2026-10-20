@@ -1,6 +1,5 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import type { NextConfig } from "next";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +24,8 @@ const securityHeaders = [
   },
 ];
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   /**
    * The workspace root, stated rather than inferred.
    *
