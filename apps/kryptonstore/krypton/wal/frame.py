@@ -1,4 +1,4 @@
-\"\"\"WAL Engine: Binary frame serializer/deserializer with CRC32 verification.\"\"\"
+"""WAL Engine: Binary frame serializer/deserializer with CRC32 verification."""
 import struct
 import zlib
 import json

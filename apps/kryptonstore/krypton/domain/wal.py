@@ -1,4 +1,4 @@
-\"\"\"Domain contracts: WAL manager protocol.\"\"\"
+"""Domain contracts: WAL manager protocol."""
 from typing import List, Protocol
 from krypton.models.log_entry import LogEntry
 

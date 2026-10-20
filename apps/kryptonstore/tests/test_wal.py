@@ -1,4 +1,4 @@
-\"\"\"Test Suite: WAL corruption recovery and CRC32 verification.\"\"\"
+"""Test Suite: WAL corruption recovery and CRC32 verification."""
 import unittest, tempfile, shutil
 from pathlib import Path
 from krypton.models.log_entry import LogEntry

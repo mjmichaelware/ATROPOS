@@ -231,14 +231,31 @@ class AppFactoryRouter(
     ): FactoryLoopResult {
         val handoff = FactoryRunHandoff.read(repoRoot, runId)
         val repairRouter = FactoryRepairRouter(repoRoot, DagStore(repoRoot), memory)
+        val targetDir = resolveTargetDirectoryForRun(runId)
         return FactoryObligationLoop(DagStore(repoRoot)).resume(
             handoff = handoff,
             freeze = freeze,
             repairHandler = { dagId: String, failedNode: atropos.core.dag.DagNode, errorLog: String, attempt: Int ->
-                repairRouter.repair(dagId, failedNode, errorLog, attempt)
+                repairRouter.repair(dagId, failedNode, errorLog, attempt, targetDir)
             },
             executeWave = executeWave
         )
+    }
+
+    private fun resolveTargetDirectoryForRun(runId: String): Path {
+        val appsDir = repoRoot.resolve("apps")
+        if (java.nio.file.Files.isDirectory(appsDir)) {
+            val matchedApp = appsDir.toFile().listFiles()?.firstOrNull { app ->
+                app.isDirectory && app.resolve(".atropos/staging").exists()
+            }
+            if (matchedApp != null) return matchedApp.toPath()
+        }
+        val genDir = repoRoot.resolve(".atropos/generated-projects")
+        if (java.nio.file.Files.isDirectory(genDir)) {
+            val matched = genDir.toFile().listFiles()?.firstOrNull { it.isDirectory && it.name.contains(runId.take(8)) }
+            if (matched != null) return matched.toPath()
+        }
+        return repoRoot
     }
 
     fun runClarified(projectId: String, answers: List<Boolean>): FactoryPlan {

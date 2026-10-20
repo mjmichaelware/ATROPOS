@@ -1,4 +1,4 @@
-\"\"\"WAL Engine: Rolling segment files with corruption recovery.\"\"\"
+"""WAL Engine: Rolling segment files with corruption recovery."""
 import os
 from pathlib import Path
 from typing import List

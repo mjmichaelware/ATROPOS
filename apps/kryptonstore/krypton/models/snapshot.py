@@ -1,4 +1,4 @@
-\"\"\"Core models: State Snapshot.\"\"\"
+"""Core models: State Snapshot."""
 from dataclasses import dataclass
 from typing import Dict
 

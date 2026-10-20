@@ -1,4 +1,4 @@
-\"\"\"Consensus State Machine: Deterministic Raft engine.\"\"\"
+"""Consensus State Machine: Deterministic Raft engine."""
 from typing import List, Set
 from krypton.models.raft_state import RaftState, Role
 from krypton.models.log_entry import LogEntry

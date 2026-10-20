@@ -1,4 +1,4 @@
-\"\"\"Core models: Raft RPC packets.\"\"\"
+"""Core models: Raft RPC packets."""
 from dataclasses import dataclass
 from typing import List
 from krypton.models.log_entry import LogEntry

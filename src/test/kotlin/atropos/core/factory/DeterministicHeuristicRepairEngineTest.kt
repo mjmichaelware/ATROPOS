@@ -4,6 +4,7 @@ package atropos.core.factory
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
 import java.nio.file.Files
+import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -113,6 +114,40 @@ class DeterministicHeuristicRepairEngineTest {
             assertEquals("RULE_SYNTAX_ERROR_LINE_CONTINUATION", outcome.ruleApplied)
             val content = Files.readString(scriptPy)
             assertEquals("def greet():\n    return \"hello world\"\n", content)
+        } finally {
+            tempDir.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun repairs_syntax_error_inside_isolated_staging_worktree() {
+        val tempDir = createTempDirectory("heuristic-staging-worktree-test")
+        try {
+            val stagingDir = tempDir.resolve(".atropos/staging/node-verify-1").createDirectories()
+            val scriptPy = stagingDir.resolve("math_util.py")
+            val code = "def add(a, b):\n    \\\"\\\"\\\"Add two numbers.\\\"\\\"\\\"\n    return a + b\n"
+            Files.writeString(scriptPy, code)
+
+            val failedNode = DagNode(
+                id = "node-verify-1",
+                dagId = "dag-test",
+                label = "Verify test suite",
+                action = DagNodeAction.EXECUTE_COMMAND,
+                actionPayload = "python3 -c 'import math_util; assert math_util.add(2, 3) == 5'"
+            )
+
+            // Test with brief errorLog (does not even contain the full traceback)
+            val outcome = DeterministicHeuristicRepairEngine.attemptDeterministicRepair(
+                targetDir = tempDir,
+                failedNode = failedNode,
+                errorLog = "verification failed"
+            )
+
+            assertTrue(outcome.repaired)
+            assertEquals("RULE_SYNTAX_ERROR_LINE_CONTINUATION", outcome.ruleApplied)
+            val content = Files.readString(scriptPy)
+            assertFalse(content.contains("\\\""))
+            assertTrue(content.contains("\"\"\"Add two numbers.\"\"\""))
         } finally {
             tempDir.toFile().deleteRecursively()
         }

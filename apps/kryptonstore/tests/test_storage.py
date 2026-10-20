@@ -1,4 +1,4 @@
-\"\"\"Test Suite: LSM/MemTable storage and tombstone deletion.\"\"\"
+"""Test Suite: LSM/MemTable storage and tombstone deletion."""
 import unittest, tempfile, shutil
 from pathlib import Path
 from krypton.storage.memtable import MemTable

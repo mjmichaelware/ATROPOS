@@ -1,4 +1,4 @@
-\"\"\"Core models: LogEntry.\"\"\"
+"""Core models: LogEntry."""
 from dataclasses import dataclass
 import time
 

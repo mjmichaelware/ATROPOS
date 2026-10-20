@@ -1,4 +1,4 @@
-\"\"\"Domain contracts: Storage engine protocol.\"\"\"
+"""Domain contracts: Storage engine protocol."""
 from typing import Optional, Protocol
 
 class StorageEngine(Protocol):

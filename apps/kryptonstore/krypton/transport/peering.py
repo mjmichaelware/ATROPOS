@@ -1,4 +1,4 @@
-\"\"\"Transport Layer: Peer registry.\"\"\"
+"""Transport Layer: Peer registry."""
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 

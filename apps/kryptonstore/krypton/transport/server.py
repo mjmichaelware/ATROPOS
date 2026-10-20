@@ -1,4 +1,4 @@
-\"\"\"Transport Layer: HTTP endpoints for cluster peering and client ops.\"\"\"
+"""Transport Layer: HTTP endpoints for cluster peering and client ops."""
 import json
 from http.server import BaseHTTPRequestHandler
 from typing import Any, Callable, Dict, Optional

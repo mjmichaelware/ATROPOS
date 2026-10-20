@@ -1,4 +1,4 @@
-\"\"\"Core models: MerkleNode.\"\"\"
+"""Core models: MerkleNode."""
 from dataclasses import dataclass
 from typing import Optional
 

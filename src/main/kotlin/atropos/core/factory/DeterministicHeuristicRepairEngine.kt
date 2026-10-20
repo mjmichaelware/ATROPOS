@@ -46,7 +46,7 @@ object DeterministicHeuristicRepairEngine {
             return HeuristicRepairOutcome(false, null, emptyList())
         }
 
-        // Rule 0: SyntaxError: unexpected character after line continuation character
+        // Rule 0: SyntaxError: unexpected character after line continuation character or escaped quotes
         val lineContOutcome = repairLineContinuationSyntaxErrors(targetDir, failedNode, errorLog)
         if (lineContOutcome.repaired) return lineContOutcome
 
@@ -65,17 +65,91 @@ object DeterministicHeuristicRepairEngine {
         return HeuristicRepairOutcome(false, null, emptyList())
     }
 
+    private fun resolveSearchDirectories(targetDir: Path, failedNode: DagNode): List<Path> {
+        val dirs = LinkedHashSet<Path>()
+        dirs.add(targetDir)
+
+        val localStaging = targetDir.resolve(".atropos/staging")
+        if (Files.isDirectory(localStaging)) {
+            val nodeStaging = localStaging.resolve(failedNode.id)
+            if (Files.isDirectory(nodeStaging)) dirs.add(nodeStaging)
+            localStaging.toFile().listFiles()?.filter { it.isDirectory }?.forEach { dirs.add(it.toPath()) }
+        }
+
+        var curr: Path? = targetDir.toAbsolutePath().normalize()
+        for (i in 0..4) {
+            if (curr == null) break
+            val parentStaging = curr.resolve(".atropos/staging")
+            if (Files.isDirectory(parentStaging)) {
+                val nodeStaging = parentStaging.resolve(failedNode.id)
+                if (Files.isDirectory(nodeStaging)) dirs.add(nodeStaging)
+                parentStaging.toFile().listFiles()?.filter { it.isDirectory }?.forEach { dirs.add(it.toPath()) }
+            }
+            val appsDir = curr.resolve("apps")
+            if (Files.isDirectory(appsDir)) {
+                appsDir.toFile().listFiles()?.filter { it.isDirectory }?.forEach { app ->
+                    dirs.add(app.toPath())
+                    val appStaging = app.toPath().resolve(".atropos/staging").resolve(failedNode.id)
+                    if (Files.isDirectory(appStaging)) dirs.add(appStaging)
+                }
+            }
+            curr = curr.parent
+        }
+
+        return dirs.filter { Files.isDirectory(it) }
+    }
+
+    private fun collectPythonFiles(searchDirs: List<Path>): List<Path> {
+        return searchDirs.flatMap { dir ->
+            dir.toFile().walkTopDown().maxDepth(6)
+                .filter { file ->
+                    file.isFile && file.name.endsWith(".py") &&
+                        !file.name.startsWith(".") &&
+                        !file.absolutePath.contains("/.git/") &&
+                        !file.absolutePath.contains("/__pycache__/")
+                }
+                .map { it.toPath() }
+                .toList()
+        }.distinct()
+    }
+
+    private fun resolveExecutionDirectory(targetDir: Path, failedNode: DagNode): Path {
+        val stagingNode = targetDir.resolve(".atropos/staging").resolve(failedNode.id)
+        if (Files.isDirectory(stagingNode)) return stagingNode
+
+        var curr: Path? = targetDir.toAbsolutePath().normalize()
+        for (i in 0..4) {
+            if (curr == null) break
+            val candidate = curr.resolve(".atropos/staging").resolve(failedNode.id)
+            if (Files.isDirectory(candidate)) return candidate
+            curr = curr.parent
+        }
+
+        val appsDir = targetDir.resolve("apps")
+        if (Files.isDirectory(appsDir)) {
+            appsDir.toFile().listFiles()?.filter { it.isDirectory }?.forEach { app ->
+                val appStaging = app.toPath().resolve(".atropos/staging").resolve(failedNode.id)
+                if (Files.isDirectory(appStaging)) return appStaging
+            }
+        }
+
+        return targetDir
+    }
+
     private fun repairMissingInitPy(targetDir: Path, failedNode: DagNode): HeuristicRepairOutcome {
         val created = mutableListOf<String>()
-        val baseDir = targetDir.toFile()
-        baseDir.walkTopDown().filter { it.isDirectory && it != baseDir }.forEach { dir ->
-            val pathStr = dir.absolutePath
-            if (!pathStr.contains(".git") && !pathStr.contains(".atropos") && !pathStr.contains("__pycache__")) {
-                val hasPyFiles = dir.listFiles()?.any { it.isFile && it.name.endsWith(".py") } == true
-                val initFile = File(dir, "__init__.py")
-                if (hasPyFiles && !initFile.exists()) {
-                    initFile.writeText("# package marker\n")
-                    created.add(targetDir.relativize(initFile.toPath()).toString().replace('\\', '/'))
+        val searchDirs = resolveSearchDirectories(targetDir, failedNode)
+        for (dir in searchDirs) {
+            val baseDir = dir.toFile()
+            baseDir.walkTopDown().filter { it.isDirectory && it != baseDir }.forEach { subDir ->
+                val pathStr = subDir.absolutePath
+                if (!pathStr.contains("/.git/") && !pathStr.contains("/__pycache__/") && !subDir.name.startsWith(".")) {
+                    val hasPyFiles = subDir.listFiles()?.any { it.isFile && it.name.endsWith(".py") } == true
+                    val initFile = File(subDir, "__init__.py")
+                    if (hasPyFiles && !initFile.exists()) {
+                        initFile.writeText("# package marker\n")
+                        created.add(initFile.name)
+                    }
                 }
             }
         }
@@ -104,7 +178,7 @@ object DeterministicHeuristicRepairEngine {
             return HeuristicRepairOutcome(false, null, emptyList())
         }
 
-        val targetPath = extractTargetPythonFile(targetDir, errorLog)
+        val targetPath = extractTargetPythonFile(targetDir, failedNode, errorLog)
             ?: return HeuristicRepairOutcome(false, null, emptyList())
 
         val content = runCatching { Files.readString(targetPath) }.getOrNull()
@@ -123,7 +197,7 @@ object DeterministicHeuristicRepairEngine {
 
         if (written) {
             val verified = runVerificationCommand(targetDir, failedNode)
-            val relPath = targetDir.relativize(targetPath).toString().replace('\\', '/')
+            val relPath = try { targetDir.relativize(targetPath).toString().replace('\\', '/') } catch (_: Exception) { targetPath.fileName.toString() }
             if (verified) {
                 return HeuristicRepairOutcome(true, "RULE_MISSING_STDLIB_IMPORT:$missingName", listOf(relPath))
             } else {
@@ -135,10 +209,8 @@ object DeterministicHeuristicRepairEngine {
     }
 
     private fun repairSyntaxErrors(targetDir: Path, failedNode: DagNode): HeuristicRepairOutcome {
-        val pyFiles = targetDir.toFile().walkTopDown()
-            .filter { it.isFile && it.name.endsWith(".py") && !it.absolutePath.contains(".git") && !it.absolutePath.contains(".atropos") }
-            .map { it.toPath() }
-            .toList()
+        val searchDirs = resolveSearchDirectories(targetDir, failedNode)
+        val pyFiles = collectPythonFiles(searchDirs)
 
         for (file in pyFiles) {
             val compileResult = checkPyCompile(file)
@@ -146,7 +218,7 @@ object DeterministicHeuristicRepairEngine {
                 val patched = attemptColonFix(file, compileResult)
                 if (patched) {
                     val verified = runVerificationCommand(targetDir, failedNode)
-                    val relPath = targetDir.relativize(file).toString().replace('\\', '/')
+                    val relPath = try { targetDir.relativize(file).toString().replace('\\', '/') } catch (_: Exception) { file.fileName.toString() }
                     if (verified) {
                         return HeuristicRepairOutcome(true, "RULE_SYNTAX_ERROR_COLON", listOf(relPath))
                     }
@@ -191,7 +263,7 @@ object DeterministicHeuristicRepairEngine {
         return false
     }
 
-    private fun extractTargetPythonFile(targetDir: Path, errorLog: String): Path? {
+    private fun extractTargetPythonFile(targetDir: Path, failedNode: DagNode, errorLog: String): Path? {
         val matcher = tracebackFilePattern.matcher(errorLog)
         var candidatePath: String? = null
         while (matcher.find()) {
@@ -201,11 +273,15 @@ object DeterministicHeuristicRepairEngine {
             }
         }
         if (candidatePath == null) return null
-        val direct = targetDir.resolve(candidatePath).normalize()
-        if (Files.isRegularFile(direct)) return direct
-
-        val fileName = Path.of(candidatePath).fileName.toString()
-        return targetDir.toFile().walkTopDown().maxDepth(5).firstOrNull { it.isFile && it.name == fileName }?.toPath()
+        val searchDirs = resolveSearchDirectories(targetDir, failedNode)
+        for (dir in searchDirs) {
+            val direct = dir.resolve(candidatePath).normalize()
+            if (Files.isRegularFile(direct)) return direct
+            val fileName = Path.of(candidatePath).fileName.toString()
+            val found = dir.toFile().walkTopDown().maxDepth(6).firstOrNull { it.isFile && it.name == fileName }?.toPath()
+            if (found != null) return found
+        }
+        return null
     }
 
     private fun repairLineContinuationSyntaxErrors(
@@ -214,14 +290,17 @@ object DeterministicHeuristicRepairEngine {
         errorLog: String
     ): HeuristicRepairOutcome {
         val matchesErrorLog = errorLog.contains("unexpected character after line continuation character", ignoreCase = true)
-        val pyFiles = targetDir.toFile().walkTopDown()
-            .filter { it.isFile && it.name.endsWith(".py") && !it.absolutePath.contains(".git") && !it.absolutePath.contains(".atropos") }
-            .map { it.toPath() }
-            .toList()
+        val searchDirs = resolveSearchDirectories(targetDir, failedNode)
+        val pyFiles = collectPythonFiles(searchDirs)
 
         var hasSyntaxError = matchesErrorLog
         if (!hasSyntaxError) {
             for (file in pyFiles) {
+                val content = runCatching { Files.readString(file) }.getOrNull() ?: continue
+                if (content.contains("\\\"") || content.contains("\\'")) {
+                    hasSyntaxError = true
+                    break
+                }
                 val compileResult = checkPyCompile(file)
                 if (compileResult != null && compileResult.contains("unexpected character after line continuation character", ignoreCase = true)) {
                     hasSyntaxError = true
@@ -247,7 +326,7 @@ object DeterministicHeuristicRepairEngine {
                     true
                 }.getOrDefault(false)
                 if (written) {
-                    val relPath = targetDir.relativize(file).toString().replace('\\', '/')
+                    val relPath = try { targetDir.relativize(file).toString().replace('\\', '/') } catch (_: Exception) { file.fileName.toString() }
                     patchedFiles.add(relPath)
                 }
             }
@@ -274,10 +353,11 @@ object DeterministicHeuristicRepairEngine {
     }
 
     private fun runVerificationCommand(targetDir: Path, failedNode: DagNode): Boolean {
+        val execDir = resolveExecutionDirectory(targetDir, failedNode)
         val command = failedNode.actionPayload?.takeIf { it.isNotBlank() } ?: "python3 -m unittest"
         return try {
             val pb = ProcessBuilder("bash", "-c", command)
-            pb.directory(targetDir.toFile())
+            pb.directory(execDir.toFile())
             pb.environment()["PYTHONPATH"] = "."
             pb.redirectErrorStream(true)
             val proc = pb.start()

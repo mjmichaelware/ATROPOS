@@ -1,4 +1,4 @@
-\"\"\"LSM/MemTable Storage: In-memory sorted map with flush thresholds and tombstones.\"\"\"
+"""LSM/MemTable Storage: In-memory sorted map with flush thresholds and tombstones."""
 from typing import Dict, List, Optional, Tuple
 
 class MemTable:

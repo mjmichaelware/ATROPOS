@@ -1,4 +1,4 @@
-\"\"\"Domain contracts: Consensus protocol.\"\"\"
+"""Domain contracts: Consensus protocol."""
 from typing import Protocol
 from krypton.models.rpc import AppendEntriesRPC, AppendEntriesResult, RequestVoteRPC, RequestVoteResult
 

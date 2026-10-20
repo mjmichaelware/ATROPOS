@@ -275,7 +275,13 @@ class DagNodeShellExecutor(
                 ),
                 relatedPaths = relatedPaths
             )
-            DagNodeExecutionResult(original.id, state, success, message)
+            DagNodeExecutionResult(
+                nodeId = original.id,
+                state = state,
+                ok = success,
+                message = message,
+                result = output.take(4000).ifBlank { message }
+            )
         } catch (e: Exception) {
             finisher.fail(running, original, e.message ?: crashMessage)
         }

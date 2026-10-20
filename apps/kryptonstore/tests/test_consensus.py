@@ -1,4 +1,4 @@
-\"\"\"Test Suite: Consensus split-vote resolution, quorum, and election invariants.\"\"\"
+"""Test Suite: Consensus split-vote resolution, quorum, and election invariants."""
 import unittest
 from krypton.consensus.state_machine import RaftConsensusStateMachine
 from krypton.models.raft_state import Role

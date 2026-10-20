@@ -1,4 +1,4 @@
-\"\"\"Core models: RaftState and Role.\"\"\"
+"""Core models: RaftState and Role."""
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional

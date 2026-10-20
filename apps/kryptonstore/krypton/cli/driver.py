@@ -1,4 +1,4 @@
-\"\"\"CLI Driver: Command-line administration tool.\"\"\"
+"""CLI Driver: Command-line administration tool."""
 import argparse
 import sys
 from pathlib import Path

@@ -1,4 +1,4 @@
-\"\"\"Domain contracts: Merkle tree protocol.\"\"\"
+"""Domain contracts: Merkle tree protocol."""
 from typing import List, Protocol
 
 class MerkleTree(Protocol):

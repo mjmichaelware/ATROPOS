@@ -1,4 +1,4 @@
-\"\"\"LSM Storage Engine implementation.\"\"\"
+"""LSM Storage Engine implementation."""
 from pathlib import Path
 from typing import Optional
 from krypton.storage.memtable import MemTable

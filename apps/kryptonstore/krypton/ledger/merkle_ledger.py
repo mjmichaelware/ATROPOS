@@ -1,4 +1,4 @@
-\"\"\"Cryptographic Ledger: Merkle tree calculation over committed log entries.\"\"\"
+"""Cryptographic Ledger: Merkle tree calculation over committed log entries."""
 import hashlib
 from typing import List
 from krypton.models.log_entry import LogEntry

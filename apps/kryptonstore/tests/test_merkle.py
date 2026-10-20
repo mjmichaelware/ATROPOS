@@ -1,4 +1,4 @@
-\"\"\"Test Suite: Merkle root verification and cryptographic attestation.\"\"\"
+"""Test Suite: Merkle root verification and cryptographic attestation."""
 import unittest
 from krypton.ledger.merkle_ledger import MerkleLedger
 from krypton.models.log_entry import LogEntry
