@@ -21,6 +21,8 @@ export interface EditorTab {
   /** Undefined while loading. */
   readonly content?: string;
   readonly dirty: boolean;
+  /** Optional project identifier for multi-project or workspace sessions. */
+  readonly projectId?: string;
 }
 
 export interface TabStore {
