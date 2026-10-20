@@ -46,6 +46,10 @@ object DeterministicHeuristicRepairEngine {
             return HeuristicRepairOutcome(false, null, emptyList())
         }
 
+        // Rule 0: SyntaxError: unexpected character after line continuation character
+        val lineContOutcome = repairLineContinuationSyntaxErrors(targetDir, failedNode, errorLog)
+        if (lineContOutcome.repaired) return lineContOutcome
+
         // Rule 1: Missing __init__.py files in subdirectories
         val initOutcome = repairMissingInitPy(targetDir, failedNode)
         if (initOutcome.repaired) return initOutcome
@@ -204,11 +208,77 @@ object DeterministicHeuristicRepairEngine {
         return targetDir.toFile().walkTopDown().maxDepth(5).firstOrNull { it.isFile && it.name == fileName }?.toPath()
     }
 
+    private fun repairLineContinuationSyntaxErrors(
+        targetDir: Path,
+        failedNode: DagNode,
+        errorLog: String
+    ): HeuristicRepairOutcome {
+        val matchesErrorLog = errorLog.contains("unexpected character after line continuation character", ignoreCase = true)
+        val pyFiles = targetDir.toFile().walkTopDown()
+            .filter { it.isFile && it.name.endsWith(".py") && !it.absolutePath.contains(".git") && !it.absolutePath.contains(".atropos") }
+            .map { it.toPath() }
+            .toList()
+
+        var hasSyntaxError = matchesErrorLog
+        if (!hasSyntaxError) {
+            for (file in pyFiles) {
+                val compileResult = checkPyCompile(file)
+                if (compileResult != null && compileResult.contains("unexpected character after line continuation character", ignoreCase = true)) {
+                    hasSyntaxError = true
+                    break
+                }
+            }
+        }
+
+        if (!hasSyntaxError) {
+            return HeuristicRepairOutcome(false, null, emptyList())
+        }
+
+        val patchedFiles = mutableListOf<String>()
+        val backups = mutableMapOf<Path, String>()
+
+        for (file in pyFiles) {
+            val content = runCatching { Files.readString(file) }.getOrNull() ?: continue
+            val stripped = stripInvalidBackslashEscapes(content)
+            if (stripped != content) {
+                backups[file] = content
+                val written = runCatching {
+                    Files.writeString(file, stripped)
+                    true
+                }.getOrDefault(false)
+                if (written) {
+                    val relPath = targetDir.relativize(file).toString().replace('\\', '/')
+                    patchedFiles.add(relPath)
+                }
+            }
+        }
+
+        if (patchedFiles.isNotEmpty()) {
+            val verified = runVerificationCommand(targetDir, failedNode)
+            if (verified) {
+                return HeuristicRepairOutcome(true, "RULE_SYNTAX_ERROR_LINE_CONTINUATION", patchedFiles)
+            } else {
+                for ((file, original) in backups) {
+                    runCatching { Files.writeString(file, original) }
+                }
+            }
+        }
+
+        return HeuristicRepairOutcome(false, null, emptyList())
+    }
+
+    private fun stripInvalidBackslashEscapes(content: String): String {
+        var result = content.replace("\\\"", "\"").replace("\\'", "'")
+        result = result.replace(Regex("""\\(?=[ \t]+$)""", RegexOption.MULTILINE), "")
+        return result
+    }
+
     private fun runVerificationCommand(targetDir: Path, failedNode: DagNode): Boolean {
         val command = failedNode.actionPayload?.takeIf { it.isNotBlank() } ?: "python3 -m unittest"
         return try {
             val pb = ProcessBuilder("bash", "-c", command)
             pb.directory(targetDir.toFile())
+            pb.environment()["PYTHONPATH"] = "."
             pb.redirectErrorStream(true)
             val proc = pb.start()
             val finished = proc.waitFor(30, TimeUnit.SECONDS)

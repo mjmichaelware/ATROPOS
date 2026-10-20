@@ -26,5 +26,5 @@ object CodeFenceExtractor {
         return trimmed
     }
 
-    fun extractSourceCode(raw: String): String = cleanCodeFences(raw)
+    fun extractSourceCode(raw: String): String = CodeBlockExtractor.extract(raw)
 }

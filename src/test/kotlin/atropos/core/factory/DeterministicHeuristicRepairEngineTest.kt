@@ -83,4 +83,38 @@ class DeterministicHeuristicRepairEngineTest {
             tempDir.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun repairs_line_continuation_syntax_error() {
+        val tempDir = createTempDirectory("heuristic-linecont-test")
+        try {
+            val scriptPy = tempDir.resolve("calc.py")
+            // Code with escaped quotes that cause Python SyntaxError
+            val code = "def greet():\n    return \\\"hello world\\\"\n"
+            Files.writeString(scriptPy, code)
+
+            val failedNode = DagNode(
+                id = "node-verify-suite",
+                dagId = "dag-test",
+                label = "Verify test suite",
+                action = DagNodeAction.EXECUTE_COMMAND,
+                actionPayload = "python3 -c 'import calc; assert calc.greet() == \"hello world\"'"
+            )
+
+            val trace = "SyntaxError: unexpected character after line continuation character"
+
+            val outcome = DeterministicHeuristicRepairEngine.attemptDeterministicRepair(
+                targetDir = tempDir,
+                failedNode = failedNode,
+                errorLog = trace
+            )
+
+            assertTrue(outcome.repaired)
+            assertEquals("RULE_SYNTAX_ERROR_LINE_CONTINUATION", outcome.ruleApplied)
+            val content = Files.readString(scriptPy)
+            assertEquals("def greet():\n    return \"hello world\"\n", content)
+        } finally {
+            tempDir.toFile().deleteRecursively()
+        }
+    }
 }

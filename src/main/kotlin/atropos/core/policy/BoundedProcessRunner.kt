@@ -8,6 +8,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
+typealias ProcessRunner = BoundedProcessRunner
+
 data class BoundedProcessResult(
     val exitCode: Int?,
     val timedOut: Boolean,
@@ -52,6 +54,25 @@ class BoundedProcessRunner(
             maxOutputLines = 10_000
         )
 
+    fun runProcess(
+        command: List<String>,
+        directory: Path = Path.of(System.getProperty("user.dir")),
+        timeoutMillis: Long = 600_000L,
+        requestedLimit: Int = 1_048_576,
+        maxOutputLines: Int = 10_000,
+        environment: Map<String, String> = emptyMap()
+    ): BoundedProcessResult {
+        val safeLimit = maxOf(4096, minOf(requestedLimit, 10_485_760))
+        return run(
+            command = command,
+            directory = directory,
+            timeoutMillis = timeoutMillis,
+            maxOutputBytes = safeLimit,
+            maxOutputLines = maxOutputLines,
+            environment = environment
+        )
+    }
+
     fun run(
         command: List<String>,
         directory: Path,
@@ -65,7 +86,9 @@ class BoundedProcessRunner(
         inputRedirect: Path? = null,
         narrate: Boolean = true
     ): BoundedProcessResult {
-        validate(command, directory, timeoutMillis, maxOutputBytes, maxOutputLines)
+        val safeLimit = maxOf(4096, minOf(maxOutputBytes, MAX_OUTPUT_BYTES))
+        val safeLines = maxOf(1, minOf(maxOutputLines, MAX_OUTPUT_LINES))
+        validate(command, directory, timeoutMillis, safeLimit, safeLines)
 
         // Internal maintenance/geometry probes (such as `stty size`) poll continuously
         // and must never flood the operator's thinking/process narration trace.
@@ -110,8 +133,8 @@ class BoundedProcessRunner(
         val logDirectory = evidenceDirectory?.also { Files.createDirectories(it) }
         val stdoutPath = logDirectory?.resolve("stdout.log")
         val stderrPath = logDirectory?.resolve("stderr.log")
-        val stdout = pumps.submit<Captured> { capture(process.inputStream, maxOutputBytes, maxOutputLines, stdoutPath) }
-        val stderr = pumps.submit<Captured> { capture(process.errorStream, maxOutputBytes, maxOutputLines, stderrPath) }
+        val stdout = pumps.submit<Captured> { capture(process.inputStream, safeLimit, safeLines, stdoutPath) }
+        val stderr = pumps.submit<Captured> { capture(process.errorStream, safeLimit, safeLines, stderrPath) }
         val finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)
         if (!finished) terminate(process)
         val out = result(stdout)
@@ -315,7 +338,7 @@ class BoundedProcessRunner(
         const val MAX_ARGUMENTS = 64
         const val MAX_ARGUMENT_LENGTH = 8_192
         const val MAX_TIMEOUT_MILLIS = 1_800_000L
-        const val MAX_OUTPUT_BYTES = 256 * 1024
-        const val MAX_OUTPUT_LINES = 4_000
+        const val MAX_OUTPUT_BYTES = 10_485_760
+        const val MAX_OUTPUT_LINES = 100_000
     }
 }

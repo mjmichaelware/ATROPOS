@@ -67,6 +67,8 @@ data class GitWorktreeCommandResult(
     }
 }
 
+typealias GitCommandExecutor = BoundedGitWorktreeCommandRunner
+
 class BoundedGitWorktreeCommandRunner(
     private val processRunner: (List<String>, Path, String?) -> GitWorktreeCommandResult = ::runProcess
 ) {
@@ -177,14 +179,16 @@ class BoundedGitWorktreeCommandRunner(
         fun runProcess(
             command: List<String>,
             directory: Path,
-            input: String?
+            input: String?,
+            requestedLimit: Int = 1_000_000
         ): GitWorktreeCommandResult = runCatching {
             val normalizedDir = directory.toAbsolutePath().normalize()
+            val safeLimit = maxOf(4096, minOf(requestedLimit, 10_485_760))
             val result = BoundedProcessRunner().run(
                 command = command,
                 directory = normalizedDir,
                 timeoutMillis = 30_000,
-                maxOutputBytes = 1_000_000,
+                maxOutputBytes = safeLimit,
                 maxOutputLines = 20_000,
                 standardInput = input?.toByteArray(StandardCharsets.UTF_8)
             )

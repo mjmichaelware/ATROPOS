@@ -68,4 +68,16 @@ class CapabilityAttenuationSandbox(private val masterSecret: ByteArray) {
         atropos.core.thinking.Thinking.detail("sandbox", "Capability check for $operation on $targetPath: allowed=$valid")
         return valid
     }
+
+    fun normalizeSource(content: String): String =
+        content.replace("\\\"", "\"").replace("\\'", "'")
+
+    fun writeSourceFile(token: AttenuatedToken, targetPath: java.nio.file.Path, content: String): java.nio.file.Path {
+        check(validateAction(token, "write", targetPath)) {
+            "CapabilityAttenuationSandbox denied write access: territory escape attempt"
+        }
+        val normalized = normalizeSource(content)
+        targetPath.parent?.let { java.nio.file.Files.createDirectories(it) }
+        return java.nio.file.Files.writeString(targetPath, normalized)
+    }
 }

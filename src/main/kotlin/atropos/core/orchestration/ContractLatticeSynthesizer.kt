@@ -142,7 +142,7 @@ class ContractLatticeSynthesizer(
         targetPath.parent?.let { Files.createDirectories(it) }
 
         val sourceCode = generateSourceForNode(node, request)
-        Files.writeString(targetPath, sourceCode)
+        atropos.core.factory.StagingFileWriter.writeSource(targetPath, sourceCode)
         return SynthesisResult(true, "file synthesized at ${worktreeRoot.relativize(targetPath)}")
     }
 

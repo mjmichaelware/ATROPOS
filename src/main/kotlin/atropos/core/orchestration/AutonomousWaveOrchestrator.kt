@@ -76,6 +76,8 @@ class AutonomousWaveOrchestrator(
     )
 
     companion object {
+        val PYTHON_ENV: Map<String, String> = mapOf("PYTHONPATH" to ".")
+
         fun createDefault(repoRoot: Path): AutonomousWaveOrchestrator {
             val dagStore = DagStore(repoRoot)
             val worktreeService = IsolatedWorktreeService(repoRoot)
@@ -197,8 +199,10 @@ class AutonomousWaveOrchestrator(
         val diAssembler = atropos.core.composition.DependencyInjectionAssembler()
         val diModule = diAssembler.assemble(lattice, mapOf(), targetDir)
 
-        val driver = atropos.core.toolchain.NativeToolchainRegistry.getDriver("kotlin")
-            ?: atropos.core.toolchain.NativeToolchainRegistry.requireDriver("kotlin")
+        val isPython = targetDir.toFile().walkTopDown().any { it.isFile && it.name.endsWith(".py") }
+        val lang = if (isPython) "python" else "kotlin"
+        val driver = atropos.core.toolchain.NativeToolchainRegistry.getDriver(lang)
+            ?: atropos.core.toolchain.NativeToolchainRegistry.requireDriver(lang)
         val compileResult = driver.compile(targetDir)
 
         return OrchestrationReport(

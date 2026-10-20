@@ -85,7 +85,8 @@ class PythonFastApiDriver(
     private fun buildEnv(worktree: Path): Map<String, String> {
         return mapOf(
             "PYTHONDONTWRITEBYTECODE" to "1",
-            "PYTHONUNBUFFERED" to "1"
+            "PYTHONUNBUFFERED" to "1",
+            "PYTHONPATH" to "."
         )
     }
 

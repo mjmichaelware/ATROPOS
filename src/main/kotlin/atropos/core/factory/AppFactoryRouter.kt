@@ -139,6 +139,9 @@ class AppFactoryRouter(
         runCatching {
             behaviorGuard.requireRealBehavior(request.projectSpec, filesMap)
         }
+        runCatching {
+            verificationHelper.runVerify(request.targetDirectory)
+        }
 
         val factoryPlan = plan(prompt)
         val generatedProject = GeneratedAppProject(
@@ -302,4 +305,8 @@ class AppFactoryRouter(
     }
 
     fun render(plan: FactoryPlan): String = FactoryPlanHelper.render(plan)
+
+    companion object {
+        val PYTHON_ENV: Map<String, String> = mapOf("PYTHONPATH" to ".")
+    }
 }

@@ -38,6 +38,7 @@ class AppVerificationHelper(
             timeoutMillis = 900_000L,
             maxOutputBytes = 64 * 1024,
             maxOutputLines = 4_000,
+            environment = mapOf("PYTHONPATH" to "."),
             removeEnvironmentKeys = setOf("KOTLIN_RUNNER"),
             evidenceDirectory = directory.resolve(".atropos/evidence/build")
         )

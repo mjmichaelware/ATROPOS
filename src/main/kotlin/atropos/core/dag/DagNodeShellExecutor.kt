@@ -231,12 +231,18 @@ class DagNodeShellExecutor(
                 return finisher.fail(running, original, "DAG command refused by policy: ${authorization.reason}")
             }
 
+            val procEnv = if (projectLanguage == ProjectLanguage.PYTHON || command.contains("python") || command.contains("pytest")) {
+                mapOf("PYTHONPATH" to ".")
+            } else {
+                emptyMap()
+            }
             val bounded = processRunner.run(
                 command = listOf("sh", "-c", command),
                 directory = workingDir,
                 timeoutMillis = 900_000L,
                 maxOutputBytes = 256 * 1024,
-                maxOutputLines = 4_000
+                maxOutputLines = 4_000,
+                environment = procEnv
             )
             val output = listOf(bounded.stdout, bounded.stderr)
                 .filter { it.isNotBlank() }

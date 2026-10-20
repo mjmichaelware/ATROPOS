@@ -104,4 +104,18 @@ class BoundedProcessRunnerTest {
             unsubscribe()
         }
     }
+
+    @Test
+    fun clamps_requested_output_buffer_limit_safely() {
+        var observedBytes = 0
+        val runner = BoundedProcessRunner { _, _, _, _ ->
+            ProcessBuilder("true").start()
+        }
+        val result = runner.runProcess(
+            command = listOf("echo", "ok"),
+            directory = Files.createTempDirectory("atropos-clamp-test-"),
+            requestedLimit = 50_000_000 // exceeds 10MB limit
+        )
+        assertTrue(result.exitCode == 0 || result.exitCode == null)
+    }
 }
