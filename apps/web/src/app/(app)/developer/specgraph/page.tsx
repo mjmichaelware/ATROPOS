@@ -20,7 +20,7 @@ import {
 } from '@/lib/specgraph/client';
 import { DeveloperToolsContainer } from '@/components/dev-tools/developer-tools-container';
 
-export function SpecGraphPage() {
+export default function SpecGraphPage() {
   const [projects, setProjects] = useState<SpecGraphProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,5 +71,3 @@ export function SpecGraphPage() {
     />
   );
 }
-
-export default SpecGraphPage;

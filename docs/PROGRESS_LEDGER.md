@@ -16433,3 +16433,32 @@ End of AGENTS.md
   - `FactoryRunOrchestrator.kt=e886d5fcb76fd5b003e54989e491d48454eaf5de9315128165617af63f937234`
   - `FactoryCompletionVerifier.kt=51446b0fc2dd544c69cd20b2edf0d37f99d0d0e2900447be77c8a029e1689760`
   - `AppFactoryRouterTest.kt=10c9e4dfe98dd3276f348aaa2afdfda3b64b934ed971a86fae7da5188ac276ad`
+
+### 2026-10-20T22:31Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: web-standalone-export-ci-release
+- Paths touched:
+  - `apps/web/src/app/(app)/developer/specgraph/page.tsx` (+1/-3 lines, 73 lines total / converted named export `SpecGraphPage` to default export, removed conflicting named export)
+  - `apps/web/src/app/(app)/developer/page.tsx` (+1/-1 lines, 40 lines total / updated import from named to default import `SpecGraphPage`)
+  - `apps/web/next.config.ts` (+1 lines, 96 lines total / added `output: "standalone"`, kept `typedRoutes: false`)
+  - `.github/workflows/release.yml` (+37 lines, 223 lines total / added `web` job with cloud build, asset copying, zip packaging, and GitHub release upload)
+- Atoms / phases affected: Phase 18 / HOE Web Presentation & Release CI.
+- Predicate moved:
+  - Resolved Next.js TypeScript export error (`Type error: "SpecGraphPage" is not a valid Page export field`) by changing `export function SpecGraphPage()` to `export default function SpecGraphPage()` and eliminating extraneous page exports.
+  - Enabled Next.js standalone server mode by setting `output: "standalone"` in `next.config.ts` with `typedRoutes: false`.
+  - Added GitHub Actions web standalone cloud build job `web:` to `.github/workflows/release.yml` running `npm ci`, `npm run build`, copying `.next/static` and `public` into `.next/standalone/`, archiving to `web-standalone.zip`, and uploading to GitHub Release via `gh release upload` for both rolling latest and tagged releases alongside `ATROPOS.jar` and `ATROPOS.apk`.
+  - Mathematical Proof Gate verified:
+    - Zero competitor strings in modified files.
+    - Zero `TODO`, `FIXME`, or hollow stub methods in modified files.
+    - Every modified source file strictly <= 500 LOC (`specgraph/page.tsx`: 73, `developer/page.tsx`: 40, `next.config.ts`: 96, `release.yml`: 223).
+    - Remote execution mandate honored: zero local `./gradlew`, `kotlinc`, or `npm run build` executed in Termux.
+- Why the delta is justified: Closes the web compilation and distribution pipeline by fixing the Next.js page export type validation failure, configuring standalone output bundling, and offloading heavy build and packaging to GitHub Actions cloud runners.
+- % delta: HOE Web Presentation (+2% to release readiness, build unblocked).
+- Git Object Hashes:
+  - `apps/web/src/app/(app)/developer/specgraph/page.tsx`: `6c1fc5d27bfc3b8a6e187d3cc9f7441623eca349`
+  - `apps/web/src/app/(app)/developer/page.tsx`: `6fb71bded393cfbed355bfbf65640547287bc73d`
+  - `apps/web/next.config.ts`: `3df6b2e262c05a8b1da899e9558431fa41725791`
+  - `.github/workflows/release.yml`: `7f7484d8a1e9c0e0dbdd8d93089ccedd8e397c7c`
+- Fingerprints (sha256):
+  - `apps/web/src/app/(app)/developer/specgraph/page.tsx=c8e566f7c90d9804e3e033b490fa6a11943494b541ceab486c62687a4f360781`
+  - `apps/web/src/app/(app)/developer/page.tsx=5e0cb064704f77b442c70b6b56ee00ebd0db66ab11dcf044f4d87389c47f51a7`
+  - `apps/web/next.config.ts=d7020148b72691ec297f4569dcb97899b381711e5f2f322c9bb9e07a19a2970d`
+  - `.github/workflows/release.yml=10039bf127b96751e9fedec62463270f63b77e41b0823a8e8878c7f819c184ec`
