@@ -16335,7 +16335,7 @@ End of AGENTS.md
   - `CapabilityAttenuationSandbox.kt=ec510ebe656be607d346438cbdcda2199236e4b22f59d64a7d6a2eb4b870f8e7`
   - `DeterministicHeuristicRepairEngine.kt=a2e0302b533c56fece6044ef4ba811ff3929c310d7d45221d94025c745e0f80a`
   - `BoundedProcessRunner.kt=a300e589dfbb89dfc193e1d72af7f25214fafd945cbb0ff92dd7dececb74e7e3`
-  - `BoundedGitWorktreeCommandRunner.kt=62363238687eaa58ce6d6680f3fe469f478d3869b201a71614582026ebb29e0f`
+  - `BoundedGitWorktreeCommandRunner.kt=9c3f61cab1d43cd9fb8a5760040c2f4d408bc37480448542f88af0ef839637eb`
   - `AppVerificationHelper.kt=436b36379d17b9b78cbffe6e5e97634f0d432a2b208cdff40097e44cfb34815c`
   - `AppFactoryRouter.kt=dcd5d97a55940ff5d92ebfc178c3a80c6530920571cfe922f311da39815bc3c0`
   - `AutonomousWaveOrchestrator.kt=da4b8184ea69f768efadb613a0542b93191467438121ee54621ac5a4832f6641`

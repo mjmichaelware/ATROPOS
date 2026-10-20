@@ -179,8 +179,14 @@ class BoundedGitWorktreeCommandRunner(
         fun runProcess(
             command: List<String>,
             directory: Path,
+            input: String?
+        ): GitWorktreeCommandResult = runProcess(command, directory, input, 1_000_000)
+
+        fun runProcess(
+            command: List<String>,
+            directory: Path,
             input: String?,
-            requestedLimit: Int = 1_000_000
+            requestedLimit: Int
         ): GitWorktreeCommandResult = runCatching {
             val normalizedDir = directory.toAbsolutePath().normalize()
             val safeLimit = maxOf(4096, minOf(requestedLimit, 10_485_760))
