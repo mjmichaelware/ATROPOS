@@ -469,7 +469,7 @@ services_content = services_path.read_text(
 old_project_insert = """        try:
             with self.database.connect() as connection:
                 connection.execute(
-                    \"\"\"
+                    """
                     INSERT INTO projects(
                         id,
                         slug,
@@ -478,7 +478,7 @@ old_project_insert = """        try:
                         created_at
                     )
                     VALUES(?,?,?,?,?)
-                    \"\"\",
+                    """,
                     (
                         project_id,
                         slug,
@@ -509,7 +509,7 @@ new_project_insert = """        try:
                         ) from error
 
                     connection.execute(
-                        \"\"\"
+                        """
                         INSERT INTO projects(
                             id,
                             owner_id,
@@ -519,7 +519,7 @@ new_project_insert = """        try:
                             created_at
                         )
                         VALUES(?,?,?,?,?,?)
-                        \"\"\",
+                        """,
                         (
                             project_id,
                             owner_id,
@@ -531,7 +531,7 @@ new_project_insert = """        try:
                     )
                 else:
                     connection.execute(
-                        \"\"\"
+                        """
                         INSERT INTO projects(
                             id,
                             slug,
@@ -540,7 +540,7 @@ new_project_insert = """        try:
                             created_at
                         )
                         VALUES(?,?,?,?,?)
-                        \"\"\",
+                        """,
                         (
                             project_id,
                             slug,

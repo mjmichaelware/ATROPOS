@@ -325,8 +325,8 @@ class FactoryRunOrchestrator(
         val previewImpacts = previewService.inspectUI(previewFiles)
         val browserEvidence = previewFiles.firstOrNull { it.endsWith(".html", ignoreCase = true) }
             ?.let { relative ->
-                val html = java.nio.file.Files.readString(Path.of(generatedProject.path).resolve(relative))
-                previewService.captureStaticHtml("factory-${plan.id}", html)
+                val html = runCatching { java.nio.file.Files.readString(Path.of(generatedProject.path).resolve(relative)) }.getOrNull()
+                html?.let { previewService.captureStaticHtml("factory-${plan.id}", it) }
             }
         recorder.recordPreview(
             runId = plan.id,

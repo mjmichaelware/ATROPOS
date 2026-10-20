@@ -111,7 +111,7 @@ def make_pdf(
     for text in page_texts:
         stream = (
             "BT\n/F1 24 Tf\n72 72 Td\n("
-            + text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+            + text.replace("\", "\\\").replace("(", "\\(").replace(")", "\\)")
             + ") Tj\nET\n"
         ).encode("utf-8")
         objects.append(
@@ -200,7 +200,7 @@ class DocumentAdaptersTest(unittest.TestCase):
     def test_json_is_validated_and_hashed_deterministically(
         self,
     ) -> None:
-        raw = b"{\"b\":2,\r\n\"a\":1}\r\n"
+        raw = b"{"b":2,\r\n"a":1}\r\n"
         derived = self.derive(
             filename="data.json",
             media_type="application/json",
@@ -209,14 +209,14 @@ class DocumentAdaptersTest(unittest.TestCase):
 
         self.assertEqual(
             derived.derived_text,
-            "{\"b\":2,\n\"a\":1}\n",
+            "{"b":2,\n"a":1}\n",
         )
         self.assertEqual(
             hashlib.sha256(
                 derived.derived_bytes
             ).hexdigest(),
             hashlib.sha256(
-                b"{\"b\":2,\n\"a\":1}\n"
+                b"{"b":2,\n"a":1}\n"
             ).hexdigest(),
         )
 

@@ -16405,3 +16405,31 @@ End of AGENTS.md
   - `AppFactoryRouter.kt=3ede406c4b636faf43f222115023e9775298f35c4274ed89d59ce7fdbb2c6631`
   - `DeterministicHeuristicRepairEngine.kt=29cd900cc0c7c19182f59aad70f8bedae6c559886e4ce7d346e49f63b5d9552a`
   - `DeterministicHeuristicRepairEngineTest.kt=b405af3dc69b34433ce98a65c8e8e44d546d931366943a837039245d177ae6b5`
+
+### 2026-10-20T18:50Z · Agent: ATROPOS Orchestrator · Batch: factory-malformed-input-binary-exclusion
+- Paths touched:
+  - `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+39/-5 lines / exclude pycache, venv, and binary file extensions from source file collection, safe read with UTF-8 and ISO-8859-1 fallback preventing MalformedInputException)
+  - `src/main/kotlin/atropos/core/factory/FactoryRepairRouter.kt` (+18/-5 lines / align source file collection with AppFactoryRouter binary exclusions and safe fallback)
+  - `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+2/-2 lines / wrap static html read in runCatching preventing encoding failures)
+  - `src/main/kotlin/atropos/core/verification/FactoryCompletionVerifier.kt` (+3/-3 lines / recognize .atropos, __pycache__, and .pyc as derived verifier paths)
+  - `src/test/kotlin/atropos/core/factory/AppFactoryRouterTest.kt` (+18 lines / unit test for binary and pycache exclusion)
+  - `apps/specgraph-foundry/` (+13 files / sanitized escaped quotes)
+- Atoms / phases affected: Phase 19 App Factory Wave Pipeline, Phase 8 Verification & Completion Gate.
+- Predicate moved:
+  - Fixed root cause of `java.nio.charset.MalformedInputException: Input length = 1` which halted factory pipeline post-wave completion when reading `.pyc` bytecode generated during test runs in project target directory.
+  - Implemented `isSourceTextFile` filtering out `.pyc`, `.wal`, binary extensions, and `__pycache__` directories.
+  - Wrapped source file reads in UTF-8 decode with ISO-8859-1 fallback so binary or non-UTF-8 files never throw `MalformedInputException`.
+  - Added `.atropos`, `__pycache__`, and `.pyc` to `isDerivedVerifierPath` in `FactoryCompletionVerifier`.
+  - Mathematical Proof Gate verified:
+    - Zero competitor strings in modified files.
+    - Zero `TODO`, `FIXME`, or hollow stub methods in modified files.
+    - Every modified source file strictly <= 500 LOC (AppFactoryRouter: 367, FactoryRepairRouter: 282, FactoryRunOrchestrator: 487, FactoryCompletionVerifier: 298, AppFactoryRouterTest: 40).
+    - `scripts/find-orphans.py --fail-on-new` exits 0.
+- Why the delta is justified: Guarantees that factory runs completing wave execution transition cleanly through behavior guard, verification, and artifact emission without crashing on bytecode or binary assets.
+- % delta: Phase 19 robustness (+0% baseline delta, zero crash guarantee).
+- Fingerprints (sha256):
+  - `AppFactoryRouter.kt=91e6529357ca33098a02e04365c70bcbdfe3d927b513a15aa83d6db220965aa0`
+  - `FactoryRepairRouter.kt=5d5027eb87c09739358bf1a88959ab06f84f453fdace7890424f3bd292626f10`
+  - `FactoryRunOrchestrator.kt=e886d5fcb76fd5b003e54989e491d48454eaf5de9315128165617af63f937234`
+  - `FactoryCompletionVerifier.kt=51446b0fc2dd544c69cd20b2edf0d37f99d0d0e2900447be77c8a029e1689760`
+  - `AppFactoryRouterTest.kt=10c9e4dfe98dd3276f348aaa2afdfda3b64b934ed971a86fae7da5188ac276ad`

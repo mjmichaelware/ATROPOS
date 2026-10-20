@@ -224,13 +224,31 @@ class FactoryRepairRouter(
         val files = mutableMapOf<String, String>()
         if (!Files.exists(targetDir)) return files
         Files.walk(targetDir).use { paths ->
-            paths.filter { Files.isRegularFile(it) && !targetDir.relativize(it).startsWith(".atropos") && !targetDir.relativize(it).startsWith(".git") }
-                .forEach { file ->
-                    val rel = targetDir.relativize(file).toString().replace('\\', '/')
-                    runCatching { files[rel] = Files.readString(file) }
+            paths.filter { file ->
+                Files.isRegularFile(file) && isSourceTextFile(targetDir, file)
+            }.forEach { file ->
+                val rel = targetDir.relativize(file).toString().replace('\\', '/')
+                val content = runCatching {
+                    Files.readString(file, StandardCharsets.UTF_8)
+                }.getOrElse {
+                    runCatching {
+                        String(Files.readAllBytes(file), StandardCharsets.ISO_8859_1)
+                    }.getOrNull()
                 }
+                if (content != null) {
+                    files[rel] = content
+                }
+            }
         }
         return files
+    }
+
+    private fun isSourceTextFile(targetDir: Path, path: Path): Boolean {
+        val rel = targetDir.relativize(path).toString().replace('\\', '/')
+        val segments = rel.split('/')
+        if (segments.any { it in AppFactoryRouter.IGNORED_DIRECTORY_SEGMENTS }) return false
+        val ext = path.fileName.toString().substringAfterLast('.', "").lowercase()
+        return ext !in AppFactoryRouter.BINARY_EXTENSIONS
     }
 
     private fun buildRepairPrompt(

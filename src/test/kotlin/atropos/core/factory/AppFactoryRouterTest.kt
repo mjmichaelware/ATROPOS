@@ -19,4 +19,22 @@ class AppFactoryRouterTest {
         assertTrue(plan.steps.any { it.kind == FactoryStepKind.CODE })
         assertTrue(plan.steps.any { it.kind == FactoryStepKind.VALIDATE })
     }
+
+    @Test
+    fun isSourceTextFile_excludes_pycache_and_binary_extensions() {
+        val root = Files.createTempDirectory("atropos-factory-src-")
+        val router = AppFactoryRouter(repoRoot = root)
+        val target = root.resolve("project")
+        Files.createDirectories(target.resolve("pkg/__pycache__"))
+        val pyc = target.resolve("pkg/__pycache__/module.cpython-314.pyc")
+        val py = target.resolve("pkg/module.py")
+        val wal = target.resolve("data.wal")
+        Files.write(pyc, byteArrayOf(0x8c.toByte(), 0xf3.toByte()))
+        Files.writeString(py, "print('hello')")
+        Files.write(wal, byteArrayOf(0x00, 0x01))
+
+        assertTrue(!router.isSourceTextFile(target, pyc))
+        assertTrue(!router.isSourceTextFile(target, wal))
+        assertTrue(router.isSourceTextFile(target, py))
+    }
 }

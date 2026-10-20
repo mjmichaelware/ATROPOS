@@ -281,14 +281,17 @@ internal class FactoryCompletionVerifier(
     private fun isDerivedVerifierPath(relative: String): Boolean =
         relative == ".git" || relative.startsWith(".git/") ||
             relative == "build" || relative.startsWith("build/") ||
+            relative == ".atropos" || relative.startsWith(".atropos/") ||
+            relative.contains("__pycache__") ||
+            relative.endsWith(".pyc") ||
             relative == ".atropos/evidence/app-manifest.txt" ||
             relative == ".atropos/evidence/build" || relative.startsWith(".atropos/evidence/build/")
 
     private fun isNonSymlinkPath(path: Path, root: Path): Boolean {
-        var cursor = root
+        var currentPath = root
         for (part in root.relativize(path)) {
-            cursor = cursor.resolve(part)
-            if (Files.isSymbolicLink(cursor)) return false
+            currentPath = currentPath.resolve(part)
+            if (Files.isSymbolicLink(currentPath)) return false
         }
         return true
     }

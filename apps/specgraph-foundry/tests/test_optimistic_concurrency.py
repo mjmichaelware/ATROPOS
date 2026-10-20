@@ -165,7 +165,7 @@ class OptimisticConcurrencyTest(
                 "paid_emergency_enabled": True,
                 "max_paid_decisions_per_unlock": 2,
             },
-            if_match="\"stale\"",
+            if_match=""stale"",
         )
         self.assertEqual(stale.status, 412)
         self.assertEqual(

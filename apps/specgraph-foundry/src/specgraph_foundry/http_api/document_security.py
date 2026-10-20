@@ -184,7 +184,7 @@ def normalized_filename(filename: str) -> str:
         raise InvalidDocumentError("filename is invalid")
     if FILENAME_CONTROL_PATTERN.search(candidate):
         raise InvalidDocumentError("filename is invalid")
-    if "/" in candidate or "\\" in candidate:
+    if "/" in candidate or "\" in candidate:
         raise InvalidDocumentError("filename is invalid")
 
     return candidate

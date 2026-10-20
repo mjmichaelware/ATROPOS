@@ -484,7 +484,7 @@ write(
 write(
     "src/specgraph_foundry/__init__.py",
     """
-    \"\"\"SpecGraph Foundry.\"\"\"
+    """SpecGraph Foundry."""
 
     __version__ = "0.1.0"
     """,
@@ -503,19 +503,19 @@ write(
     "src/specgraph_foundry/errors.py",
     """
     class SpecGraphError(Exception):
-        \"\"\"Base application error.\"\"\"
+        """Base application error."""
 
 
     class ValidationError(SpecGraphError):
-        \"\"\"Input violates an invariant.\"\"\"
+        """Input violates an invariant."""
 
 
     class NotFoundError(SpecGraphError):
-        \"\"\"Requested record does not exist.\"\"\"
+        """Requested record does not exist."""
 
 
     class ConflictError(SpecGraphError):
-        \"\"\"Requested mutation conflicts with stored state.\"\"\"
+        """Requested mutation conflicts with stored state."""
     """,
 )
 

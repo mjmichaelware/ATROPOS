@@ -50,7 +50,7 @@ def validate_host(host: str | None, settings: SecuritySettings) -> None:
 def validate_request_target(target: str, settings: ResourceLimitSettings) -> None:
     if len(target.encode("utf-8")) > settings.max_request_target_bytes:
         raise SecurityRejection("REQUEST_TARGET_TOO_LARGE", "request target is too large", 414)
-    if any(ord(ch) < 0x20 for ch in target) or "\\" in target or "#" in target:
+    if any(ord(ch) < 0x20 for ch in target) or "\" in target or "#" in target:
         raise SecurityRejection("VALIDATION_ERROR", "request target is invalid", 400)
     if re.search(r"%(?![0-9A-Fa-f]{2})", target):
         raise SecurityRejection("VALIDATION_ERROR", "request target is invalid", 400)

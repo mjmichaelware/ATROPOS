@@ -129,11 +129,21 @@ class AppFactoryRouter(
         val filesMap = mutableMapOf<String, String>()
         if (java.nio.file.Files.exists(request.targetDirectory)) {
             java.nio.file.Files.walk(request.targetDirectory).use { paths ->
-                paths.filter { java.nio.file.Files.isRegularFile(it) && !request.targetDirectory.relativize(it).startsWith(".atropos") }
-                    .forEach { file ->
-                        val rel = request.targetDirectory.relativize(file).toString().replace('\\', '/')
-                        filesMap[rel] = java.nio.file.Files.readString(file)
+                paths.filter { path ->
+                    java.nio.file.Files.isRegularFile(path) && isSourceTextFile(request.targetDirectory, path)
+                }.forEach { file ->
+                    val rel = request.targetDirectory.relativize(file).toString().replace('\\', '/')
+                    val content = runCatching {
+                        java.nio.file.Files.readString(file, java.nio.charset.StandardCharsets.UTF_8)
+                    }.getOrElse {
+                        runCatching {
+                            String(java.nio.file.Files.readAllBytes(file), java.nio.charset.StandardCharsets.ISO_8859_1)
+                        }.getOrNull()
                     }
+                    if (content != null) {
+                        filesMap[rel] = content
+                    }
+                }
             }
         }
         runCatching {
@@ -323,7 +333,36 @@ class AppFactoryRouter(
 
     fun render(plan: FactoryPlan): String = FactoryPlanHelper.render(plan)
 
+    fun isSourceTextFile(targetDir: Path, path: Path): Boolean {
+        val rel = targetDir.relativize(path).toString().replace('\\', '/')
+        val segments = rel.split('/')
+        if (segments.any { it in IGNORED_DIRECTORY_SEGMENTS }) return false
+        val ext = path.fileName.toString().substringAfterLast('.', "").lowercase()
+        return ext !in BINARY_EXTENSIONS
+    }
+
     companion object {
         val PYTHON_ENV: Map<String, String> = mapOf("PYTHONPATH" to ".")
+
+        val IGNORED_DIRECTORY_SEGMENTS: Set<String> = setOf(
+            ".atropos",
+            ".git",
+            "__pycache__",
+            ".venv",
+            "venv",
+            "node_modules",
+            "build",
+            "dist",
+            "target",
+            ".gradle",
+            ".idea"
+        )
+
+        val BINARY_EXTENSIONS: Set<String> = setOf(
+            "pyc", "pyo", "pyd", "so", "dll", "dylib", "class", "jar", "war", "ear",
+            "wal", "db", "sqlite", "sqlite3", "bin", "dat", "iso", "img",
+            "png", "jpg", "jpeg", "gif", "ico", "bmp", "tiff", "webp",
+            "pdf", "zip", "tar", "gz", "bz2", "xz", "7z", "zst"
+        )
     }
 }

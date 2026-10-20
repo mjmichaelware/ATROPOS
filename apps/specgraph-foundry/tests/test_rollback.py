@@ -31,7 +31,7 @@ class TestRollbackWorkflow(unittest.TestCase):
         self.assertIn("rollback-vercel", self.content)
 
     def test_refuses_empty_revision(self):
-        self.assertIn("if [ -z \"$REVISION\"", self.content)
+        self.assertIn("if [ -z "$REVISION"", self.content)
 
     def test_refuses_latest(self):
         self.assertIn("'latest'", self.content)

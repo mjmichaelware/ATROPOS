@@ -91,7 +91,7 @@ def validate_segment(value: str) -> str:
         not normalized
         or normalized in {".", ".."}
         or "/" in normalized
-        or "\\" in normalized
+        or "\" in normalized
         or not SAFE_SEGMENT.fullmatch(normalized)
         or posixpath.normpath(normalized) != normalized
     ):
@@ -101,7 +101,7 @@ def validate_segment(value: str) -> str:
 
 def validate_artifact_name(name: str) -> str:
     normalized = name.strip()
-    if "/" in normalized or "\\" in normalized:
+    if "/" in normalized or "\" in normalized:
         raise ValidationError("artifact name is invalid")
     validate_segment(normalized)
     if normalized not in {

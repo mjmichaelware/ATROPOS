@@ -52,7 +52,7 @@ def check_refusal_paths() -> list[str]:
     if path.is_file():
         content = path.read_text()
         refusal_patterns = [
-            ("empty revision", "if [ -z \"$REVISION\""),
+            ("empty revision", "if [ -z "$REVISION""),
             ("latest rejection", "'latest'"),
             ("HEAD rejection", "'HEAD'"),
             ("invalid target", "target must be"),

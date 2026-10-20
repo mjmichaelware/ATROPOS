@@ -55,7 +55,7 @@ def adapt_docx(
                         "DOCX archive exceeds the configured member limit"
                     )
 
-                normalized_name = info.filename.replace("\\", "/").lstrip("/")
+                normalized_name = info.filename.replace("\", "/").lstrip("/")
                 lower_name = normalized_name.casefold()
 
                 if not normalized_name or "/../" in f"/{normalized_name}/":

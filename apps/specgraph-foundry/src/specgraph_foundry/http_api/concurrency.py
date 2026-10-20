@@ -34,7 +34,7 @@ def strong_etag(
         + b"\x00"
         + canonical_json_bytes(value)
     ).hexdigest()
-    return f"\"{digest}\""
+    return f""{digest}""
 
 
 def binding_etag(

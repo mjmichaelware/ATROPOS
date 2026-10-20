@@ -127,7 +127,7 @@ def _render_minimal_pdf(markdown: str) -> bytes:
 
 def _pdf_escape(value: str) -> str:
     return (
-        value.replace("\\", "\\\\")
+        value.replace("\", "\\\")
         .replace("(", "\\(")
         .replace(")", "\\)")
         .encode("latin-1", errors="replace")

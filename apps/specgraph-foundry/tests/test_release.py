@@ -23,7 +23,7 @@ class TestReleaseSHA(unittest.TestCase):
         content = wf_path.read_text()
         self.assertIn("'latest'", content)
         self.assertIn("'HEAD'", content)
-        self.assertIn("if [ -z \"$REVISION\"", content)
+        self.assertIn("if [ -z "$REVISION"", content)
 
 
 class TestEnvironmentBoundary(unittest.TestCase):
