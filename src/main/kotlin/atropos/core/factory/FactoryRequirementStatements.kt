@@ -62,5 +62,10 @@ object FactoryRequirementStatements {
         add("The generated project MUST NOT mutate the host repository outside its own territory.")
         add("Provider prose MUST NOT execute directly as a command.")
         add("The run MUST record evidence sufficient for an independent audit.")
+
+        // Universal System Constraints: Chaos Gate, Persistence Gate, and Strict Serialization
+        add("Any generated state machine, WAL, or consensus module MUST satisfy The Chaos Gate by including adversarial unit tests verifying recovery from truncated files, corrupted byte frames, and simulated network partitions.")
+        add("Any system involving file I/O or databases MUST satisfy The Persistence Gate by generating a write-restart-read integration test with in-memory-only mock tests strictly forbidden for storage logic.")
+        add("File generation and serialization MUST enforce explicit raw string literals and strict byte-level encoding standardizing newline escaping to prevent disk serialization mismatches.")
     }
 }

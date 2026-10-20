@@ -28,6 +28,9 @@
 8. **Original Source Docs 1–3 are immutable.** New capability = proposal → accepted amendment path (Phase 20). Do not silently edit original authority.
 9. **Evidence over narrative.** Every claim of progress must name paths, line deltas, and which acceptance predicate moved.
 10. **Update `docs/PROGRESS_LEDGER.md` after every coherent batch.** See §4.
+11. **The Chaos Gate (Adversarial Reliability).** Any generated state machine, WAL, or consensus module MUST include adversarial unit tests. ATROPOS must test recovery from truncated files, corrupted byte frames, and simulated network partitions.
+12. **The Persistence Gate (Crash Resilience).** Any system involving file I/O or databases MUST generate a "write -> kill process -> restart -> read" integration test. In-memory-only mock tests are strictly forbidden for storage logic.
+13. **Strict Serialization.** Enforce explicit raw string literals and strict byte-level encoding (standardizing `\n` vs `\\n` escaping) to prevent disk serialization mismatches during file generation.
 
 ---
 
@@ -220,6 +223,9 @@ Everything else continues autonomously.
 - All new self-build or mutation paths must go through VerifiedCompletionGate; nonzero exit forbids VERIFIED.
 - Territory recorded at claim/dispatch; out-of-territory writes refused before mutation.
 - Evidence (hashes, paths, gate results) produced for every completion claim.
+- **The Chaos Gate:** Any generated state machine, WAL, or consensus module MUST include adversarial unit tests. ATROPOS must test recovery from truncated files, corrupted byte frames, and simulated network partitions.
+- **The Persistence Gate:** Any system involving file I/O or databases MUST generate a "write -> kill process -> restart -> read" integration test. In-memory-only mock tests are strictly forbidden for storage logic.
+- **Strict Serialization:** Enforce explicit raw string literals and strict byte-level encoding (standardizing `\n` vs `\\n` escaping) to prevent disk serialization mismatches during file generation.
 
 ---
 

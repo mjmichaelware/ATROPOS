@@ -16462,3 +16462,32 @@ End of AGENTS.md
   - `apps/web/src/app/(app)/developer/page.tsx=5e0cb064704f77b442c70b6b56ee00ebd0db66ab11dcf044f4d87389c47f51a7`
   - `apps/web/next.config.ts=d7020148b72691ec297f4569dcb97899b381711e5f2f322c9bb9e07a19a2970d`
   - `.github/workflows/release.yml=10039bf127b96751e9fedec62463270f63b77e41b0823a8e8878c7f819c184ec`
+
+### 2026-10-20T22:45Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: engine-chaos-persistence-gates
+- Paths touched:
+  - `AGENTS.md` (+6 lines, 264 lines total / injected §0 rules 11-13 and §7 code style for The Chaos Gate, The Persistence Gate, and Strict Serialization)
+  - `apps/specgraph-foundry/src/specgraph_foundry/atom_research_questions.py` (+16/-4 lines, 97 lines total / injected universal system constraints into research dimension prompts for STATE_MODEL, DATA_LIFECYCLE, RESTART_RECOVERY, TESTS_ACCEPTANCE)
+  - `src/main/kotlin/atropos/core/factory/FactoryRequirementStatements.kt` (+5 lines, 71 lines total / injected Chaos Gate, Persistence Gate, and Strict Serialization invariant modal requirements)
+  - `src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt` (+4 lines, 289 lines total / injected Universal Constraints into LLM classification prompts)
+- Atoms / phases affected: Phase 8 (Deterministic Verifier), Phase 19 (App Factory), Phase 20 (Self-Improvement / Invariant System Constraints).
+- Predicate moved:
+  - Enforced The Chaos Gate: Any generated state machine, WAL, or consensus module MUST include adversarial unit tests for recovery from truncated files, corrupted byte frames, and simulated network partitions.
+  - Enforced The Persistence Gate: Any system involving file I/O or databases MUST generate a "write -> kill process -> restart -> read" integration test; in-memory-only mock tests are strictly forbidden for storage logic.
+  - Enforced Strict Serialization: Mandated explicit raw string literals and strict byte-level encoding standardizing newline escaping to prevent disk serialization mismatches during file generation.
+  - Mathematical Proof Gate verified:
+    - Zero competitor strings in `src/` or `app/` modified files.
+    - Zero `TODO`, `FIXME`, or hollow stub methods in modified files.
+    - Every modified source file strictly <= 500 LOC (`AGENTS.md`: 264, `atom_research_questions.py`: 97, `FactoryRequirementStatements.kt`: 71, `SpecGraphCanonicalAtomProvider.kt`: 289).
+    - Remote execution mandate honored: zero local `./gradlew`, `kotlinc`, or `npm run build` executed in Termux.
+- Why the delta is justified: Upgrades the core ATROPOS engine with universal invariants across all generated applications and autonomous worktrees, preventing corrupt state transitions, ensuring crash resilience, and eliminating disk serialization divergences.
+- % delta: Phase 8 & Phase 19 robustness (+0% baseline delta, universal invariant gates active).
+- Git Object Hashes:
+  - `AGENTS.md`: `70b4eaa5342e86d523bdeaa4012a2ccaf4701f7c`
+  - `apps/specgraph-foundry/src/specgraph_foundry/atom_research_questions.py`: `4b881c4eb2032c4f6e94baf99a003564a8e76c57`
+  - `src/main/kotlin/atropos/core/factory/FactoryRequirementStatements.kt`: `81d3ade30f844d795f08f7880bb7d17cf69017ca`
+  - `src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt`: `7ceaccd109e28bee4300315179944992a0cec688`
+- Fingerprints (sha256):
+  - `AGENTS.md=22a2eda9d1d5806a4febed615c16217739ee4f0cd4e82d67e8a56500e2ab6164`
+  - `apps/specgraph-foundry/src/specgraph_foundry/atom_research_questions.py=beddd2994e65c434b8b4a857ecf18b974b364da62c13d7b4f8706d3194f29c41`
+  - `src/main/kotlin/atropos/core/factory/FactoryRequirementStatements.kt=7c60261bfb62b5e377b696252cfe50ce5cb57460c1d0e7cb2f9e6c88a4a72de5`
+  - `src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt=f82ed86fb7db883c9f35526915272cc5576e66ccdbbf6854d24748d0184d7d54`

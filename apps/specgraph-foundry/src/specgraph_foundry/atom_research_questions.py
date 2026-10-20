@@ -23,11 +23,19 @@ def research_question(
         ),
         "DATA_LIFECYCLE": (
             "What data is created, read, updated, "
-            "retained, exported, or deleted?"
+            "retained, exported, or deleted? The Persistence Gate: "
+            "any system involving file I/O or databases MUST generate a "
+            "write -> kill process -> restart -> read integration test "
+            "(in-memory mocks forbidden). Strict Serialization: enforce "
+            "explicit raw string literals and strict byte-level encoding "
+            r"(standardizing \n vs \\n escaping)."
         ),
         "STATE_MODEL": (
             "What states, transitions, guards, and "
-            "terminal conditions are required?"
+            "terminal conditions are required? The Chaos Gate: "
+            "any state machine, WAL, or consensus module MUST include "
+            "adversarial unit tests for recovery from truncated files, "
+            "corrupted byte frames, and simulated network partitions."
         ),
         "ERROR_MODEL": (
             "What failures can occur and how must "
@@ -47,7 +55,9 @@ def research_question(
         ),
         "RESTART_RECOVERY": (
             "How must interrupted work resume without "
-            "duplication, corruption, or lost state?"
+            "duplication, corruption, or lost state? The Chaos & Persistence Gates: "
+            "recovery from truncated files, corrupted byte frames, and process kill/restart "
+            "must be validated by deterministic integration tests."
         ),
         "PERFORMANCE_RESOURCES": (
             "What latency, throughput, memory, storage, "
@@ -63,7 +73,9 @@ def research_question(
         ),
         "TESTS_ACCEPTANCE": (
             "Which deterministic tests and acceptance "
-            "evidence prove this requirement is complete?"
+            "evidence prove this requirement is complete? MUST enforce "
+            "The Chaos Gate (adversarial tests for truncated/corrupted inputs) and "
+            "The Persistence Gate (real crash-restart tests; in-memory mocks strictly forbidden)."
         ),
         "INTEGRATION_CALL_SITES": (
             "Where is this behavior invoked, exposed, "

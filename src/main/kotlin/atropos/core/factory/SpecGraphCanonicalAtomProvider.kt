@@ -133,6 +133,10 @@ class SpecGraphCanonicalAtomProvider(
             Classify this software requirement into exactly one ATROPOS AtomDimension.
             Return only the exact enum constant, with no markdown or explanation.
             Categories: ${AtomDimension.entries.joinToString(", ") { it.name }}
+            Universal Constraints:
+            - Chaos Gate: State machines, WALs, and consensus require adversarial unit tests for recovery from truncated files, corrupted byte frames, and simulated network partitions.
+            - Persistence Gate: Storage and databases require write -> kill process -> restart -> read integration tests (in-memory mocks forbidden).
+            - Strict Serialization: Enforce explicit raw string literals and strict byte-level encoding standardizing newline escaping.
             Prompt fingerprint: $promptFingerprint
             Source: $sourcePath
             Requirement: ${atom.statement}
