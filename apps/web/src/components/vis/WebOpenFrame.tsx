@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 'use client';
 
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { globalRoutes, navigationSpine, HOE_A02_SPINE_ORDER } from '@/components/navigation/routes';
 import { useNavItems } from '@/components/navigation/use-nav-items';
 import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
