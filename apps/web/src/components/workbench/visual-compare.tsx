@@ -12,8 +12,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { writeEngine, readEngine } from '@/lib/engine/client';
-import { isEvidenceRef } from '@/packages/atropos-web-contracts/src/index.mjs';
+import { writeEngine } from '@/lib/engine/client';
 
 export interface VisualCompareResult {
   ok: true;
