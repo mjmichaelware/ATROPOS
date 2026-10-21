@@ -4,6 +4,7 @@ import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.PatchActionProposals
+import atropos.core.security.ProtectedPathPolicy
 import atropos.core.territory.GrantResult
 import atropos.core.territory.TerritoryGrantService
 import java.nio.file.Files
@@ -17,7 +18,8 @@ class AgentPatchApplyService(
     private val territoryGrants: TerritoryGrantService,
     private val agencyGate: BoundedAgencyGate,
     private val auditGate: AgentPatchAuditGate,
-    private val agencyRunner: AgentPatchAgencyRunner
+    private val agencyRunner: AgentPatchAgencyRunner,
+    private val protectedPathPolicy: ProtectedPathPolicy = ProtectedPathPolicy()
 ) {
     fun applyPatch(reference: String, checkOnly: Boolean): AgentPatchApplyResult {
         val resolvedId = resolvePatchId(reference)
@@ -89,6 +91,30 @@ class AgentPatchApplyService(
                 refusalReason = mutationDecision.reason,
                 disposition = mutationDecision.disposition,
                 proposalId = mutationProposal.id
+            )
+        }
+
+        // Check protected paths before any mutation
+        val pathCheck = protectedPathPolicy.checkPaths(snapshot.extraction.touchedPaths)
+        if (pathCheck is ProtectedPathResult.Protected) {
+            val logFile = if (!checkOnly) {
+                metadataWriter.writeApplyMeta(
+                    snapshot = snapshot,
+                    checkOnly = false,
+                    checkResult = AgentPatchCheckResult(passed = false, exitCode = 0, output = pathCheck.reason),
+                    applyResult = null,
+                    refusalReason = pathCheck.reason,
+                    changedPaths = snapshot.extraction.touchedPaths
+                )
+            } else null
+            return AgentPatchApplyResult(
+                patchId = snapshot.id,
+                patchFile = snapshot.patchFile,
+                changedPaths = snapshot.extraction.touchedPaths,
+                checkOnly = checkOnly,
+                applied = false,
+                refusalReason = "protected path: ${pathCheck.reason}",
+                logFile = logFile
             )
         }
 

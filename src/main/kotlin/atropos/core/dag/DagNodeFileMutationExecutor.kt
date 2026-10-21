@@ -1,6 +1,8 @@
 package atropos.core.dag
 
 import atropos.core.planning.NodeResult
+import atropos.core.security.ProtectedPathPolicy
+import atropos.core.security.ProtectedPathResult
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -8,7 +10,8 @@ class DagNodeFileMutationExecutor(
     private val store: DagStore,
     private val finisher: DagNodeFinisher,
     private val normalizeCandidatePath: (String) -> Path?,
-    private val territoryViolation: (DagNode, List<String>) -> String?
+    private val territoryViolation: (DagNode, List<String>) -> String?,
+    private val protectedPathPolicy: ProtectedPathPolicy = ProtectedPathPolicy()
 ) {
     fun execute(node: DagNode, original: DagNode): DagNodeExecutionResult {
         val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
@@ -24,6 +27,12 @@ class DagNodeFileMutationExecutor(
                 throw atropos.core.EngineDomainViolationException(
                     "Mutation denied: target path ${parsed.path} is within engine authority domain"
                 )
+            }
+
+            // Check protected paths
+            val pathCheck = protectedPathPolicy.checkPath(parsed.path.toString())
+            if (pathCheck is ProtectedPathResult.Protected) {
+                return finisher.fail(running, original, "protected path: ${pathCheck.reason}")
             }
             if (parsed.content.isBlank()) {
                 return finisher.fail(running, original, "file mutation refused: empty content")
