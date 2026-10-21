@@ -16635,3 +16635,16 @@ End of AGENTS.md
 - New overall estimate: ≈ 43% (unchanged; CI evidence confirms prior delta)
 - Fingerprints (sha256, first 12): commit `b8734640`; run `39562130897`; job `119095645683`
 
+### 2026-10-21T16:00:00Z · Agent: Codex GPT-5 · Batch: structural-headless-console-safety
+
+- Paths touched:
+  - `src/main/kotlin/atropos/core/security/OwnerAuthorizationService.kt` (+7/-4) — made the `System.console()` dependency explicitly nullable and centralized the no-console branch as `isHeadless`; owner authorization remains fail-closed in headless execution.
+  - `src/test/kotlin/atropos/core/security/OwnerAuthorizationServiceHeadlessTest.kt` (+18 new) — regression coverage for construction and authorization with no console.
+  - `docs/PROGRESS_LEDGER.md` (+10) — recorded the structural headless-console patch.
+- Atoms / phases affected: CLI/headless runtime safety; Phase 20 owner authorization boundary.
+- Predicate moved: all live `System.console()` assignments are now nullable or safely compared/used; no headless path constructs a non-null `Console` from a possibly null platform value. Interactive rendering and authorization continue to degrade to plain I/O or fail closed without an NPE.
+- Verification actually run: static `rg` audit of all `System.console()` call sites and targeted source inspection; `git diff --check`. No local Gradle, Kotlin compiler, or test execution was run per the remote-CI-only constraint.
+- % delta: headless runtime safety moved from partial to structurally covered; broader phase percentages unchanged pending hosted CI evidence.
+- New overall estimate: unchanged (≈ 43%).
+- Fingerprints: computed after commit.
+

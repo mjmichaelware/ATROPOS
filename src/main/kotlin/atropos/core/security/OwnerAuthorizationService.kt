@@ -57,7 +57,7 @@ import javax.crypto.spec.PBEParameterSpec
 class OwnerAuthorizationService(
     private val configRoot: Path = AtroposConfig.configRoot(),
     private val clock: () -> Instant = { Instant.now() },
-    private val console: Console = System.console()
+    private val console: Console? = System.console()
 ) {
     companion object {
         private const val PBKDF2_ITERATIONS = 100_000
@@ -88,6 +88,9 @@ class OwnerAuthorizationService(
     private val shadowDir: Path = configRoot.resolve(AUTH_DIR_NAME)
     private val shadowFile: Path = shadowDir.resolve(SHADOW_FILE_NAME)
     private val failedAttemptsCache = ConcurrentHashMap<String, Long>()
+
+    private val isHeadless: Boolean
+        get() = console == null
 
     init {
         ensureShadowDirectory()
@@ -213,9 +216,9 @@ class OwnerAuthorizationService(
             return null
         }
 
-        // Interactive mode: require console
-        if (console == null) {
-            // No console available - cannot prompt for password
+        // Interactive authorization is unavailable without a console. Fail closed
+        // instead of allowing Kotlin's non-null platform type to throw at startup.
+        if (isHeadless) {
             return null
         }
 
