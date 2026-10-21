@@ -25,6 +25,16 @@ jobs:
         java-version: '17'
     - name: Install ripgrep
       run: sudo apt-get update && sudo apt-get install -y ripgrep
+    - name: Backend atom source contract
+      run: bash scripts/backend-atom-contract-test.sh
+    - name: Clean runner contract
+      run: bash scripts/github-actions-clean-runner-test.sh
+    - name: Provider connect contract
+      run: bash scripts/provider-connect-contract-test.sh
+    - name: MCP example contract
+      run: bash scripts/mcp-example-contract-test.sh
+    - name: Release installer contract
+      run: bash scripts/release-installer-contract-test.sh
     - name: Clear Gradle cache
       run: rm -rf ~/.gradle/caches ~/.gradle/wrapper/dists/gradle-8.4-bin
     - name: Build the jar
