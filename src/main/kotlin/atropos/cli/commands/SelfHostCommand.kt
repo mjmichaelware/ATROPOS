@@ -193,6 +193,16 @@ class SelfHostCommand(
         val prompt = args.joinToString(" ").ifBlank {
             return AgentCommandOutcome.Invalid("usage: /agent self-host run <natural-language self-host goal>")
         }
+
+        // Every self-build invocation is an operator-authorized Phase 20
+        // operation. The credential source is local-only; CI never reaches
+        // this command and therefore never needs the operator credential.
+        if (phase20Auth.requireAuthorization("Phase 20 self-host run") == null) {
+            val message = "self-host run refused: Phase 20 owner authorization required"
+            ui.renderError(message)
+            return AgentCommandOutcome.Invalid(message)
+        }
+
         // A spinner communicates one bit — something is happening — and stops
         // being informative in about ten seconds. After that the operator
         // cannot tell progress from a hang, and the only available action

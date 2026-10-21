@@ -15,7 +15,7 @@ object CommandRiskCatalog {
             value == "/paid unlock" || value.startsWith("/keys setup") ||
                 value.startsWith("/artifact install") || value.startsWith("/artifact commit") ||
                 value.startsWith("/artifact promote-jar") || value.startsWith("/self-host start") ||
-                value.startsWith("/self-host run") || value.startsWith("/agent apply") ||
+                value.startsWith("/self-host run") || value.startsWith("/self run") || value.startsWith("/agent apply") ||
                 value.startsWith("/agent repair") || value.startsWith("/agent daemon start") ||
                 value.startsWith("/agent daemon stop") || value.startsWith("/git reset") ||
                 value.startsWith("/git push") || value.startsWith("/shell") -> CommandRisk.RISKY

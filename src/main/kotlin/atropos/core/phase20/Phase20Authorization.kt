@@ -26,8 +26,11 @@ import javax.crypto.spec.PBEParameterSpec
  *
  * ## Trust Boundary
  *
- * - The owner password is never stored in plaintext, configuration committed to Git,
- *   logs, prompts, or memory beyond the verification scope.
+ * - In the normal vault-backed mode, the owner password is never stored in
+ *   plaintext, configuration committed to Git, logs, prompts, or memory beyond
+ *   the verification scope. While hosted auth is paused, the explicitly
+ *   operator-managed `ATROPOS_PHASE20_PASSWORD` value may be read from the
+ *   ignored local `.env` file and is never committed or logged.
  * - A salted PBKDF2 hash is stored in the TokenIsolationVault under the secret
  *   name `phase20-owner-auth`.
  * - The vault uses AES-GCM encryption at rest; the PBKDF2 hash adds a second
@@ -79,11 +82,13 @@ class Phase20Authorization(
 
     private val secretName = "phase20-owner-auth"
     private val tokenSecretName = "phase20-auth-token"
+    private val localPasswordEnvName = "ATROPOS_PHASE20_PASSWORD"
 
     /**
      * Checks if owner authorization is configured.
      */
     fun isConfigured(): Boolean {
+        if (localPhase20Password() != null) return true
         val result = vault.readSecretResult(secretName)
         return result is VaultReadResult.Available
     }
@@ -130,6 +135,17 @@ class Phase20Authorization(
      * Verifies the provided password against the stored hash.
      */
     fun verifyPassword(password: String): Boolean {
+        // Supabase is intentionally not involved in this temporary local mode.
+        // An ignored .env value is the operator-owned source while the hosted
+        // service is paused; CI has no .env and therefore never receives this
+        // credential or this authentication path.
+        localPhase20Password()?.let { configured ->
+            return MessageDigest.isEqual(
+                password.toByteArray(StandardCharsets.UTF_8),
+                configured.toByteArray(StandardCharsets.UTF_8)
+            )
+        }
+
         val result = vault.readSecretResult(secretName)
         if (result !is VaultReadResult.Available) return false
         val stored = result.value
@@ -304,6 +320,44 @@ class Phase20Authorization(
         return console?.readPassword(prompt)?.joinToString("")?.trim()
             ?.takeIf { it.isNotBlank() }
     }
+
+    /**
+     * Reads the temporary local operator credential without adding a dotenv
+     * dependency to the engine. Only the Phase 20 key is considered; no .env
+     * contents are logged, copied into the vault, or sent to CI.
+     */
+    private fun localPhase20Password(): String? {
+        System.getenv(localPasswordEnvName)?.takeIf { it.isNotBlank() }?.let { return it }
+
+        val candidates = listOfNotNull(
+            runCatching { Path.of(System.getProperty("user.dir")).resolve(".env") }.getOrNull(),
+            runCatching { AtroposRepoRootLocator.resolve().resolve(".env") }.getOrNull(),
+            runCatching { Path.of(System.getProperty("user.home")).resolve(".env") }.getOrNull()
+        ).distinct()
+
+        return candidates.asSequence()
+            .mapNotNull { readDotEnvValue(it, localPasswordEnvName) }
+            .firstOrNull()
+    }
+
+    private fun readDotEnvValue(path: Path, key: String): String? = runCatching {
+        if (!Files.isRegularFile(path)) return@runCatching null
+        Files.readAllLines(path, StandardCharsets.UTF_8)
+            .asSequence()
+            .map(String::trim)
+            .filter { it.isNotEmpty() && !it.startsWith("#") }
+            .mapNotNull { line ->
+                val separator = line.indexOf('=')
+                if (separator <= 0 || line.substring(0, separator).trim() != key) return@mapNotNull null
+                val raw = line.substring(separator + 1).trim()
+                val quoted = raw.length >= 2 &&
+                    ((raw.first() == '"' && raw.last() == '"') ||
+                        (raw.first() == '\'' && raw.last() == '\''))
+                (if (quoted) raw.substring(1, raw.length - 1) else raw.substringBefore(" #").trim())
+                    .takeIf { it.isNotBlank() }
+            }
+            .firstOrNull()
+    }.getOrNull()
 
     // --- Clock for testability --
 

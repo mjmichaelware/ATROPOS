@@ -44,47 +44,25 @@ jobs:
             *gradle-9*) echo "::error::Gradle 9 is incompatible with the Kotlin Android plugin"; exit 1 ;;
           esac
 
-      # Signing secrets are checked before the build, not after it. apksigner
-      # reports a missing alias and password as
-      # "Failed to load signer / Tag number over 30 is not supported", which
-      # reads like a corrupt APK rather than absent configuration and cost a
-      # full build to discover. Values are never echoed; only presence and the
-      # decoded keystore's magic bytes are reported.
-      - name: Verify signing secrets are present and well-formed
+      # Permanent release signing is optional for CI compilation. These
+      # credentials belong to the operator's release-signing setup; their
+      # absence must never prevent the application from being built and
+      # inspected remotely. Values are never echoed.
+      - name: Detect optional permanent signing credentials
+        id: signing
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set -eu
-          missing=0
-          for name in KS_B64 KS_ALIAS KS_PASS; do
-            eval "value=\${$name:-}"
-            if [ -z "$value" ]; then
-              echo "::error::secret $name is empty or not set"
-              missing=1
-            else
-              echo "$name: present (${#value} chars)"
-            fi
-          done
-          [ "$missing" -eq 0 ] || {
-            echo "::error::Set ANDROID_KEYSTORE_B64, ANDROID_KEY_ALIAS and ANDROID_KEYSTORE_PASSWORD in repository secrets."
-            exit 1
-          }
-
-          printf '%s' "$KS_B64" | base64 -d > /tmp/ks.jks 2>/dev/null || {
-            echo "::error::ANDROID_KEYSTORE_B64 is not valid base64"; exit 1; }
-          size=$(stat -c%s /tmp/ks.jks)
-          echo "decoded keystore: $size bytes"
-          [ "$size" -gt 100 ] || { echo "::error::decoded keystore is too small to be real"; exit 1; }
-
-          # Prove the keystore actually opens with the supplied alias and
-          # password before spending a build on it.
-          keytool -list -keystore /tmp/ks.jks -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null 2>&1 || {
-            echo "::error::keystore will not open with the supplied alias/password. Check ANDROID_KEY_ALIAS matches the alias inside the keystore."
-            exit 1; }
-          echo "keystore opens with the supplied alias and password"
-          rm -f /tmp/ks.jks
+          if [ -n "$KS_B64" ] && [ -n "$KS_ALIAS" ] && [ -n "$KS_PASS" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Permanent signing credentials detected; CI will produce a signed artifact after the build."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Permanent signing credentials are not configured; CI will publish the verified unsigned build artifact."
+          fi
 
       # Release, not debug. Modern Android refuses debug-signed APKs through the
       # GUI installer, which is why installation kept failing even after the
@@ -112,7 +90,42 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
+      # Validate the compiled application independently of signing. This keeps
+      # the build gate useful when permanent release credentials are intentionally
+      # absent while still proving that the APK is not an empty shell.
+      - name: Verify unsigned APK contains compiled application
+        run: |
+          set -eu
+          apk=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          test -n "$apk"
+          aapt="$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort | tail -1)"
+          "$aapt" dump badging "$apk" > badging.txt
+          grep -q "package: name=" badging.txt
+          grep -q "launchable-activity" badging.txt
+          unzip -l "$apk" > contents.txt
+          grep -q "classes.dex" contents.txt
+          grep -q "resources.arsc" contents.txt
+          echo "APK_BUILD_VERIFIED_OK"
+
+      - name: Verify optional signing credentials
+        if: steps.signing.outputs.available == 'true'
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -eu
+          trap 'rm -f /tmp/ks.jks' EXIT
+          printf '%s' "$KS_B64" | base64 -d > /tmp/ks.jks 2>/dev/null || {
+            echo "::error::ANDROID_KEYSTORE_B64 is not valid base64"; exit 1; }
+          size=$(stat -c%s /tmp/ks.jks)
+          [ "$size" -gt 100 ] || { echo "::error::decoded keystore is too small to be real"; exit 1; }
+          keytool -list -keystore /tmp/ks.jks -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null 2>&1 || {
+            echo "::error::keystore will not open with the supplied alias/password"; exit 1; }
+          echo "optional permanent signing credentials verified"
+
       - name: Sign APK with Permanent Key
+        if: steps.signing.outputs.available == 'true'
         uses: r0adkll/sign-android-release@v1
         id: sign_app
         with:
@@ -128,6 +141,7 @@ jobs:
       # device: a valid package name, a version, and a launchable activity.
       # The previous "empty shell" APK would have failed every one of these.
       - name: Verify the signed APK is installable
+        if: steps.signing.outputs.available == 'true'
         run: |
           set -eu
           apk="${{ steps.sign_app.outputs.signedReleaseFile }}"
@@ -151,8 +165,13 @@ jobs:
       # Stable artifact name. A dynamic name is what broke the download script:
       # it searched for a fixed pattern that never matched.
       - name: Upload Signed APK Artifact
+        if: steps.signing.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: atropos-android-signed
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
           if-no-files-found: error
+
+      - name: Report unsigned-only CI result
+        if: steps.signing.outputs.available != 'true'
+        run: echo "Unsigned APK build is complete; permanent signing was intentionally skipped."

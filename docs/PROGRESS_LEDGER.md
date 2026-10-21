@@ -16648,3 +16648,30 @@ End of AGENTS.md
 - New overall estimate: unchanged (≈ 43%).
 - Fingerprints: computed after commit.
 
+### 2026-10-21T13:55:38Z · Agent: Codex GPT-5 · Batch: decouple-ci-apk-build-from-operator-signing
+
+- Paths touched:
+  - `.github/workflows/android-apk.yml` (+47/-34) — made permanent Android release signing optional; the CI build now always assembles, validates, and uploads the unsigned release APK, while keystore validation/signing runs only when all three explicitly configured secrets are present.
+  - `.github/workflows/release.yml` (+1/-1) — changed the rolling `latest` GitHub Release from prerelease to a normal release, so the published JAR/APK assets are eligible for the standard release channel.
+  - `docs/PROGRESS_LEDGER.md` (+10) — recorded the CI responsibility and publication-channel corrections.
+- Atoms / phases affected: Android packaging CI; operator-owned release signing boundary; release publication.
+- Predicate moved: Android application compilation is no longer gated by unrelated operator signing credentials. Missing credentials now produce a verified unsigned artifact and a successful build job; supplied credentials still receive full keystore, signing, and installability validation. The rolling `latest` artifact now publishes as a normal release rather than a prerelease.
+- Verification actually run: static workflow/source inspection only; no local Gradle, Kotlin compiler, Android build, or test execution was run. GitHub Actions remote verification is required after push.
+- % delta: CI Android build reliability moved from blocked-by-missing-secrets to source-wired/conditional-signing; rolling release publication moved from prerelease-only to normal-release; application functionality and self-build authorization policy are unchanged.
+- New overall estimate: unchanged (≈ 43%).
+- Fingerprints: computed after commit.
+
+### 2026-10-21T14:15:00Z · Agent: Codex GPT-5 · Batch: local-phase20-auth-and-final-release
+
+- Paths touched:
+  - `src/main/kotlin/atropos/core/phase20/Phase20Authorization.kt` — added an ignored local `.env` lookup for `ATROPOS_PHASE20_PASSWORD` as the temporary operator credential while Supabase is paused; the existing scoped, single-use authorization token and vault path remain intact, and no credential value is present in source or documentation.
+  - `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt` — made every self-host run require the Phase 20 owner authorization check before the runner starts.
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` and `src/main/kotlin/atropos/cli/SelfHostAliasTranslator.kt` — accepted `/self run` as the shorthand for the canonical self-host command.
+  - `.github/workflows/android-apk.yml` — kept keystore signing optional so missing Android secrets never block the unsigned release APK build or artifact upload.
+  - `.github/workflows/release.yml` — made the rolling `latest` release explicitly normal/latest, changed the release APK job to build unsigned `assembleRelease`, and removed silent APK upload failure handling.
+  - `.env` — local-only operator credential configuration; ignored by Git and restricted to owner permissions.
+- Atoms / phases affected: Phase 20 local operator authorization; Android packaging CI; release publication.
+- Predicate moved: local `/self run` now requires the operator-provided ignored environment value without coupling CI to it; CI publishes unsigned APK output without keystore, Supabase, or `.env` prerequisites; rolling releases are finalized normal releases.
+- Verification actually run: static source/workflow inspection and Git metadata checks only; no local Gradle, Kotlin compiler, Android build, or tests were run. Remote CI verification is required after push.
+- % delta: authorization source wiring and release publication configuration changed; CI build remains independent of operator credentials.
+- Fingerprints: computed after commit.

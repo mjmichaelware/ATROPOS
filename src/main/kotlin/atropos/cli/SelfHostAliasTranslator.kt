@@ -12,7 +12,7 @@ internal object SelfHostAliasTranslator {
     fun translate(tokens: List<String>): List<String>? {
         if (tokens.isEmpty()) return null
         val first = tokens.first().lowercase()
-        if (first != "/self-host" && first != "self-host") return null
+        if (first !in setOf("/self-host", "self-host", "/self", "self")) return null
 
         val remainder = tokens.drop(1)
         val subcommand = remainder.firstOrNull()?.lowercase()

@@ -285,7 +285,7 @@ class CommandRouter(
             return RouterOutcome.CONTINUE
         }
 
-        if (first in setOf("/self-host", "self-host")) {
+        if (first in setOf("/self-host", "self-host", "/self", "self")) {
             promptSupport.selfHostAlias(routedTokens)
             return RouterOutcome.CONTINUE
         }

@@ -106,7 +106,7 @@ jobs:
 
         gh release delete latest --yes --cleanup-tag || true
 
-        gh release create latest --title "ATROPOS latest (rolling)" --notes "$notes" "$jar" "$jar.sha256" --prerelease=true'
+        gh release create latest --title "ATROPOS latest (rolling)" --notes "$notes" "$jar" "$jar.sha256" --prerelease=false --latest'
   publish-npm:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: publish
@@ -132,15 +132,14 @@ jobs:
   apk:
     needs: publish
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v5
       with:
         distribution: temurin
         java-version: '17'
-    - name: Build the APK
-      run: ./gradlew --no-daemon -p app assembleDebug --max-workers=1
+    - name: Build the unsigned release APK
+      run: ./gradlew --no-daemon -p app assembleRelease --max-workers=1
     - name: Name it, and record the hash
       id: apk
       run: 'set -euo pipefail
@@ -162,7 +161,7 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: 'set -euo pipefail
 
-        gh release upload latest build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber || true'
+        gh release upload latest build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber'
     - name: Publish it on the tagged release
       if: startsWith(github.ref, 'refs/tags/v')
       env:
