@@ -67,14 +67,11 @@ export function FileExplorer({
     setSource('loading');
     try {
       const result = await readWorkspaceTree();
-      if (!result.ok) {
-        setState({ kind: 'error', detail: result.detail, remedy: result.remedy });
-        setSource('session');
-      } else if (result.data.tree.length === 0) {
+      if (result.tree.length === 0) {
         setState({ kind: 'empty', source: 'workspace' });
         setSource('workspace');
       } else {
-        setState({ kind: 'workspace', tree: result.data.tree });
+        setState({ kind: 'workspace', tree: result.tree });
         setSource('workspace');
       }
     } catch (error) {
@@ -98,7 +95,7 @@ export function FileExplorer({
       try {
         const result = await readWorkspaceTree();
         if (cancelled) return;
-        if (!result.ok || result.data.tree.length === 0) {
+        if (result.tree.length === 0) {
           // Fall back to session files
           const filesResult = await readEngine<FilesPayload>('/v1/files');
           if (cancelled) return;
@@ -112,7 +109,7 @@ export function FileExplorer({
             setSource('session');
           }
         } else {
-          setState({ kind: 'workspace', tree: result.data.tree });
+          setState({ kind: 'workspace', tree: result.tree });
           setSource('workspace');
         }
       } catch {
