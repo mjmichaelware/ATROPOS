@@ -5,7 +5,7 @@ import React from 'react';
 import { SplitTerminalEditor } from '../split-terminal-editor';
 
 // Mock xterm to prevent canvas/addon DOM errors in jsdom
-vi.mock('@xterm/xterm', () => {
+vi.mock('xterm', () => {
   return {
     Terminal: vi.fn().mockImplementation(() => ({
       loadAddon: vi.fn(),

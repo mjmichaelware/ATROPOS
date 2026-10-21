@@ -12,12 +12,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { BinaryIpcSocket, SocketState } from '../../lib/bridge/binary-ipc-socket';
 import { Split, Maximize2, Minimize2, Terminal as TerminalIcon, FileCode, RefreshCw } from 'lucide-react';
-import '@xterm/xterm/css/xterm.css';
+import 'xterm/css/xterm.css';
 
 export interface FileEditorTab {
   id: string;
