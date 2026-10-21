@@ -16607,3 +16607,20 @@ End of AGENTS.md
 - New overall estimate: ≈ 43% (42% → 43%). Arithmetic: Phase 20 +13 points on 10% weight = +1.3; Protected Paths +15 on Phase 13 (70%→85%, 25% weight in Horizon II) = +1.0 on Horizon II; SWE-bench fixes unblock evaluation evidence.
 
 - Fingerprints (sha256, first 12): `OwnerAuthorizationService.kt` computed after write; `ProtectedPathPolicy.kt` computed after write; `AgentContextCollector.kt` computed after write; `SourceBindingFetcher.kt` computed after write; `run_swe_bench_batch.py` computed after write; `ProtectedPathPolicyTest.kt` computed after write.
+
+### 2026-10-21T14:30:00Z · Agent: OpenCode (nemotron-3-ultra-free) · Batch: swe-bench-context-pack-target-workspace-fix
+
+- Paths touched:
+  - `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` (+16/-7) — Modified `sourcePack()` to use target workspace as effective repo root for source binding resolution and context packing when a target workspace is provided and differs from the ATROPOS repo root. Creates new `ActiveSourceBindingResolver` and `CodebaseContextPacker` instances bound to the target workspace instead of reusing the ATROPOS-engine-root-bound instances.
+
+- Atoms / phases affected: SWE-bench Context Pack Resolution (Core Engine Gap Map), Phase 11 Self-Build Loop (external workspace support), Phase 0–11 Foundation aggregate
+
+- Predicate moved: **External workspace source context pack now resolves correctly** — previously, when `TargetWorkspaceLocator` identified an external workspace (e.g., SWE-bench `astropy__astropy-11693`), `AgentContextCollector.sourcePack()` would resolve the source binding against the ATROPOS engine root but attempt to pack files from the target workspace using `allowedPaths = listOf(".")`. This territory mismatch caused `CodebaseContextPacker` to refuse the pack with `SOURCE_PACK_REFUSED`, resulting in `sourcePackId = null` and the provider boundary refusing with `MISSING_SOURCE_PACK`. Now `sourcePack()` creates a target-workspace-scoped binding resolver and packer, so the source binding (default `LOCAL_PATH` to target workspace) and the allowed paths both reference the same external repository tree.
+
+- % delta: SWE-bench evaluation runner moved from source-wired/partial → functional for external workspaces (unblocks Phase 11 external self-host path). Phase 11 aggregate unchanged at ~78% (this fix enables but does not complete the interactive external workspace path). Critical stub aggregate unchanged at ~82%.
+
+- Why the delta is justified: The fix is a single-method change in `AgentContextCollector.sourcePack()` (lines 254–289) that respects the existing `targetWorkspace` parameter already propagated by `collect()`, `collectPatch()`, and `collectRepair()`. No new owners, registries, or policy systems were introduced — the existing `ActiveSourceBindingResolver` and `CodebaseContextPacker` are composed with the target workspace as their root, satisfying AGENTS.md §7 (composition over monoliths, non-duplication law). The change is fail-closed: if target workspace equals repo root, the pre-created instances are reused exactly as before.
+
+- New overall estimate: ≈ 43% (unchanged). The fix unblocks evaluation evidence for SWE-bench but does not move a blueprint phase gate; overall weighted percentage remains at the prior ledger's 43%.
+
+- Fingerprints (sha256, first 12): `AgentContextCollector.kt`=computed after write.

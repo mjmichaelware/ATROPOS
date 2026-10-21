@@ -252,16 +252,25 @@ class AgentContextCollector(
     }
 
     private fun sourcePack(allowedPaths: List<String>, targetWorkspace: Path? = null): SourcePackSelection {
-        val binding = sourceBindingResolver.resolve().binding
+        val effectiveRepoRoot = targetWorkspace?.takeIf { it != repoRoot } ?: repoRoot
+        val bindingResolver = if (effectiveRepoRoot != repoRoot) {
+            ActiveSourceBindingResolver(effectiveRepoRoot)
+        } else {
+            sourceBindingResolver
+        }
+        val packer = if (effectiveRepoRoot != repoRoot) {
+            CodebaseContextPacker(effectiveRepoRoot)
+        } else {
+            contextPacker
+        }
+        val binding = bindingResolver.resolve().binding
             ?: return SourcePackSelection(null, "SOURCE_BINDING_UNAVAILABLE")
-        // If we have a target workspace different from repoRoot, use it as the allowed path
-        // to ensure we pack the external repo's files, not ATROPOS paths
         val effectiveAllowedPaths = if (targetWorkspace != null && targetWorkspace != repoRoot) {
             listOf(".") // Pack the entire target workspace
         } else {
             allowedPaths
         }
-        val result = contextPacker.pack(
+        val result = packer.pack(
             SourcePackRequest(
                 binding = binding,
                 allowedPaths = effectiveAllowedPaths.distinct(),
