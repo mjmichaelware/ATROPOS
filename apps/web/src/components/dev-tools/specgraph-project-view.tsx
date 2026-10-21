@@ -168,7 +168,7 @@ function SourcesTab({ sources, loading, error }: { sources: any[]; loading: bool
           </tr>
         </thead>
         <tbody>
-          {sources.map((source) => (
+          {sources.map((source: any) => (
             <tr key={source.id}>
               <td className="font-mono text-sm">{source.title}</td>
               <td>{source.metadata?.type ?? 'unknown'}</td>
@@ -198,7 +198,7 @@ function AtomsTab({ atoms, loading, error }: { atoms: any[]; loading: boolean; e
           </tr>
         </thead>
         <tbody>
-          {atoms.map((atom) => (
+          {atoms.map((atom: any) => (
             <tr key={atom.id}>
               <td className="font-mono text-xs">{atom.id.slice(0, 16)}…</td>
               <td>{atom.type}</td>
@@ -219,14 +219,14 @@ function ResearchTab({ research, loading, error }: { research: any[]; loading: b
 
   return (
     <div className="space-y-4">
-      {research.map((r) => (
+      {research.map((r: any) => (
         <details key={r.id} className="sg-devtools-details">
           <summary className="sg-devtools-summary">
             <span className="font-mono">{r.query}</span>
-            <span className="text-xs text-sg-neutral-500">{r.results.length} results</span>
+            <span className="text-xs text-sg-neutral-500">{(r.results?.length ?? 0)} results</span>
           </summary>
           <ul className="mt-2 space-y-1">
-            {r.results.map((s) => (
+            {r.results?.map((s: any) => (
               <li key={s.id} className="text-sm font-mono">{s.title}</li>
             ))}
           </ul>
@@ -253,7 +253,7 @@ function ExecutionsTab({ executions, loading, error }: { executions: any[]; load
           </tr>
         </thead>
         <tbody>
-          {executions.map((e) => (
+          {executions.map((e: any) => (
             <tr key={e.id}>
               <td className="font-mono text-xs">{e.id.slice(0, 16)}…</td>
               <td><span className={`sg-status sg-status-${e.status}`}>{e.status}</span></td>

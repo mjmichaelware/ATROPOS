@@ -16538,12 +16538,13 @@ End of AGENTS.md
   - `.github/workflows/release.yml=51d44934bd09477579c161967b5a9717090277120799b72000a3e8a506230a32`
   - `.github/workflows/compile-gate.yml=1f7bb58b5ab19c73e9dbed8e6f88f485fca17cbbefef888c431b294ac8668b31`
 
-### 2026-10-21T00:22Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: specgraph-view-type-narrowing-fix
+### 2026-10-21T00:32Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: specgraph-view-type-narrowing-fix
 - Paths touched:
-  - `apps/web/src/components/dev-tools/specgraph-project-view.tsx` (+50 lines, -26 lines, 299 lines total / block-scoped const result and direct errorMsg evaluation resolving Next.js TypeScript build failure)
+  - `apps/web/src/components/dev-tools/specgraph-project-view.tsx` (+50 lines, -26 lines, 299 lines total / block-scoped const result and direct errorMsg evaluation resolving Next.js TypeScript build failure, added explicit types to map callbacks)
 - Atoms / phases affected: Phase 18 (HOE Web Presentation), CI/CD Web Pipeline.
 - Predicate moved:
   - Fixed TypeScript discriminated union narrowing on `SpecGraphResult` in `loadTab`, resolving Next.js build error `Property 'detail' does not exist on type 'EngineSuccess<any>'`.
+  - Resolved implicit any error on `r.results.map((s: any) => ...)` in `ResearchTab`.
   - Mathematical Proof Gate verified:
     - Zero competitor strings in modified files.
     - Zero `TODO`, `FIXME`, or hollow stub methods in modified files.
@@ -16552,6 +16553,6 @@ End of AGENTS.md
 - Why the delta is justified: Enables clean Next.js web compilation on CI without type error crashes.
 - % delta: HOE Web Presentation (+1% to web surface stability).
 - Git Object Hashes:
-  - `apps/web/src/components/dev-tools/specgraph-project-view.tsx`: `2c71fc3b39f6811e5bdf7e2063594443055f782a`
+  - `apps/web/src/components/dev-tools/specgraph-project-view.tsx`: `aadcd6e6861973d400f409fc2da2d23375a4809e`
 - Fingerprints (sha256):
-  - `apps/web/src/components/dev-tools/specgraph-project-view.tsx=15d0f96d99a86eac7f43970f11916063c93811e0e1ae148c4b5d547214b84db2`
+  - `apps/web/src/components/dev-tools/specgraph-project-view.tsx=3c325777b167d16faf1085695191674bbda297d564bb0fb70182b2f161b1042f`
