@@ -170,7 +170,9 @@ export function TerminalComponent({ projectId, initialCommand, onExit }: Termina
       if (saved) {
         const data = JSON.parse(saved);
         if (data.serialized) {
-          serialize.deserialize(data.serialized);
+          // The serialize addon only serializes; replay the captured escape
+          // stream into the terminal to restore its visible state.
+          term.write(data.serialized);
         }
       }
     } catch {
