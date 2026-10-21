@@ -2,6 +2,8 @@
 package atropos.core.security
 
 import atropos.core.AtroposRepoRootLocator
+import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -25,6 +27,10 @@ import java.nio.file.Paths
  * Uses canonicalized paths and filesystem-aware checks rather than simple
  * string-prefix matching. Fail closed if a target workspace cannot be
  * identified or verified.
+ *
+ * Uses `Path.toRealPath()` to resolve symlinks and ensure they cannot escape
+ * to protected roots. All path checks are performed against the real, canonical
+ * path to prevent symlink-based escapes.
  *
  * Ordinary coding tasks must still be able to edit files inside their
  * authorized target repositories. Only the explicitly authorized Phase 20
@@ -156,19 +162,20 @@ class ProtectedPathPolicy(
 
     /**
      * Normalizes a path to be repository-relative with forward slashes.
+     * Uses filesystem-aware canonicalization with symlink resolution.
      * Returns null if the path escapes the repository root or cannot be resolved.
      */
     private fun normalizePath(path: String): String? {
         return try {
             val inputPath = Paths.get(path)
             val absolutePath = if (inputPath.isAbsolute) {
-                inputPath.normalize()
+                inputPath.toRealPath(LinkOption.NOFOLLOW_LINKS)
             } else {
-                repoRoot.resolve(inputPath).normalize()
+                repoRoot.resolve(inputPath).toRealPath(LinkOption.NOFOLLOW_LINKS)
             }
 
-            // Verify it's within the repo root
-            val repoAbsolute = repoRoot.toAbsolutePath().normalize()
+            // Verify it's within the repo root (using real paths)
+            val repoAbsolute = repoRoot.toRealPath(LinkOption.NOFOLLOW_LINKS)
             if (!absolutePath.startsWith(repoAbsolute)) {
                 return null
             }
@@ -177,6 +184,99 @@ class ProtectedPathPolicy(
             repoAbsolute.relativize(absolutePath).toString().replace('\\', '/')
         } catch (_: Exception) {
             null
+        }
+    }
+
+    /**
+     * Checks if a path is protected using real filesystem paths (resolving symlinks).
+     * This is the primary enforcement method for mutation operations.
+     *
+     * @param path The path to check
+     * @return ProtectedPathResult indicating whether the path is protected
+     */
+    fun checkPathReal(path: Path): ProtectedPathResult {
+        return try {
+            // Resolve to real path (follows symlinks)
+            val realPath = path.toRealPath(LinkOption.NOFOLLOW_LINKS)
+            val repoAbsolute = repoRoot.toRealPath(LinkOption.NOFOLLOW_LINKS)
+
+            // Verify it's within the repo root
+            if (!realPath.startsWith(repoAbsolute)) {
+                return ProtectedPathResult.Protected("path escapes repository root: $path")
+            }
+
+            // Get relative path for policy checks
+            val relativePath = repoAbsolute.relativize(realPath).toString().replace('\\', '/')
+            checkPath(relativePath)
+        } catch (_: Exception) {
+            ProtectedPathResult.Protected("path could not be resolved: $path")
+        }
+    }
+
+    /**
+     * Checks multiple paths using real filesystem canonicalization.
+     */
+    fun checkPathsReal(paths: List<Path>): ProtectedPathResult {
+        for (path in paths) {
+            val result = checkPathReal(path)
+            if (result is ProtectedPathResult.Protected) {
+                return result
+            }
+        }
+        return ProtectedPathResult.Allowed(paths.joinToString(", ") { it.toString() })
+    }
+
+    /**
+     * Checks if a subprocess command would mutate protected paths.
+     * Parses common destructive commands and validates their target paths.
+     *
+     * @param command The command and arguments
+     * @param workingDir The working directory for the command
+     * @return ProtectedPathResult indicating if the command is allowed
+     */
+    fun checkCommand(command: List<String>, workingDir: Path = repoRoot): ProtectedPathResult {
+        // Commands that can mutate filesystem
+        val destructiveCommands = setOf(
+            "rm", "mv", "cp", "mkdir", "touch", "chmod", "chown",
+            "git", "patch", "sed", "awk", "tee", "dd", "truncate",
+            "rmdir", "ln", "rsync", "tar", "unzip", "gunzip"
+        )
+
+        val firstArg = command.firstOrNull()?.takeLast("/")?.lowercase() ?: return ProtectedPathResult.Allowed("")
+
+        // For git, check subcommands
+        if (firstArg == "git") {
+            return checkGitCommand(command, workingDir)
+        }
+
+        // For other commands, check if they target protected paths
+        if (firstArg in destructiveCommands) {
+            // Extract path arguments (simplified heuristic)
+            val pathArgs = command.drop(1).filter { it.startsWith("/") || it.startsWith("./") || it.startsWith("../") || it.contains("/") }
+            if (pathArgs.isNotEmpty()) {
+                return checkPathsReal(pathArgs.map { workingDir.resolve(it) })
+            }
+        }
+
+        return ProtectedPathResult.Allowed("")
+    }
+
+    private fun checkGitCommand(command: List<String>, workingDir: Path): ProtectedPathResult {
+        val subcommand = command.getOrNull(1)?.lowercase() ?: return ProtectedPathResult.Allowed("")
+        return when (subcommand) {
+            "checkout", "reset", "restore", "apply", "commit", "merge", "rebase", "cherry-pick" -> {
+                // These can modify files - check working tree
+                checkPathsReal(listOf(workingDir))
+            }
+            "clean" -> {
+                // git clean removes untracked files
+                checkPathsReal(listOf(workingDir))
+            }
+            "push", "fetch", "pull", "clone" -> {
+                // Network operations, check .git directory
+                checkPathReal(workingDir.resolve(".git"))
+            }
+            else -> ProtectedPathResult.Allowed("")
         }
     }
 

@@ -2,6 +2,7 @@ package atropos.core.provider
 
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
+import atropos.cli.ui.TerminalText
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import atropos.core.security.SecretSinkKind
@@ -41,9 +42,13 @@ class SourceBindingFetcher(
         val root = resolveFilePath(binding.uri)
             ?: return SourceFetchResult.Failed("local_path contains an invalid path")
         if (hasSymbolicComponent(root)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=local_path reason=symbolic_path_component path=$root")
             return SourceFetchResult.Failed("local_path crosses a symbolic path component")
         }
-        if (!Files.isDirectory(root)) return SourceFetchResult.Failed("local_path is not a directory: ${binding.uri}")
+        if (!Files.isDirectory(root)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=local_path reason=not_a_directory uri=${binding.uri} resolved=$root")
+            return SourceFetchResult.Failed("local_path is not a directory: ${binding.uri}")
+        }
         val tree = treeWriter.materialize(root)
         return SourceFetchResult.Fetched(receipt(binding, root.toString(), "local", tree))
     }
@@ -52,18 +57,26 @@ class SourceBindingFetcher(
         val ref = binding.ref ?: "HEAD"
         val source = runCatching { resolveFilePath(binding.uri) }.getOrNull()
         if (source != null && hasSymbolicComponent(source)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=git reason=symbolic_path_component path=$source")
             return SourceFetchResult.Failed("git source binding crosses a symbolic path component")
         }
         return if (source != null && Files.isDirectory(source.resolve(".git"), LinkOption.NOFOLLOW_LINKS)) {
             val checkout = temporaryDir("git-local-")
             val copy = runCommand(listOf("git", "clone", "--no-hardlinks", source.toString(), checkout.toString()), repoRoot)
-            if (copy.exitCode != 0) return SourceFetchResult.Failed("git clone failed: ${copy.safeOutput()}")
+            if (copy.exitCode != 0) {
+                TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=git reason=clone_failed uri=${binding.uri} output=${copy.safeOutput()}")
+                return SourceFetchResult.Failed("git clone failed: ${copy.safeOutput()}")
+            }
             val checkoutRef = runCommand(listOf("git", "checkout", ref), checkout)
-            if (checkoutRef.exitCode != 0) return SourceFetchResult.Failed("git checkout $ref failed: ${checkoutRef.safeOutput()}")
+            if (checkoutRef.exitCode != 0) {
+                TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=git reason=checkout_failed ref=$ref output=${checkoutRef.safeOutput()}")
+                return SourceFetchResult.Failed("git checkout $ref failed: ${checkoutRef.safeOutput()}")
+            }
             val commit = runCommand(listOf("git", "rev-parse", "HEAD"), checkout).output.trim().ifBlank { ref }
             val tree = treeWriter.materialize(checkout)
             SourceFetchResult.Fetched(receipt(binding, binding.uri, commit, tree))
         } else if (localOnly) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=git reason=remote_disabled_by_localOnly")
             SourceFetchResult.Failed("remote git source binding disabled by localOnly")
         } else {
             val checkout = temporaryDir("git-remote-")
@@ -73,7 +86,10 @@ class SourceBindingFetcher(
                 listOf("git", "clone", "--depth", "1", "--branch", ref, binding.uri, checkout.toString())
             }
             val clone = runCommand(cloneCommand, repoRoot)
-            if (clone.exitCode != 0) return SourceFetchResult.Failed("git clone failed: ${clone.safeOutput()}")
+            if (clone.exitCode != 0) {
+                TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=git reason=remote_clone_failed uri=${binding.uri} output=${clone.safeOutput()}")
+                return SourceFetchResult.Failed("git clone failed: ${clone.safeOutput()}")
+            }
             val commit = runCommand(listOf("git", "rev-parse", "HEAD"), checkout).output.trim().ifBlank { ref }
             val tree = treeWriter.materialize(checkout)
             SourceFetchResult.Fetched(receipt(binding, binding.uri, commit, tree))
@@ -84,12 +100,17 @@ class SourceBindingFetcher(
         val archive = resolveFilePath(binding.uri)
             ?: return SourceFetchResult.Failed("archive contains an invalid path")
         if (hasSymbolicComponent(archive)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=symbolic_path_component path=$archive")
             return SourceFetchResult.Failed("archive source binding crosses a symbolic path component")
         }
-        if (!Files.isRegularFile(archive)) return SourceFetchResult.Failed("archive is not a file: ${binding.uri}")
+        if (!Files.isRegularFile(archive)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=not_a_file uri=${binding.uri} resolved=$archive")
+            return SourceFetchResult.Failed("archive is not a file: ${binding.uri}")
+        }
         val actual = sha256(archive)
         val expected = binding.expectedSha256
         if (expected != null && !actual.equals(expected, ignoreCase = true)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=hash_mismatch expected=$expected actual=$actual")
             return SourceFetchResult.Failed("archive hash mismatch: expected=$expected observed=$actual")
         }
         val unpacked = temporaryDir("archive-")
@@ -98,6 +119,7 @@ class SourceBindingFetcher(
             name.endsWith(".zip") -> {
                 val extracted = runCatching { unzip(archive, unpacked) }
                 if (extracted.isFailure) {
+                    TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=zip_extraction_failed error=${extracted.exceptionOrNull()?.message ?: "unknown"}")
                     return SourceFetchResult.Failed(
                         "zip extraction failed: ${extracted.exceptionOrNull()?.message ?: "unknown"}"
                     )
@@ -106,15 +128,20 @@ class SourceBindingFetcher(
             name.endsWith(".tar") || name.endsWith(".tar.gz") || name.endsWith(".tgz") -> {
                 val unsafeEntry = firstUnsafeTarEntry(archive)
                 if (unsafeEntry != null) {
+                    TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=unsafe_tar_entry entry=$unsafeEntry")
                     return SourceFetchResult.Failed("tar extraction refused: archive entry escapes target root: $unsafeEntry")
                 }
                 val tar = runCommand(listOf("tar", "-xf", archive.toString(), "-C", unpacked.toString()), repoRoot)
-                if (tar.exitCode != 0) return SourceFetchResult.Failed("tar extraction failed: ${tar.safeOutput()}")
+                if (tar.exitCode != 0) {
+                    TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=tar_extraction_failed output=${tar.safeOutput()}")
+                    return SourceFetchResult.Failed("tar extraction failed: ${tar.safeOutput()}")
+                }
             }
             else -> return SourceFetchResult.Unsupported("unsupported archive format: ${archive.fileName}")
         }
         val unsafeExtractedEntry = firstUnsafeExtractedEntry(unpacked)
         if (unsafeExtractedEntry != null) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=archive reason=unsafe_extracted_entry entry=$unsafeExtractedEntry")
             return SourceFetchResult.Failed(
                 "archive extraction refused: unsafe extracted entry: $unsafeExtractedEntry"
             )
@@ -124,8 +151,12 @@ class SourceBindingFetcher(
     }
 
     private fun fetchHttpBundle(binding: SourceBinding): SourceFetchResult {
-        if (localOnly) return SourceFetchResult.Failed("http source binding disabled by localOnly")
+        if (localOnly) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=http_bundle reason=remote_disabled_by_localOnly")
+            return SourceFetchResult.Failed("http source binding disabled by localOnly")
+        }
         if (!SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=http_bundle reason=egress_refused_by_SecretSinkMatrix")
             return SourceFetchResult.Failed("http source binding refused by SecretSinkMatrix")
         }
         val expected = binding.expectedSha256
@@ -149,12 +180,17 @@ class SourceBindingFetcher(
                 .build()
                 .send(request, HttpResponse.BodyHandlers.ofInputStream())
             if (response.statusCode() !in 200..299) {
+                TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=http_bundle reason=fetch_failed status=${response.statusCode()}")
                 return SourceFetchResult.Failed("http_bundle fetch failed: status=${response.statusCode()}")
             }
             val downloadFailure = writeBoundedBody(response, target)
-            if (downloadFailure != null) return SourceFetchResult.Failed(downloadFailure)
+            if (downloadFailure != null) {
+                TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=http_bundle reason=download_failed error=$downloadFailure")
+                return SourceFetchResult.Failed(downloadFailure)
+            }
             val actual = sha256(target)
             if (!actual.equals(expected, ignoreCase = true)) {
+                TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=http_bundle reason=hash_mismatch expected=$expected actual=$actual")
                 return SourceFetchResult.Failed("http_bundle hash mismatch: expected=$expected observed=$actual")
             }
             when (val archive = fetchArchive(binding.copy(kind = SourceBindingKind.ARCHIVE, uri = target.toString(), expectedSha256 = expected))) {
@@ -169,6 +205,7 @@ class SourceBindingFetcher(
                 is SourceFetchResult.Unsupported -> archive
             }
         } catch (e: Exception) {
+            TerminalText.emitTelemetry("SOURCE_BINDING_FAILURE kind=http_bundle reason=exception error=${e.message ?: e.javaClass.simpleName}")
             SourceFetchResult.Failed("http_bundle fetch failed: ${e.message ?: e.javaClass.simpleName}")
         }
     }

@@ -11,6 +11,7 @@ import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import atropos.core.security.ContextPathExclusions
 import java.nio.file.Path
+import java.nio.file.LinkOption
 
 data class AgentContextSnapshot(
     val repoRoot: Path,
@@ -83,7 +84,7 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         truncated = appendSection(builder, "# Selected Sources\n${selectedSources(files)}\n", truncated)
-        val sourcePack = sourcePack(defaultPackRoots(taskHint))
+        val sourcePack = sourcePack(defaultPackRoots(taskHint), targetWorkspace)
         truncated = appendSection(
             builder,
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
@@ -109,6 +110,10 @@ class AgentContextCollector(
     }
 
     fun collectPatch(taskHint: String? = null): AgentContextSnapshot {
+        val targetWorkspace = runCatching {
+            val hintPath = taskHint?.let { runCatching { Path.of(it) }.getOrNull() }?.takeIf { Files.exists(it) }
+            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
+        }.getOrNull()
         val files = taskHintFiles(taskHint).ifEmpty {
             listOf(repoRoot.resolve("README.md").normalize())
         }.distinct()
@@ -116,13 +121,16 @@ class AgentContextCollector(
         var truncated = false
 
         truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
+        if (targetWorkspace != null && targetWorkspace != repoRoot) {
+            truncated = appendSection(builder, "# Target Workspace\n$targetWorkspace\n", truncated)
+        }
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
             .filter { it.isNotBlank() }
             .ifEmpty { listOf("README.md") }
-        val sourcePack = sourcePack(roots)
+        val sourcePack = sourcePack(roots, targetWorkspace)
         truncated = appendSection(
             builder,
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
@@ -148,6 +156,10 @@ class AgentContextCollector(
     }
 
     fun collectRepair(taskHint: String? = null, fileHints: List<String> = emptyList()): AgentContextSnapshot {
+        val targetWorkspace = runCatching {
+            val hintPath = taskHint?.let { runCatching { Path.of(it) }.getOrNull() }?.takeIf { Files.exists(it) }
+            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
+        }.getOrNull()
         val hintedFiles = (taskHintFiles(taskHint) + fileHints.mapNotNull { resolveHint(it) }).distinct()
         val files = hintedFiles.ifEmpty {
             listOf(repoRoot.resolve("README.md").normalize())
@@ -156,13 +168,16 @@ class AgentContextCollector(
         var truncated = false
 
         truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
+        if (targetWorkspace != null && targetWorkspace != repoRoot) {
+            truncated = appendSection(builder, "# Target Workspace\n$targetWorkspace\n", truncated)
+        }
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
             .filter { it.isNotBlank() }
             .ifEmpty { listOf("README.md") }
-        val sourcePack = sourcePack(roots)
+        val sourcePack = sourcePack(roots, targetWorkspace)
         truncated = appendSection(
             builder,
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
@@ -236,18 +251,25 @@ class AgentContextCollector(
         return if (Files.isRegularFile(candidate) && !isExcluded(candidate)) candidate else null
     }
 
-    private fun sourcePack(allowedPaths: List<String>): SourcePackSelection {
+    private fun sourcePack(allowedPaths: List<String>, targetWorkspace: Path? = null): SourcePackSelection {
         val binding = sourceBindingResolver.resolve().binding
             ?: return SourcePackSelection(null, "SOURCE_BINDING_UNAVAILABLE")
+        // If we have a target workspace different from repoRoot, use it as the allowed path
+        // to ensure we pack the external repo's files, not ATROPOS paths
+        val effectiveAllowedPaths = if (targetWorkspace != null && targetWorkspace != repoRoot) {
+            listOf(".") // Pack the entire target workspace
+        } else {
+            allowedPaths
+        }
         val result = contextPacker.pack(
             SourcePackRequest(
                 binding = binding,
-                allowedPaths = allowedPaths.distinct(),
+                allowedPaths = effectiveAllowedPaths.distinct(),
                 maxBytes = (contextCapBytes / 2).coerceAtLeast(16 * 1024)
             )
         )
         val pack = (result as? SourcePackResult.Packed)?.pack
-            ?: return SourcePackSelection(null, "SOURCE_PACK_REFUSED")
+            ?: return SourcePackSelection(null, "SOURCE_PACK_REFUSED: ${result}")
         if (pack.truncated) {
             return SourcePackSelection(null, "SOURCE_PACK_TRUNCATED")
         }
@@ -258,6 +280,11 @@ class AgentContextCollector(
     }
 
     private fun defaultPackRoots(taskHint: String?): List<String> {
+        // If repoRoot is not the ATROPOS engine root (i.e., we're in an external/target workspace),
+        // use "." to pack the entire workspace instead of hardcoded ATROPOS paths
+        if (!isAtroposEngineRoot(repoRoot)) {
+            return listOf(".")
+        }
         val lower = taskHint.orEmpty().lowercase()
         if ("self-host" in lower || "self host" in lower || "atropos" in lower) {
             return listOf(
@@ -272,6 +299,16 @@ class AgentContextCollector(
             "src/main/kotlin/atropos/core/agent",
             "src/main/kotlin/atropos/core/provider"
         )
+    }
+
+    /**
+     * Checks if the given path is the ATROPOS engine root by looking for
+     * ATROPOS-specific marker files/directories.
+     */
+    private fun isAtroposEngineRoot(path: Path): Boolean {
+        return Files.isRegularFile(path.resolve("settings.gradle.kts"), LinkOption.NOFOLLOW_LINKS) &&
+            Files.isRegularFile(path.resolve("build.gradle.kts"), LinkOption.NOFOLLOW_LINKS) &&
+            Files.isDirectory(path.resolve("src/main/kotlin/atropos"), LinkOption.NOFOLLOW_LINKS)
     }
 
     private fun Path.relativizeSafely(file: Path): String? =
