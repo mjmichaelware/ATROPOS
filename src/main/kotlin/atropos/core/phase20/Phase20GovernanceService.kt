@@ -40,6 +40,7 @@ class Phase20GovernanceService(
     private val policyGate: PolicyGate = PolicyGate(),
     private val auditLog: Phase20AuditLog = Phase20AuditLog(),
     private val loop: SelfImprovementLoop = Phase20Loop.canonical(ledger),
+    private val phase20Auth: Phase20Authorization = Phase20Authorization(),
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val observationLedger = ObservationCasLedger(evidence)
@@ -121,12 +122,46 @@ class Phase20GovernanceService(
         context: GovernanceDetectorContext,
         deficiency: ProposalDeficiency,
         policy: PolicyGateContext = PolicyGateContext(),
-        humanAuthorised: Boolean = false
+        humanAuthorised: Boolean = false,
+        authorization: AuthorizationToken? = null
     ): GovernanceReport {
         val report = observe(context, policy)
         if (!report.policy.allowed) {
             record(report, "advance-refused", report.policy.reason)
             return report
+        }
+
+        // If the deficiency involves invariants, require authorization
+        val invariants = ImmutableInvariants.classify(
+            ProposalDeficiency(
+                territory = deficiency.territory,
+                estimatedLines = deficiency.estimatedLines,
+                invariants = deficiency.invariants
+            )
+        )
+        val requiresAuth = invariants.requiresHumanAuthorisation
+        val authToken = if (requiresAuth) {
+            authorization ?: phase20Auth.requireAuthorization("Phase 20 advance for ${deficiency.territory.joinToString("|")}")
+        } else {
+            null
+        }
+        if (requiresAuth && authToken == null) {
+            val refusedReport = report.copy(
+                outcome = LoopOutcome.NeedsHuman(
+                    proposal = ImprovementProposal(
+                        id = "none",
+                        territory = deficiency.territory,
+                        metric = atropos.core.evaluation.MetricDeclaration("none", "none", 0.0),
+                        guardrails = emptyList(),
+                        evidence = emptyList(),
+                        proposedBy = "phase20-governance",
+                        observedAt = clock()
+                    ),
+                    invariants = invariants
+                )
+            )
+            record(refusedReport, "advance-refused", "authorization required for invariant-touching operation")
+            return refusedReport
         }
 
         val outcome = loop.advance(
@@ -139,7 +174,11 @@ class Phase20GovernanceService(
                 retries = policy.retries,
                 tokensSpentInPeriod = policy.tokensSpentInPeriod,
                 subsystemUnderObservationUntil = policy.subsystemUnderObservationUntil,
-                humanAuthorised = humanAuthorised
+                authorization = authToken ?: AuthorizationToken(
+                    token = "none",
+                    scope = "no-invariants",
+                    issuedAt = clock()
+                )
             )
         )
 

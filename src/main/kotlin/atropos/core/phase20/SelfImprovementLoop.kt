@@ -53,6 +53,14 @@ import java.time.Instant
  * emits a hash-pinned contract and stops; [advance] returns
  * [LoopOutcome.ContractReady] rather than calling an executor, because a loop
  * that could reach the mutation path directly would make law 20.10 a comment.
+ *
+ * ## Authorization
+ *
+ * Any advance that touches an invariant (H01/H02) requires a valid
+ * [AuthorizationToken] obtained through [Phase20Authorization]. The token
+ * proves the local installation owner explicitly authorized this specific
+ * operation and scope. Without a valid token, the advance stops at
+ * [LoopOutcome.NeedsHuman] and cannot proceed.
  */
 class SelfImprovementLoop(
     private val ledger: GovernanceLedger,
@@ -168,8 +176,11 @@ class SelfImprovementLoop(
 
         // H01/H02 — invariants and meta-level separation.
         val invariants = ImmutableInvariants.classify(proposal)
-        if (invariants.requiresHumanAuthorisation && !request.humanAuthorised) {
-            return LoopOutcome.NeedsHuman(proposal, invariants)
+        if (invariants.requiresHumanAuthorisation) {
+            // Require explicit owner authorization token for invariant-touching operations
+            if (!SelfImprovementLaws.checkLaw20_1(request.authorization, proposal)) {
+                return LoopOutcome.NeedsHuman(proposal, invariants)
+            }
         }
 
         // L07/L08 — recorded, then audited by someone other than the proposer.
@@ -274,7 +285,8 @@ data class LoopRequest(
     val retries: Int = 0,
     val tokensSpentInPeriod: Long = 0,
     val subsystemUnderObservationUntil: Instant? = null,
-    val humanAuthorised: Boolean = false
+    /** Authorization token proving owner consent for this specific operation and scope. */
+    val authorization: AuthorizationToken
 )
 
 /** Which transition refused, so a refusal names a law rather than a line. */

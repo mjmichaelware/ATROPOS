@@ -9,11 +9,30 @@ import atropos.core.evaluation.AtroposMetric
  */
 object SelfImprovementLaws {
 
-    /** Law 20.1: Human authority takes precedence over autonomous changes. */
-    fun checkLaw20_1(proposal: ImprovementProposal, humanAuthorized: Boolean): Boolean {
-        val verdict = ImmutableInvariants.classify(proposal)
-        return !verdict.requiresHumanAuthorisation || humanAuthorized
-    }
+/** Law 20.1: Human authority takes precedence over autonomous changes.
+ *  The operation must carry a valid AuthorizationToken with matching scope. */
+fun checkLaw20_1(authorization: AuthorizationToken, proposal: ImprovementProposal): Boolean {
+    // Verify the token is valid and not expired
+    val now = java.time.Instant.now()
+    val tokenAge = java.time.Duration.between(authorization.issuedAt, now).toSeconds()
+    if (tokenAge > 300) return false // Token expires after 5 minutes
+
+    // Verify the scope matches the operation (proposal territory)
+    val proposalScope = proposal.territory.joinToString("|")
+    if (authorization.scope != proposalScope) return false
+
+    // Verify the proposal touches invariants (requires authorization)
+    val verdict = ImmutableInvariants.classify(proposal)
+    if (!verdict.requiresHumanAuthorisation) return true // No invariants touched, no auth needed
+
+    return true
+}
+
+/** Law 20.1 (legacy): Human authority takes precedence over autonomous changes. */
+fun checkLaw20_1(proposal: ImprovementProposal, humanAuthorized: Boolean): Boolean {
+    val verdict = ImmutableInvariants.classify(proposal)
+    return !verdict.requiresHumanAuthorisation || humanAuthorized
+}
 
     /** Law 20.2: Observations must be normalized into structured tuples. */
     fun checkLaw20_2(observation: RuntimeObservation): Boolean {

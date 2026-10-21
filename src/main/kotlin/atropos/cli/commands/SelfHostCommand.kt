@@ -11,6 +11,7 @@ import atropos.core.agent.SelfHostGoalService
 import atropos.core.dag.DagExecutionService
 import atropos.core.journal.EventJournalService
 import atropos.core.phase20.GovernanceDetectorContext
+import atropos.core.phase20.Phase20Authorization
 import atropos.core.phase20.Phase20GovernanceService
 import atropos.core.provider.ProviderOnboardingService
 import atropos.core.verification.VerifiedCompletionGate
@@ -28,6 +29,7 @@ class SelfHostCommand(
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot),
     private val proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer(),
     private val governanceService: Phase20GovernanceService = Phase20GovernanceService(),
+    private val phase20Auth: Phase20Authorization = Phase20Authorization(),
     private val jarPromoteRenderer: JarPromoteRenderer =
         JarPromoteRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager()))
 ) : AgentCommandHandler {
@@ -57,6 +59,7 @@ class SelfHostCommand(
             "learned" -> handleLearned()
             "benchmark" -> handleBenchmark()
             "governance" -> handleGovernance()
+            "auth" -> handleAuth(normalized.drop(2))
             else -> AgentCommandOutcome.Invalid(SelfHostCommandText.usage())
         }
     }
@@ -382,5 +385,67 @@ class SelfHostCommand(
         }
         if (report.clean) ui.renderNotice(text) else ui.renderError(text)
         return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleAuth(args: List<String>): AgentCommandOutcome {
+        if (args.isEmpty()) {
+            return AgentCommandOutcome.Invalid("usage: /agent self-host auth <setup|status|enable|disable>")
+        }
+        return when (args[0].lowercase()) {
+            "setup" -> handleAuthSetup()
+            "status" -> handleAuthStatus()
+            "enable" -> handleAuthEnable()
+            "disable" -> handleAuthDisable()
+            else -> AgentCommandOutcome.Invalid("usage: /agent self-host auth <setup|status|enable|disable>")
+        }
+    }
+
+    private fun handleAuthSetup(): AgentCommandOutcome {
+        val result = phase20Auth.setup()
+        return when (result) {
+            is Phase20Authorization.SetupResult.Success -> {
+                ui.renderNotice("Phase 20 owner authorization configured successfully")
+                AgentCommandOutcome.Completed("Phase 20 authorization configured")
+            }
+            is Phase20Authorization.SetupResult.Failed -> {
+                ui.renderError("Phase 20 authorization setup failed: ${result.reason}")
+                AgentCommandOutcome.Invalid(result.reason)
+            }
+        }
+    }
+
+    private fun handleAuthStatus(): AgentCommandOutcome {
+        val configured = phase20Auth.isConfigured()
+        val text = buildString {
+            appendLine("PHASE 20 AUTHORIZATION STATUS")
+            appendLine("Configured: $configured")
+            if (configured) {
+                appendLine("Owner password hash stored in vault")
+            } else {
+                appendLine("Run '/agent self-host auth setup' to configure")
+            }
+        }
+        ui.renderNotice(text)
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleAuthEnable(): AgentCommandOutcome {
+        // Authorization is enabled by default when configured
+        if (phase20Auth.isConfigured()) {
+            ui.renderNotice("Phase 20 authorization is already enabled")
+        } else {
+            ui.renderError("Phase 20 authorization not configured. Run '/agent self-host auth setup' first.")
+        }
+        return AgentCommandOutcome.Completed("authorization enabled")
+    }
+
+    private fun handleAuthDisable(): AgentCommandOutcome {
+        val disabled = phase20Auth.disable()
+        if (disabled) {
+            ui.renderNotice("Phase 20 owner authorization disabled")
+        } else {
+            ui.renderError("Phase 20 authorization was not configured")
+        }
+        return AgentCommandOutcome.Completed("authorization disabled")
     }
 }
