@@ -294,7 +294,7 @@ class OwnerAuthorizationService(
         val timestamp = clock().toEpochMilli()
         val nonce = bytesToHex(ByteArray(16).also { SecureRandom().nextBytes(it) })
 
-        val stored = "${bytesToHex(tokenHash)}:$scope:$timestamp:$nonce"
+        val stored = "$tokenHash:$scope:$timestamp:$nonce"
         writeSecret(TOKEN_SECRET_NAME, stored)
         writeSecret(NONCE_SECRET_NAME, nonce)
 

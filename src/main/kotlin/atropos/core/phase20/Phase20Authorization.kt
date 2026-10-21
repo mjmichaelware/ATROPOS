@@ -104,7 +104,7 @@ class Phase20Authorization(
             vault.writeSecret(secretName, stored)
             return SetupResult.Success
         } catch (e: Exception) {
-            return SetupResult.Failed("failed to store authorization: ${redactionFilter.redact(e.message)}")
+            return SetupResult.Failed("failed to store authorization: ${redactionFilter.redact(e.message ?: "unknown error")}")
         }
     }
 
@@ -242,7 +242,7 @@ class Phase20Authorization(
         val timestamp = currentTime().toEpochMilli()
         val nonce = bytesToHex(ByteArray(16).also { SecureRandom().nextBytes(it) })
 
-        val stored = "${bytesToHex(tokenHash)}:$scope:$timestamp:$nonce"
+        val stored = "$tokenHash:$scope:$timestamp:$nonce"
         vault.writeSecret(tokenSecretName, stored)
         vault.writeSecret("$tokenSecretName-nonce", nonce)
 

@@ -153,7 +153,7 @@ class Phase20GovernanceService(
                         territory = deficiency.territory,
                         risk = "high",
                         rollback = "manual",
-                        metric = atropos.core.evaluation.MetricDeclaration("none", "none", 0.0),
+                        metric = MetricDeclaration("none", "none", 0.0),
                         createdAt = clock()
                     ),
                     invariants = invariants
