@@ -269,11 +269,17 @@ class AgentContextCollector(
         } else {
             allowedPaths
         }
+        val maxPackBytes = (contextCapBytes / 2).coerceAtLeast(16 * 1024)
         val result = packer.pack(
             SourcePackRequest(
                 binding = binding,
                 allowedPaths = effectiveAllowedPaths.distinct(),
-                maxBytes = (contextCapBytes / 2).coerceAtLeast(16 * 1024)
+                maxBytes = maxPackBytes,
+                // The pack itself remains bounded by maxPackBytes. A smaller
+                // per-file default would mark a specifically referenced file
+                // as truncated even when the complete file fits in that
+                // bounded pack, causing a false fail-closed refusal.
+                maxFileBytes = maxPackBytes
             )
         )
         val pack = (result as? SourcePackResult.Packed)?.pack

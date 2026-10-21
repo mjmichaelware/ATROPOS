@@ -93,10 +93,10 @@ class AgentContextCollectorTest {
     fun task_source_pack_uses_referenced_files_instead_of_the_entire_external_tree() {
         val root = Files.createTempDirectory("atropos-context-pack-task-files-")
         Files.createDirectories(root.resolve("src"))
-        Files.writeString(root.resolve("src/target.py"), "def target():\n    return 1\n")
+        Files.writeString(root.resolve("src/target.py"), "# referenced source\n" + "value = 1\n".repeat(2_000))
         Files.writeString(root.resolve("src/unrelated.py"), "x\n".repeat(100_000))
 
-        val snapshot = AgentContextCollector(repoRoot = root, contextCapBytes = 40 * 1024)
+        val snapshot = AgentContextCollector(repoRoot = root, contextCapBytes = 64 * 1024)
             .collectPatch("fix src/target.py")
 
         assertFalse(snapshot.truncated, snapshot.text)
