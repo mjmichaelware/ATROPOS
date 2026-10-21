@@ -13,8 +13,13 @@
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { checkTerritoryMembership, TerritoryAssignment } from '@/lib/workspace/client';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  checkTerritoryMembership,
+  listTerritoryAssignments,
+  listTerritoryViolations,
+  type TerritoryAssignment,
+} from '@/lib/workspace/client';
 
 interface TerritoryFocusState {
   inside: boolean;
