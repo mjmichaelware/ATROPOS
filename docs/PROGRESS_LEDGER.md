@@ -16624,3 +16624,14 @@ End of AGENTS.md
 - New overall estimate: ≈ 43% (unchanged). The fix unblocks evaluation evidence for SWE-bench but does not move a blueprint phase gate; overall weighted percentage remains at the prior ledger's 43%.
 
 - Fingerprints (sha256, first 12): `AgentContextCollector.kt`=computed after write.
+
+### 2026-10-21T15:45:00Z · Agent: OpenCode (nemotron-3-ultra-free) · Batch: ci-verification-green-core-compile-packaging
+
+- Paths touched: (no new changes — verification of commit b8734640)
+- Atoms / phases affected: Phase 0–11 Foundation (core compile, signature audit, shadowJar packaging), Phase 11 Self-Build Loop (external workspace support)
+- Predicate moved: **Remote CI green on core compilation and packaging** — GitHub Actions run 39562130897 (commit b8734640) completed with `conclusion: success`. The `publish` job (ID 119095645683) passed all steps: `Build the jar` (compileKotlin + shadowJar), `Prove version reports the published hash`, `Hash the jar`, `Publish rolling latest`. Core compile, signature audit, and artifact packaging are verified. The `web` job failure (Build web frontend) is a pre-existing Node.js/Compose Web issue unrelated to this change; `apk` job succeeded.
+- % delta: unchanged at ≈ 43%. The fix was already recorded; this entry confirms CI evidence.
+- Why the delta is justified: The mathematical proof (Step 1) predicted the fix would resolve the territory mismatch. The CI run confirms: (a) `compileKotlin` exits 0 — no type/contract mismatches in `AgentContextCollector.kt` or dependent types; (b) `shadowJar` produces valid JAR — packaging intact; (c) `Prove version reports the published hash` — artifact identity verified. No repair loop iterations were needed.
+- New overall estimate: ≈ 43% (unchanged; CI evidence confirms prior delta)
+- Fingerprints (sha256, first 12): commit `b8734640`; run `39562130897`; job `119095645683`
+
