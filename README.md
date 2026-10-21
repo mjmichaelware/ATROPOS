@@ -74,6 +74,8 @@ See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported enviro
 | --- | --- |
 | Ollama | `OLLAMA_HOST`, `OLLAMA_MODEL` |
 | Groq | `GROQ_API_KEY` |
+| Cerebras | `CEREBRAS_API_KEY` |
+| SambaNova | `SAMBANOVA_API_KEY` |
 | Google Gemini | `GEMINI_API_KEY` |
 | GitHub Models | `GITHUB_MODELS_TOKEN` |
 | OpenRouter | `OPENROUTER_API_KEY` |
@@ -84,27 +86,15 @@ See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported enviro
 | Cloudflare Workers | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
 | Google Drive | `GOOGLE_APPLICATION_CREDENTIALS` |
 | Jina Reader | `JINA_API_KEY` |
-| Cerebras | `CEREBRAS_API_KEY` |
 | DeepInfra | `DEEPINFRA_API_KEY` |
 | Hugging Face | `HUGGINGFACE_API_KEY` |
 | NVIDIA NIM | `NVIDIA_API_KEY` |
-| SambaNova | `SAMBANOVA_API_KEY` |
 | SiliconFlow | `SILICONFLOW_API_KEY` |
 | Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY` |
 | Pinecone | `PINECONE_API_KEY` |
 | GitHub Actions | `GITHUB_TOKEN` |
 | Google Cloud Free Tier | `GOOGLE_APPLICATION_CREDENTIALS` |
-| DeepSeek Direct | `DEEPSEEK_API_KEY` |
-| Cohere | `COHERE_API_KEY` |
-| Mistral | `MISTRAL_API_KEY` |
-| Anthropic | `ANTHROPIC_API_KEY` |
-| OpenAI | `OPENAI_API_KEY` |
-| xAI | `XAI_API_KEY` |
-| AWS Bedrock | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
-| Fal.ai | `FAL_AI_API_KEY` |
-| Replicate | `REPLICATE_API_TOKEN` |
-| SerpAPI | `SERPAPI_API_KEY` |
-| SerpAPI | `SERPAPI_API_KEY` |
+| DeepSeek | `DEEPSEEK_API_KEY` |
 | DeepSeek Direct | `DEEPSEEK_API_KEY` |
 | Cohere | `COHERE_API_KEY` |
 | Mistral | `MISTRAL_API_KEY` |
