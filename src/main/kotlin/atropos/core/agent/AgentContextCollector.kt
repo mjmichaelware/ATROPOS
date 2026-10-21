@@ -227,7 +227,15 @@ class AgentContextCollector(
         }
 
         Regex("""(?:^|[\s"'`(])([A-Za-z0-9_./-]+\.[A-Za-z0-9_]+)""")
-            .findAll(task)
+            .findAll(buildString {
+                append(task)
+                candidates.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".txt") }
+                    .forEach { prompt ->
+                        runCatching { Files.readString(prompt) }.getOrNull()?.let {
+                            append('\n').append(it)
+                        }
+                    }
+            })
             .mapNotNull { match ->
                 val relative = match.groupValues[1].trim().trim('"').trim('\'')
                 val candidate = root.resolve(relative).normalize()
