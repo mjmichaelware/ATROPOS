@@ -45,7 +45,7 @@ fi
 cat > "$OUT/atropos.rb" <<EOF
 class Atropos < Formula
   desc "Deterministic software engineering engine"
-  homepage "https://github.com/mjmichaelware/ATROPOS"
+  homepage "https://github.com/MichaelAPWare/ATROPOS"
   version "$VERSION"
   url "file://$JAR"
   def install
@@ -62,11 +62,11 @@ cat > "$OUT/atropos-scoop.json" <<EOF
 {
   "version": "$VERSION",
   "description": "Deterministic software engineering engine",
-  "homepage": "https://github.com/mjmichaelware/ATROPOS",
+  "homepage": "https://github.com/MichaelAPWare/ATROPOS",
   "license": "AGPL-3.0-only",
   "url": "file://$JAR",
   "bin": [["ATROPOS.jar", "atropos"]],
-  "checkver": { "url": "https://github.com/mjmichaelware/ATROPOS/releases" }
+  "checkver": { "url": "https://github.com/MichaelAPWare/ATROPOS/releases" }
 }
 EOF
 

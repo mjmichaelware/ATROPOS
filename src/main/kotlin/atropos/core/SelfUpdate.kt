@@ -118,7 +118,7 @@ class SelfUpdate(
         MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 
     companion object {
-        const val DEFAULT_REPOSITORY = "mjmichaelware/ATROPOS"
+        const val DEFAULT_REPOSITORY = "MichaelAPWare/ATROPOS"
 
         /** The moving tag the release workflow rebuilds on every push to main. */
         const val DEFAULT_CHANNEL = "latest"

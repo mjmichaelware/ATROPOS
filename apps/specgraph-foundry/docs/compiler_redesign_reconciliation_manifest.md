@@ -13,7 +13,7 @@
 |---|---|
 | **Absolute Path** | `/data/data/com.termux/files/home/Workspaces/Applications/specgraph-foundry` |
 | **Git Type** | Top-level repository (not a worktree) |
-| **Remote** | `https://github.com/mjmichaelware/specgraph-foundry.git` |
+| **Remote** | `https://github.com/MichaelAPWare/specgraph-foundry.git` |
 | **Branch** | `phase-3-production-application` |
 | **HEAD** | `7c909b1ee7931d093266a7800fb94c7e90b5edd1` |
 | **Ahead/Behind** | `0/0` (up to date with remote) |
@@ -28,7 +28,7 @@
 |---|---|
 | **Absolute Path** | `/data/data/com.termux/files/home/Workspaces/Applications/specgraph-foundry/specgraph-foundry` |
 | **Git Type** | Independent clone inside Root A (appears as untracked `specgraph-foundry/` directory) |
-| **Remote** | `https://github.com/mjmichaelware/specgraph-foundry.git` (same remote) |
+| **Remote** | `https://github.com/MichaelAPWare/specgraph-foundry.git` (same remote) |
 | **Branch** | `main` |
 | **HEAD** | `bedac88b921f5a0eecd6d76d9a5efee00f4cc01d` |
 | **Ahead/Behind** | `0/0` |
@@ -108,7 +108,7 @@
 
 **Root A** (`/data/data/com.termux/files/home/Workspaces/Applications/specgraph-foundry`) is the canonical repository because:
 - It is the only location containing redesign files
-- It is tied to `mjmichaelware/specgraph-foundry` via `origin`
+- It is tied to `MichaelAPWare/specgraph-foundry` via `origin`
 - It is on branch `phase-3-production-application`
 - All 263 tests pass from this root
 

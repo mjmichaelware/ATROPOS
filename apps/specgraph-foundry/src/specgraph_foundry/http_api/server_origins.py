@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 
 _VERCEL_PROJECT_DEPLOYMENT_ORIGIN = re.compile(
-    r"^https://specgraph-foundry-[a-z0-9]+-mjmichaelwares-projects\.vercel\.app$"
+    r"^https://specgraph-foundry-[a-z0-9]+-MichaelAPWares-projects\.vercel\.app$"
 )
 
 

@@ -36,11 +36,11 @@
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/MichaelAPWare/ATROPOS/main/install.sh | sh
 ```
 
 ```sh
-npm install -g @mjmichaelware/atropos
+npm install -g @MichaelAPWare/atropos
 ```
 
 ```sh

@@ -17,7 +17,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
-const REPO = process.env.ATROPOS_REPO || "mjmichaelware/ATROPOS";
+const REPO = process.env.ATROPOS_REPO || "MichaelAPWare/ATROPOS";
 const VERSION = process.env.ATROPOS_VERSION || "latest";
 const BASE = `https://github.com/${REPO}/releases/download/${VERSION}`;
 const DEST_DIR = path.join(__dirname, "..", "vendor");
@@ -99,7 +99,7 @@ main().catch((error) => {
   console.error(`ATROPOS: ${error.message}`);
   console.error(
     "The package is installed but has no jar yet. Retry with:\n" +
-      "  npm rebuild @mjmichaelware/atropos\n" +
+      "  npm rebuild @MichaelAPWare/atropos\n" +
       "or set ATROPOS_JAR to a jar you already have."
   );
   process.exit(1);

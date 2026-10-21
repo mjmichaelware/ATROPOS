@@ -2483,7 +2483,7 @@ write(
                     binding_type="RUNTIME",
                     config={
                         "repository": (
-                            "mjmichaelware/ATROPOS"
+                            "MichaelAPWare/ATROPOS"
                         ),
                         "mode": "local",
                     },
@@ -2929,7 +2929,7 @@ section = dedent(
       PROJECT_ID \
       ATROPOS \
       RUNTIME \
-      '{"repository":"mjmichaelware/ATROPOS","mode":"local"}'
+      '{"repository":"MichaelAPWare/ATROPOS","mode":"local"}'
 
     python -m specgraph_foundry export-plan \
       PLAN_ID \

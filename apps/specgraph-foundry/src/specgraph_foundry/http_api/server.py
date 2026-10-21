@@ -91,7 +91,7 @@ def parse_allowed_origins() -> set[str]:
 
 
 # Vercel mints a brand-new per-deployment URL
-# (specgraph-foundry-<hash>-mjmichaelwares-projects.vercel.app) on every
+# (specgraph-foundry-<hash>-MichaelAPWares-projects.vercel.app) on every
 # deploy, distinct from the stable production alias. An exact-match
 # allowlist would reject every deployment URl except the one alias that
 # was configured, forever, regardless of how many times a client retries

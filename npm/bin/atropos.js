@@ -20,7 +20,7 @@ if (!fs.existsSync(jar)) {
   console.error(
     `ATROPOS: no jar at ${jar}\n` +
       "The install-time download did not complete. Retry with:\n" +
-      "  npm rebuild @mjmichaelware/atropos\n" +
+      "  npm rebuild @MichaelAPWare/atropos\n" +
       "or point ATROPOS_JAR at a jar you already have."
   );
   process.exit(1);

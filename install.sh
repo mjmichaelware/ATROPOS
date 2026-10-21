@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # ATROPOS installer.
 #
-#   curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/MichaelAPWare/ATROPOS/main/install.sh | sh
 #
 # Downloads a prebuilt jar rather than compiling. The engine is a 967-file
 # Kotlin tree whose compile needs more heap than a phone has spare, which is
@@ -12,7 +12,7 @@
 # whichever one is there.
 set -eu
 
-REPO="${ATROPOS_REPO:-mjmichaelware/ATROPOS}"
+REPO="${ATROPOS_REPO:-MichaelAPWare/ATROPOS}"
 # The rolling build from main by default. Set ATROPOS_VERSION=v2.0.0 for a
 # fixed release, which is what a bug report should cite.
 VERSION="${ATROPOS_VERSION:-latest}"

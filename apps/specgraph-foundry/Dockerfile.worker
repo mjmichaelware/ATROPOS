@@ -1,5 +1,5 @@
 FROM python:3.11-slim@sha256:baf89808ec37adeaab83cec287adb4a2afa4a11c1d51e961c7ec737877e61af6 AS base
-LABEL org.opencontainers.image.source="https://github.com/mjmichaelware/specgraph-foundry"
+LABEL org.opencontainers.image.source="https://github.com/MichaelAPWare/specgraph-foundry"
 LABEL org.opencontainers.image.description="SpecGraph Foundry operation worker"
 LABEL com.specgraph.component="worker"
 

@@ -1386,7 +1386,7 @@ write(
                 ),
                 config={
                     "repository": (
-                        "mjmichaelware/ATROPOS"
+                        "MichaelAPWare/ATROPOS"
                     ),
                     "transport": (
                         "VERIFIED_HANDOFF_BUNDLE"

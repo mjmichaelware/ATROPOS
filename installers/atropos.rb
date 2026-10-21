@@ -1,6 +1,6 @@
 class Atropos < Formula
   desc "Deterministic software engineering engine"
-  homepage "https://github.com/mjmichaelware/ATROPOS"
+  homepage "https://github.com/MichaelAPWare/ATROPOS"
   version "0.1.0"
   url "file://build/libs/ATROPOS.jar"
   def install

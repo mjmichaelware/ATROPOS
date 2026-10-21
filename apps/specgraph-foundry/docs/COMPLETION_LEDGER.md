@@ -205,7 +205,7 @@
 - Scope: implement deployment automation, protected previews, approvals, revision retention, backup, and rollback procedures
 - Acceptance evidence required: GitHub Actions deployment workflows, OIDC/WIF configuration proof, protected preview verification, rollback rehearsal, and runbooks
 - Commit SHA: f205797 (Group 19 HEAD after infrastructure repair), 9cd11ad (original Group 19 commit)
-- Hosted revision: specgraph-api Cloud Run service created (Buildpack deploy, container failed to start); Vercel preview deployed at https://web-f8tmc0abe-mjmichaelwares-projects.vercel.app (deployment dpl_8iQCwELd6CbmMvovWTeYbZeaRNhy)
+- Hosted revision: specgraph-api Cloud Run service created (Buildpack deploy, container failed to start); Vercel preview deployed at https://web-f8tmc0abe-MichaelAPWares-projects.vercel.app (deployment dpl_8iQCwELd6CbmMvovWTeYbZeaRNhy)
 - Known blockers: Cloud Run API container failed to start with Buildpack build; Dockerfile-based deployment requires `gcloud run deploy --source=. --dockerfile=Dockerfile.api` which timed out in this environment; Google Cloud APIs and Vercel CLI became unreachable from this sandbox mid-operation due to network restrictions; Cloud Build API was enabled during this group but builds could not complete; see `docs/runbooks/OWNER_ONLY_PLATFORM_SETUP.md` and `docs/runbooks/PRODUCTION_APPROVAL.md` for owner setup steps
 - Prohibited completion claims: do not claim hosted API availability, production deployment execution, OIDC/WIF runtime, Artifact Registry publishing, or rollback execution from this Group 19 gate alone — those remain for Group 20 hosted acceptance
 
@@ -216,6 +216,6 @@
 - Scope: perform hosted acceptance, release gating, and final production-completion verification
 - Acceptance evidence required: staged hosted acceptance reports, production approval evidence, release revisions, and post-release verification
 - Commit SHA: not yet produced
-- Hosted revision: specgraph-api Cloud Run service at https://specgraph-api-882099804366.us-west1.run.app (created via Buildpack, container not functional); Vercel preview at https://web-f8tmc0abe-mjmichaelwares-projects.vercel.app (functional, returns 302/SSO)
+- Hosted revision: specgraph-api Cloud Run service at https://specgraph-api-882099804366.us-west1.run.app (created via Buildpack, container not functional); Vercel preview at https://web-f8tmc0abe-MichaelAPWares-projects.vercel.app (functional, returns 302/SSO)
 - Known blockers: Google Cloud APIs and Vercel CLI became unreachable from this sandbox during Group 20 execution, preventing Dockerfile-based Cloud Run deployment, Supabase hosted audit, rollback rehearsal, and hosted acceptance journey execution; Cloud Run API service exists but was deployed with Buildpacks (not the correct Dockerfile.api) and the container fails to start; previously working Vercel CLI also unreachable after network restriction; the sandbox environment has a fundamental network egress restriction that prevents any cloud API access
 - Prohibited completion claims: do not claim product completion before hosted acceptance and release evidence is produced; do not mark Group 20 complete while hosted access remains unavailable; do not claim production deployment, rollback execution, browser E2E, or any hosted step passed — none have been verified at runtime

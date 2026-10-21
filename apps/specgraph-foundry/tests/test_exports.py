@@ -605,7 +605,7 @@ class ExportTest(unittest.TestCase):
                 binding_type="RUNTIME",
                 config={
                     "repository": (
-                        "mjmichaelware/ATROPOS"
+                        "MichaelAPWare/ATROPOS"
                     ),
                     "mode": "local",
                 },

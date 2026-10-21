@@ -287,8 +287,8 @@ write(
     </p>
 
     <p align="center">
-      <a href="https://github.com/mjmichaelware/specgraph-foundry/actions/workflows/ci.yml">
-        <img src="https://github.com/mjmichaelware/specgraph-foundry/actions/workflows/ci.yml/badge.svg" alt="CI">
+      <a href="https://github.com/MichaelAPWare/specgraph-foundry/actions/workflows/ci.yml">
+        <img src="https://github.com/MichaelAPWare/specgraph-foundry/actions/workflows/ci.yml/badge.svg" alt="CI">
       </a>
       <a href="LICENSE">
         <img src="https://img.shields.io/badge/license-Apache--2.0-6d82ff" alt="Apache-2.0">

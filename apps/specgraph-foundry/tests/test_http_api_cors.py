@@ -15,7 +15,7 @@ class OriginAllowlistTest(unittest.TestCase):
     def test_per_deployment_vercel_url_is_allowed(self):
         self.assertTrue(
             is_origin_allowed(
-                "https://specgraph-foundry-pw5053xe9-mjmichaelwares-projects.vercel.app",
+                "https://specgraph-foundry-pw5053xe9-MichaelAPWares-projects.vercel.app",
                 set(),
             )
         )

@@ -6,7 +6,7 @@ execution DAG, and builds against it.
 ## Install
 
 ```
-npm install -g @mjmichaelware/atropos
+npm install -g @MichaelAPWare/atropos
 atropos
 ```
 
@@ -27,7 +27,7 @@ brew install openjdk@21
 If you would rather not use npm:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/MichaelAPWare/ATROPOS/main/install.sh | sh
 ```
 
 ## Why the jar is downloaded rather than bundled
@@ -74,4 +74,4 @@ once `termux-setup-storage` has been run.
 
 ## Licence
 
-AGPL-3.0-only. Source: https://github.com/mjmichaelware/ATROPOS
+AGPL-3.0-only. Source: https://github.com/MichaelAPWare/ATROPOS

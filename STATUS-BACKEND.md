@@ -806,7 +806,7 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
-| B-INST-006 npm fallback launcher | source-wired / partial | `npm/bin/atropos.js`, `npm/scripts/postinstall.js`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | `npm install -g @mjmichaelware/atropos` → postinstall checksum path → `npm/bin/atropos.js` → JVM jar | Contract now proves the launcher honors `ATROPOS_JAR` and `ATROPOS_JAVA_OPTS`, inherits terminal streams, preserves JVM exit status, and fails nonzero on signal termination; postinstall remains checksum fail-closed. `NPM_INSTALLER_CONTRACT_OK` passes locally; release/network/device proof remains external. |
+| B-INST-006 npm fallback launcher | source-wired / partial | `npm/bin/atropos.js`, `npm/scripts/postinstall.js`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | `npm install -g @MichaelAPWare/atropos` → postinstall checksum path → `npm/bin/atropos.js` → JVM jar | Contract now proves the launcher honors `ATROPOS_JAR` and `ATROPOS_JAVA_OPTS`, inherits terminal streams, preserves JVM exit status, and fails nonzero on signal termination; postinstall remains checksum fail-closed. `NPM_INSTALLER_CONTRACT_OK` passes locally; release/network/device proof remains external. |
 
 ### 2026-08-24T12:10:00Z · Backend batch: hosted-snapshot-secret-boundary
 

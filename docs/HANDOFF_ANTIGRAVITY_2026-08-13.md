@@ -1,6 +1,6 @@
 # ATROPOS — handoff to Antigravity
 
-**Repo:** `mjmichaelware/ATROPOS` · **Branch:** `main` at `85ece6d` (clean, pushed)
+**Repo:** `MichaelAPWare/ATROPOS` · **Branch:** `main` at `85ece6d` (clean, pushed)
 **Predecessor:** Claude (claude-opus-5), 7 batches, 2026-08-13
 
 ---

@@ -762,7 +762,7 @@ def run_audit(
             ),
             config={
                 "repository": (
-                    "mjmichaelware/ATROPOS"
+                    "MichaelAPWare/ATROPOS"
                 ),
                 "transport": (
                     "VERIFIED_HANDOFF_BUNDLE"
