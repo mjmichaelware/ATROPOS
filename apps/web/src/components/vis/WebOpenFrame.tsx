@@ -20,6 +20,7 @@ import { WorkbenchShell } from '@/components/workbench/workbench-shell';
 import { FileExplorer } from '@/components/workbench/file-explorer';
 import { EditorTabs } from '@/components/workbench/editor-tabs';
 import { LogPanel } from '@/components/workbench/log-panel';
+import { TerminalComponent } from '@/components/workbench/terminal';
 
 /**
  * F-VIS-004: Web Open Frame - Session Theme
