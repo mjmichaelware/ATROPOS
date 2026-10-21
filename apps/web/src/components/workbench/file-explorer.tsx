@@ -149,22 +149,6 @@ export function FileExplorer({
     })();
   }
 
-  function renderTree(nodes: WorkspaceTreeNode[], depth = 0): React.ReactNode {
-    return (
-      <ul className="wb-filelist" aria-label={depth === 0 ? 'Project tree' : 'Directory contents'}>
-        {nodes.map((node) => (
-          <li key={node.path} style={{ paddingLeft: `${depth * 16}px` }}>
-            {node.type === 'directory' ? (
-              <DirectoryNode node={node} depth={depth} onOpen={open} />
-            ) : (
-              <FileNode node={node} onOpen={open} />
-            )}
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
   return (
     <div className="wb-explorer-inner" data-testid="file-explorer">
       <div className="wb-explorer-header">
@@ -197,7 +181,7 @@ export function FileExplorer({
             : 'No files in this session yet.'}
         </p>
       )}
-      {state.kind === 'workspace' && renderTree(state.tree)}
+      {state.kind === 'workspace' && <TreeList nodes={state.tree} onOpen={open} />}
       {state.kind === 'session' && (
         <ul className="wb-filelist" aria-label="Session files">
           {state.files.map((file) => (
@@ -220,6 +204,30 @@ export function FileExplorer({
           : 'Session files. Project tree lands with the workspace API.'}
       </p>
     </div>
+  );
+}
+
+function TreeList({
+  nodes,
+  onOpen,
+  depth = 0,
+}: {
+  nodes: WorkspaceTreeNode[];
+  onOpen: (item: { path: string; name: string }) => void;
+  depth?: number;
+}) {
+  return (
+    <ul className="wb-filelist" aria-label={depth === 0 ? 'Project tree' : 'Directory contents'}>
+      {nodes.map((node) => (
+        <li key={node.path} style={{ paddingLeft: `${depth * 16}px` }}>
+          {node.type === 'directory' ? (
+            <DirectoryNode node={node} depth={depth} onOpen={onOpen} />
+          ) : (
+            <FileNode node={node} onOpen={onOpen} />
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -246,7 +254,7 @@ function DirectoryNode({
       >
         {expanded ? '▾' : '▸'} {node.name}
       </button>
-      {expanded && hasChildren && renderTree(node.children!, depth + 1)}
+      {expanded && hasChildren && <TreeList nodes={node.children!} depth={depth + 1} onOpen={onOpen} />}
     </div>
   );
 }
