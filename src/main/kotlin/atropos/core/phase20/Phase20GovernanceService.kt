@@ -153,7 +153,7 @@ class Phase20GovernanceService(
                         territory = deficiency.territory,
                         risk = "high",
                         rollback = "manual",
-                        metric = MetricDeclaration("none", "none", 0.0),
+                        metric = MetricDeclaration("none", 0.0, 1.0, false),
                         createdAt = clock()
                     ),
                     invariants = invariants
