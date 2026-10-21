@@ -36,9 +36,9 @@ export interface SessionFrameProps {
 }
 
 export const SessionOpenFrame: FC<SessionFrameProps> = ({ children }) => {
-  const { session } = useOptionalSessionState();
+  const sessionState = useOptionalSessionState();
   const { global, project, engineState, developer } = useNavItems();
-  const activeProjectId = session?.session.activeProjectId ?? null;
+  const activeProjectId = sessionState?.session.activeProjectId ?? null;
 
   return (
     <div className="sg-session-frame">
