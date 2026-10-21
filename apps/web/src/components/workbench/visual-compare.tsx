@@ -72,8 +72,8 @@ export function VisualCompare({
         setState((prev) => ({
           ...prev,
           loading: false,
-          result: result.data,
-          error: result.data.detail,
+          result,
+          error: result.detail,
         }));
       } else {
         setState((prev) => ({
@@ -159,21 +159,21 @@ export function VisualCompare({
         <div className="wb-compare-result" role="region" aria-live="polite" aria-label="Visual comparison result">
           {state.result.ok ? (
             <>
-              <div className={`wb-compare-status ${state.result.data.match ? 'match' : 'diff'}`}>
+              <div className={`wb-compare-status ${state.result.match ? 'match' : 'diff'}`}>
                 <span className="wb-compare-badge">
-                  {state.result.data.match ? 'MATCH' : 'DIFFERENT'}
+                  {state.result.match ? 'MATCH' : 'DIFFERENT'}
                 </span>
                 <p className="wb-compare-detail">
-                  {state.result.data.match
+                  {state.result.match
                     ? 'Images are identical'
-                    : `${state.result.data.diffPercent.toFixed(2)}% difference`}
+                    : `${state.result.diffPercent.toFixed(2)}% difference`}
                 </p>
               </div>
 
-              {state.result.data.diffImage && (
+              {state.result.diffImage && (
                 <div className="wb-compare-diff-image">
                   <img
-                    src={`data:image/png;base64,${state.result.data.diffImage}`}
+                    src={`data:image/png;base64,${state.result.diffImage}`}
                     alt="Visual difference highlight"
                     className="wb-diff-image"
                   />
@@ -182,16 +182,16 @@ export function VisualCompare({
 
               <details className="wb-compare-evidence">
                 <summary>Evidence Reference</summary>
-                {state.result.data.evidenceRef ? (
+                {state.result.evidenceRef ? (
                   <dl className="wb-evidence-ref">
                     <dt>CAS Hash</dt>
-                    <dd className="wb-mono">{state.result.data.evidenceRef.casHash}</dd>
+                    <dd className="wb-mono">{state.result.evidenceRef.casHash}</dd>
                     <dt>Claim ID</dt>
-                    <dd className="wb-mono">{state.result.data.evidenceRef.claimId}</dd>
+                    <dd className="wb-mono">{state.result.evidenceRef.claimId}</dd>
                     <dt>Gates</dt>
                     <dd>
                       <ul>
-                        {state.result.data.evidenceRef.gateIds.map((gate) => (
+                        {state.result.evidenceRef.gateIds.map((gate) => (
                           <li key={gate} className="wb-mono">{gate}</li>
                         ))}
                       </ul>
@@ -206,9 +206,9 @@ export function VisualCompare({
                 <summary>Paths Compared</summary>
                 <dl>
                   <dt>Baseline</dt>
-                  <dd className="wb-mono">{state.result.data.baselinePath}</dd>
+                  <dd className="wb-mono">{state.result.baselinePath}</dd>
                   <dt>Current</dt>
-                  <dd className="wb-mono">{state.result.data.currentPath}</dd>
+                  <dd className="wb-mono">{state.result.currentPath}</dd>
                 </dl>
               </details>
             </>

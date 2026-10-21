@@ -72,8 +72,8 @@ export function ReproducibilityPanel() {
         setState((prev) => ({
           ...prev,
           loading: false,
-          result: result.data,
-          error: result.data.detail,
+          result,
+          error: result.detail,
         }));
       } else {
         setState((prev) => ({
@@ -219,7 +219,7 @@ export function ReproducibilityPanel() {
     );
   }
 
-  const { reproducible, predicates, snapshotId, timestamp } = state.result.data;
+  const { reproducible, predicates, snapshotId, timestamp } = state.result;
 
   return (
     <div className={`wb-reproducibility ${reproducible ? 'wb-repro-pass' : 'wb-repro-fail'}`} data-testid="reproducibility-panel">
