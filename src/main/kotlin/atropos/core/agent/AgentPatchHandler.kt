@@ -31,7 +31,12 @@ internal class AgentPatchHandler(
             sourceBindingKind = snapshot.sourceBindingKind
         )
         if (sourceRefusal != null) {
-            val reason = sourceRefusal.message
+            // Name the concrete pack failure (SOURCE_PACK_TRUNCATED,
+            // SOURCE_PACK_REFUSED: ..., SOURCE_BINDING_UNAVAILABLE) rather than
+            // the generic boundary message, so a refusal is diagnosable from
+            // the run record without re-running the benchmark.
+            val reason = sourceRefusal.message +
+                (snapshot.sourcePackFailure?.let { " ($it)" } ?: "")
             memoryStore.rememberFailure(
                 subjectType = "agent_patch",
                 subjectId = null,

@@ -5,6 +5,7 @@ import java.nio.file.Files
 import kotlin.test.assertEquals
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AgentContextCollectorTest {
@@ -104,6 +105,67 @@ class AgentContextCollectorTest {
         assertTrue(snapshot.sourcePackId != null, snapshot.text)
         assertTrue(snapshot.text.contains("FILE src/target.py"), snapshot.text)
         assertFalse(snapshot.text.contains("FILE src/unrelated.py"), snapshot.text)
+    }
+
+    @Test
+    fun free_form_task_hint_does_not_fabricate_an_empty_target_workspace() {
+        // Mirrors astropy__astropy-11693: the task is the issue text, the
+        // workspace is the current repository root, and the referenced source
+        // files live under it. A free-form hint must not be turned into an
+        // empty temporary target whose only candidate relativises to `..`.
+        val root = Files.createTempDirectory("atropos-context-pack-freeform-")
+        Files.createDirectories(root.resolve("astropy/wcs/wcsapi"))
+        Files.writeString(root.resolve("astropy/wcs/wcs.py"), "world = 1\n".repeat(200))
+        Files.writeString(root.resolve("astropy/wcs/wcsapi/fitswcs.py"), "api = 1\n".repeat(50))
+
+        val task = "WCS.all_world2pix failed to converge when plotting; see " +
+            "astropy/wcs/wcsapi/fitswcs.py and astropy/wcs/wcs.py"
+
+        val snapshot = AgentContextCollector(repoRoot = root, contextCapBytes = 64 * 1024).collectPatch(task)
+
+        assertEquals(null, snapshot.sourcePackFailure, snapshot.sourcePackDiagnostics)
+        assertTrue(snapshot.sourcePackId != null, snapshot.sourcePackDiagnostics)
+        assertTrue(snapshot.text.contains("FILE astropy/wcs/wcs.py"), snapshot.text)
+        assertTrue(snapshot.text.contains("FILE astropy/wcs/wcsapi/fitswcs.py"), snapshot.text)
+    }
+
+    @Test
+    fun prompt_file_hint_is_scanned_for_references_and_never_becomes_the_target_workspace() {
+        // The evaluator prompt is a file, not a workspace. It must be read for
+        // referenced paths, but the file path itself must not be adopted as the
+        // target root (which would fail with "local_path is not a directory").
+        val root = Files.createTempDirectory("atropos-context-pack-prompt-")
+        Files.createDirectories(root.resolve("astropy/wcs"))
+        Files.writeString(root.resolve("astropy/wcs/wcs.py"), "value = 1\n".repeat(100))
+
+        val prompt = Files.createTempFile("astropy__astropy-11693_prompt-", ".txt")
+        Files.writeString(
+            prompt,
+            "Astropy issue: WCS.all_world2pix failed to converge.\n" +
+                "Referenced files: astropy/wcs/wcs.py and astropy/wcs/wcsapi/fitswcs.py\n"
+        )
+
+        val snapshot = AgentContextCollector(repoRoot = root, contextCapBytes = 64 * 1024)
+            .collectPatch(prompt.toString())
+
+        assertEquals(null, snapshot.sourcePackFailure, snapshot.sourcePackDiagnostics)
+        assertTrue(snapshot.sourcePackId != null, snapshot.sourcePackDiagnostics)
+        assertTrue(snapshot.text.contains("FILE astropy/wcs/wcs.py"), snapshot.text)
+    }
+
+    @Test
+    fun source_pack_failure_carries_redacted_diagnostics() {
+        val root = Files.createTempDirectory("atropos-context-pack-diagnostics-")
+
+        val snapshot = AgentContextCollector(repoRoot = root, contextCapBytes = 64 * 1024)
+            .collectPatch("fix src/main/kotlin/atropos/missing/Missing.kt")
+
+        assertTrue(snapshot.sourcePackFailure != null, snapshot.sourcePackDiagnostics)
+        val diagnostics = assertNotNull(snapshot.sourcePackDiagnostics)
+        assertTrue(diagnostics.startsWith("pack target="), diagnostics)
+        assertTrue(diagnostics.contains("binding="), diagnostics)
+        assertTrue(diagnostics.contains("allowed="), diagnostics)
+        assertTrue(diagnostics.contains("outcome="), diagnostics)
     }
 
     @Test

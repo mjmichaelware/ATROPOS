@@ -72,7 +72,10 @@ internal class AgentAskHandler(
             truncated = snapshot.truncated
         )
         if (sourceContextRefusal != null) {
-            val reason = sourceContextRefusal.message
+            // Include the concrete pack failure so the source refusal names its
+            // cause instead of only the boundary's generic wording.
+            val reason = sourceContextRefusal.message +
+                (snapshot.sourcePackFailure?.let { " ($it)" } ?: "")
             memoryStore.rememberFailure(
                 subjectType = "agent_ask",
                 subjectId = null,

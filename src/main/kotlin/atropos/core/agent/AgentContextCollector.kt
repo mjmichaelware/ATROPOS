@@ -23,12 +23,20 @@ data class AgentContextSnapshot(
     val sourcePackContentHash: String? = null,
     val sourceTreeHash: String? = null,
     val sourceBindingKind: SourceBindingKind? = null,
-    val sourcePackFailure: String? = null
+    val sourcePackFailure: String? = null,
+    /**
+     * Redacted, bounded account of how the source pack resolved: effective
+     * target root, binding kind, allowed paths and pack outcome. It exists so a
+     * `MISSING_SOURCE_PACK` refusal can be diagnosed from the run record alone
+     * without re-running the benchmark and without dumping source bytes.
+     */
+    val sourcePackDiagnostics: String? = null
 )
 
 private data class SourcePackSelection(
     val pack: atropos.core.provider.CodebaseContextPack?,
-    val failure: String?
+    val failure: String?,
+    val diagnostics: String? = null
 )
 
 class AgentContextCollector(
@@ -69,16 +77,13 @@ class AgentContextCollector(
     ).map(repoRoot::resolve)
 
     fun collect(taskHint: String? = null): AgentContextSnapshot {
-        val targetWorkspace = runCatching {
-            val hintPath = taskHint?.let { runCatching { Path.of(it) }.getOrNull() }?.takeIf { Files.exists(it) }
-            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
-        }.getOrNull()
+        val targetWorkspace = resolveTargetWorkspace(taskHint)
         val files = (selectedSourceFiles + taskHintFiles(taskHint)).distinct()
         val builder = StringBuilder(contextCapBytes)
         var truncated = false
 
         truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
-        if (targetWorkspace != null && targetWorkspace != repoRoot) {
+        if (targetWorkspace != repoRoot) {
             truncated = appendSection(builder, "# Target Workspace\n$targetWorkspace\n", truncated)
         }
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
@@ -105,15 +110,13 @@ class AgentContextCollector(
             sourcePackContentHash = pack?.contentHash,
             sourceTreeHash = pack?.fetchReceipt?.treeHash,
             sourceBindingKind = pack?.fetchReceipt?.bindingKind,
-            sourcePackFailure = sourcePack.failure
+            sourcePackFailure = sourcePack.failure,
+            sourcePackDiagnostics = sourcePack.diagnostics
         )
     }
 
     fun collectPatch(taskHint: String? = null): AgentContextSnapshot {
-        val targetWorkspace = runCatching {
-            val hintPath = taskHint?.let { runCatching { Path.of(it) }.getOrNull() }?.takeIf { Files.exists(it) }
-            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
-        }.getOrNull()
+        val targetWorkspace = resolveTargetWorkspace(taskHint)
         val files = taskHintFiles(taskHint).ifEmpty {
             listOf(repoRoot.resolve("README.md").normalize())
         }.distinct()
@@ -121,7 +124,7 @@ class AgentContextCollector(
         var truncated = false
 
         truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
-        if (targetWorkspace != null && targetWorkspace != repoRoot) {
+        if (targetWorkspace != repoRoot) {
             truncated = appendSection(builder, "# Target Workspace\n$targetWorkspace\n", truncated)
         }
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
@@ -149,15 +152,13 @@ class AgentContextCollector(
             sourcePackContentHash = pack?.contentHash,
             sourceTreeHash = pack?.fetchReceipt?.treeHash,
             sourceBindingKind = pack?.fetchReceipt?.bindingKind,
-            sourcePackFailure = sourcePack.failure
+            sourcePackFailure = sourcePack.failure,
+            sourcePackDiagnostics = sourcePack.diagnostics
         )
     }
 
     fun collectRepair(taskHint: String? = null, fileHints: List<String> = emptyList()): AgentContextSnapshot {
-        val targetWorkspace = runCatching {
-            val hintPath = taskHint?.let { runCatching { Path.of(it) }.getOrNull() }?.takeIf { Files.exists(it) }
-            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
-        }.getOrNull()
+        val targetWorkspace = resolveTargetWorkspace(taskHint)
         val hintedFiles = (taskHintFiles(taskHint) + fileHints.mapNotNull { resolveHint(it) }).distinct()
         val files = hintedFiles.ifEmpty {
             listOf(repoRoot.resolve("README.md").normalize())
@@ -166,7 +167,7 @@ class AgentContextCollector(
         var truncated = false
 
         truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
-        if (targetWorkspace != null && targetWorkspace != repoRoot) {
+        if (targetWorkspace != repoRoot) {
             truncated = appendSection(builder, "# Target Workspace\n$targetWorkspace\n", truncated)
         }
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
@@ -194,7 +195,8 @@ class AgentContextCollector(
             sourcePackContentHash = pack?.contentHash,
             sourceTreeHash = pack?.fetchReceipt?.treeHash,
             sourceBindingKind = pack?.fetchReceipt?.bindingKind,
-            sourcePackFailure = sourcePack.failure
+            sourcePackFailure = sourcePack.failure,
+            sourcePackDiagnostics = sourcePack.diagnostics
         )
     }
 
@@ -215,12 +217,40 @@ class AgentContextCollector(
         }
     }
 
+    /**
+     * Resolves the workspace this task actually operates on.
+     *
+     * A target workspace is only ever a directory that already exists. When the
+     * hint is a free-form issue, a prompt file, or anything that is not an
+     * existing directory, the task belongs to the current repository root — the
+     * collector must not fabricate an empty temporary workspace and then pack
+     * nothing (or an escaping path) out of it, which surfaces as a spurious
+     * `MISSING_SOURCE_PACK` refusal.
+     */
+    private fun resolveTargetWorkspace(taskHint: String?): Path {
+        val hintPath = taskHint
+            ?.let { runCatching { Path.of(it.trim()) }.getOrNull() }
+            ?.takeIf { Files.isDirectory(it) }
+            ?: return repoRoot
+        return runCatching {
+            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
+        }.getOrDefault(repoRoot)
+    }
+
     private fun taskHintFiles(taskHint: String?, root: Path = repoRoot): List<Path> {
         val task = taskHint?.trim().orEmpty()
         if (task.isBlank()) return emptyList()
 
         val candidates = mutableSetOf<Path>()
         val lower = task.lowercase()
+
+        // A hint that names an existing file (for example the evaluator's
+        // `astropy__astropy-11693_prompt.txt`) is itself a candidate, so its
+        // contents can be scanned for referenced source paths below.
+        runCatching { Path.of(task) }.getOrNull()
+            ?.let { if (it.isAbsolute) it.normalize() else root.resolve(it).normalize() }
+            ?.takeIf { Files.isRegularFile(it) && !isExcluded(it) }
+            ?.let { candidates.add(it) }
 
         if ("readme" in lower) {
             listOf("README.md", "README").forEach { candidates.add(root.resolve(it).normalize()) }
@@ -268,7 +298,11 @@ class AgentContextCollector(
             contextPacker
         }
         val binding = bindingResolver.resolve().binding
-            ?: return SourcePackSelection(null, "SOURCE_BINDING_UNAVAILABLE")
+            ?: return SourcePackSelection(
+                null,
+                "SOURCE_BINDING_UNAVAILABLE",
+                packDiagnostics(effectiveRepoRoot, "unavailable", allowedPaths, "binding_unavailable")
+            )
         val effectiveAllowedPaths = if (targetWorkspace != null && targetWorkspace != repoRoot) {
             // The target packer resolves paths relative to the target root.
             // Callers that discovered a target through the task hint cannot
@@ -291,14 +325,58 @@ class AgentContextCollector(
             )
         )
         val pack = (result as? SourcePackResult.Packed)?.pack
-            ?: return SourcePackSelection(null, "SOURCE_PACK_REFUSED: ${result}")
+            ?: return SourcePackSelection(
+                null,
+                "SOURCE_PACK_REFUSED: $result",
+                packDiagnostics(effectiveRepoRoot, binding.kind.name, effectiveAllowedPaths, "refused: $result")
+            )
         if (pack.truncated) {
-            return SourcePackSelection(null, "SOURCE_PACK_TRUNCATED")
+            return SourcePackSelection(
+                null,
+                "SOURCE_PACK_TRUNCATED",
+                packDiagnostics(
+                    effectiveRepoRoot,
+                    binding.kind.name,
+                    effectiveAllowedPaths,
+                    "truncated bytes=${pack.byteCount} cap=$maxPackBytes"
+                )
+            )
         }
         if (pack.text.isBlank()) {
-            return SourcePackSelection(null, "SOURCE_PACK_EMPTY")
+            return SourcePackSelection(
+                null,
+                "SOURCE_PACK_EMPTY",
+                packDiagnostics(effectiveRepoRoot, binding.kind.name, effectiveAllowedPaths, "empty")
+            )
         }
-        return SourcePackSelection(pack, null)
+        return SourcePackSelection(
+            pack,
+            null,
+            packDiagnostics(
+                effectiveRepoRoot,
+                binding.kind.name,
+                effectiveAllowedPaths,
+                "packed id=${pack.id} files=${pack.includedPaths.size} bytes=${pack.byteCount}"
+            )
+        )
+    }
+
+    /**
+     * A bounded, redacted one-line account of a pack attempt. Paths are
+     * truncated and passed through the redaction filter; no source bytes are
+     * ever included.
+     */
+    private fun packDiagnostics(
+        effectiveRoot: Path,
+        bindingKind: String,
+        allowed: List<String>,
+        outcome: String
+    ): String {
+        val root = redactionFilter.redact(effectiveRoot.toString()).take(200)
+        val paths = allowed
+            .map { redactionFilter.redact(it.replace('\\', '/')).take(120) }
+            .joinToString("|")
+        return "pack target=$root binding=$bindingKind allowed=[$paths] outcome=$outcome"
     }
 
     /**
@@ -314,8 +392,16 @@ class AgentContextCollector(
         val taskFiles = taskHintFiles(taskHint, effectiveRoot)
         val candidates = taskFiles.ifEmpty { files }
         val hinted = candidates.mapNotNull { file ->
-            effectiveRoot.relativizeSafely(file)
-                ?.takeIf { it.isNotBlank() && Files.isRegularFile(file) && !isExcluded(file) }
+            val relative = effectiveRoot.relativizeSafely(file) ?: return@mapNotNull null
+            // A candidate that does not live under the effective root — an
+            // engine-root file when the target is external, or a prompt file
+            // outside it — would relativise to an escaping `..` path. The packer
+            // refuses such territory, so drop it here rather than let it poison
+            // an otherwise valid pack.
+            if (relative.isBlank() || relative.startsWith("/") || relative.split('/').contains("..")) {
+                return@mapNotNull null
+            }
+            relative.takeIf { Files.isRegularFile(file) && !isExcluded(file) }
         }.distinct()
         if (hinted.isNotEmpty()) return hinted
 
