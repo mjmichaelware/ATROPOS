@@ -242,7 +242,7 @@ class ProtectedPathPolicy(
             "rmdir", "ln", "rsync", "tar", "unzip", "gunzip"
         )
 
-        val firstArg = command.firstOrNull()?.takeLast("/")?.lowercase() ?: return ProtectedPathResult.Allowed("")
+        val firstArg = command.firstOrNull()?.substringAfterLast("/")?.lowercase() ?: return ProtectedPathResult.Allowed("")
 
         // For git, check subcommands
         if (firstArg == "git") {

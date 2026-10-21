@@ -5,6 +5,7 @@ import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.PatchActionProposals
 import atropos.core.security.ProtectedPathPolicy
+import atropos.core.security.ProtectedPathResult
 import atropos.core.territory.GrantResult
 import atropos.core.territory.TerritoryGrantService
 import java.nio.file.Files

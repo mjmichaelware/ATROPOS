@@ -16580,3 +16580,30 @@ End of AGENTS.md
 - Why the delta is justified: The intent router bug was a routing defect, not missing functionality; fixing it restores correctness without changing phase completion. The dopamine listener extends existing `ProviderDopamineRewardTracker` and `LocalMemoryStore` — no new systems created.
 - New overall estimate: unchanged (≈ 42%)
 - Fingerprints: to be computed after commit
+
+### 2026-10-21T00:00:00Z · Agent: OpenCode · Batch: phase20-owner-auth-protected-paths-swe-bench-fixes
+
+- Paths touched:
+  - `src/main/kotlin/atropos/core/security/OwnerAuthorizationService.kt` (+332 new) — Local installation owner authentication with PBKDF2WithHmacSHA256, salted hash stored in `~/.atropos/auth/owner.shadow` with 0600 permissions. Rate-limits failed attempts with exponential backoff. Binds authorization to exact Phase 20 target scope (file paths). Blocks authorization from dopamine rewards, memory recalls, HF exports, autonomous loops.
+  - `src/main/kotlin/atropos/core/security/ProtectedPathPolicy.kt` (+45/-10) — Filesystem-aware symlink enforcement using `Path.toRealPath(LinkOption.NOFOLLOW_LINKS)`. Added `checkPathReal`, `checkPathsReal`, `checkCommand` for subprocess boundary interception.
+  - `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` (+85/-12) — Fixed SWE-bench source context pack resolver: detects external/target workspace via `isAtroposEngineRoot()`, uses `.` as allowed path for non-ATROPOS repos. Passes `targetWorkspace` to `sourcePack()` for correct territory binding.
+  - `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+60/-15) — Added structured error telemetry via `TerminalText.emitTelemetry` for all fetch failures (local_path, git, archive, http_bundle).
+  - `atropos-evals/run_swe_bench_batch.py` (complete rewrite, +180 lines) — Fixed exit code/status ingestion: marks FAILED/REFUSED on ATROPOS refusal outputs (`[refused]`, `provider context refused`, `failed`) regardless of Java exit code. Fixed 72MB patch bloat: `git diff` with explicit pathspec exclusions (`:!.atropos :!*.jar :!*.zip :!*.pyc :!__pycache__ :!build/` etc.).
+  - `src/test/kotlin/atropos/core/security/ProtectedPathPolicyTest.kt` (+220 new) — Comprehensive tests: direct writes, traversal, symlink escapes rejected; ordinary workspace files editable; unauthorized Phase 20 invocations fail closed; authorized actions restricted to approved scope.
+
+- Atoms / phases affected: Phase 20 Owner Authorization Infrastructure (§3 priority 1), Protected Path Policy (Core/HOE Gap Maps), SWE-bench Context Pack Resolution (Core Engine Gap Map), Phase 20 Autonomous Loop Gate (Core Engine Gap Map)
+
+- Predicate moved:
+  - **OwnerAuthorizationService now exists** — previously missing entirely. Implements PBKDF2WithHmacSHA256 (100k iterations), secure shadow file with 0600 perms, exponential backoff rate-limiting, scope-bound tokens, explicit blocking of dopamine/memory/HF/autonomous sources.
+  - **ProtectedPathPolicy now uses real filesystem checks** — `toRealPath()` prevents symlink escapes to protected roots (`src/main/kotlin/atropos/`, `.git/`, `.atropos/`, build configs). Subprocess command boundary interception added.
+  - **SWE-bench context pack resolver fixed** — external repo workspaces (e.g., `astropy__astropy-11693` at `3832210580d516365ddae1a62071001faf94d416`) now correctly use target workspace as source binding territory instead of falling back to ATROPOS repo paths. Structured telemetry emitted on fetch failures.
+  - **SWE-bench evaluation runner repaired** — refusal/failure outputs now correctly mapped to FAILED/REFUSED status; patch artifacts filtered to exclude runtime configs (`.atropos/`, `.jar`, `.zip`, `__pycache__`, `build/`).
+  - **ProtectedPathPolicyTest created** — verifies all critical enforcement boundaries with symlink-aware filesystem checks.
+
+- % delta: Phase 20 Owner Auth infrastructure moved from ~12% → ~25% (+13). Critical stubs aggregate ~79% → ~82% (+3). Protected Path Policy moved from ~70% → ~85% (+15). SWE-bench evaluation runner moved from blocked → source-wired/partial.
+
+- Why the delta is justified: All five deliverables were previously missing or non-functional. OwnerAuthorizationService is a new production owner implementing the Phase 20 authorization contract per AGENTS.md §0.7 (composition over new systems). ProtectedPathPolicy now enforces at the filesystem boundary using `toRealPath()` — the canonical fix for symlink escapes. AgentContextCollector fix ensures external benchmark repos use their own file tree for context packing. run_swe_bench_batch.py now correctly interprets ATROPOS refusal semantics and filters patch bloat. ProtectedPathPolicyTest provides the verification evidence required by AGENTS.md §7 (Chaos Gate, Persistence Gate).
+
+- New overall estimate: ≈ 43% (42% → 43%). Arithmetic: Phase 20 +13 points on 10% weight = +1.3; Protected Paths +15 on Phase 13 (70%→85%, 25% weight in Horizon II) = +1.0 on Horizon II; SWE-bench fixes unblock evaluation evidence.
+
+- Fingerprints (sha256, first 12): `OwnerAuthorizationService.kt` computed after write; `ProtectedPathPolicy.kt` computed after write; `AgentContextCollector.kt` computed after write; `SourceBindingFetcher.kt` computed after write; `run_swe_bench_batch.py` computed after write; `ProtectedPathPolicyTest.kt` computed after write.

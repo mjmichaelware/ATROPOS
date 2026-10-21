@@ -13,6 +13,7 @@ import atropos.core.journal.EventJournalService
 import atropos.core.phase20.GovernanceDetectorContext
 import atropos.core.phase20.Phase20Authorization
 import atropos.core.phase20.Phase20GovernanceService
+import atropos.core.phase20.SetupResult
 import atropos.core.provider.ProviderOnboardingService
 import atropos.core.verification.VerifiedCompletionGate
 import java.nio.file.Path
@@ -403,11 +404,11 @@ class SelfHostCommand(
     private fun handleAuthSetup(): AgentCommandOutcome {
         val result = phase20Auth.setup()
         return when (result) {
-            is Phase20Authorization.SetupResult.Success -> {
+            is SetupResult.Success -> {
                 ui.renderNotice("Phase 20 owner authorization configured successfully")
                 AgentCommandOutcome.Completed("Phase 20 authorization configured")
             }
-            is Phase20Authorization.SetupResult.Failed -> {
+            is SetupResult.Failed -> {
                 ui.renderError("Phase 20 authorization setup failed: ${result.reason}")
                 AgentCommandOutcome.Invalid(result.reason)
             }

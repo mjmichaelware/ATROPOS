@@ -12,7 +12,7 @@ import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.security.spec.PBEKeySpec
+import javax.crypto.spec.PBEKeySpec
 import java.time.Instant
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -462,7 +462,7 @@ class OwnerAuthorizationService(
  * Result of owner authorization setup.
  */
 sealed class SetupResult {
-    data class Success() : SetupResult()
+    object Success : SetupResult()
     data class Failed(val reason: String) : SetupResult()
 }
 

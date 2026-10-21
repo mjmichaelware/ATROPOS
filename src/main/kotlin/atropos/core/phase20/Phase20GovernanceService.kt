@@ -132,13 +132,7 @@ class Phase20GovernanceService(
         }
 
         // If the deficiency involves invariants, require authorization
-        val invariants = ImmutableInvariants.classify(
-            ProposalDeficiency(
-                territory = deficiency.territory,
-                estimatedLines = deficiency.estimatedLines,
-                invariants = deficiency.invariants
-            )
-        )
+        val invariants = ImmutableInvariants.classify(deficiency)
         val requiresAuth = invariants.requiresHumanAuthorisation
         val authToken = if (requiresAuth) {
             authorization ?: phase20Auth.requireAuthorization("Phase 20 advance for ${deficiency.territory.joinToString("|")}")
@@ -150,12 +144,17 @@ class Phase20GovernanceService(
                 outcome = LoopOutcome.NeedsHuman(
                     proposal = ImprovementProposal(
                         id = "none",
-                        territory = deficiency.territory,
-                        metric = atropos.core.evaluation.MetricDeclaration("none", "none", 0.0),
-                        guardrails = emptyList(),
-                        evidence = emptyList(),
                         proposedBy = "phase20-governance",
-                        observedAt = clock()
+                        summary = "authorization required for invariant-touching operation",
+                        necessity = emptyList(),
+                        baseline = "none",
+                        target = "none",
+                        guardrails = emptyList(),
+                        territory = deficiency.territory,
+                        risk = "high",
+                        rollback = "manual",
+                        metric = atropos.core.evaluation.MetricDeclaration("none", "none", 0.0),
+                        createdAt = clock()
                     ),
                     invariants = invariants
                 )

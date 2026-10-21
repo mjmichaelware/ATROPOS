@@ -13,7 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.security.spec.PBEKeySpec
+import javax.crypto.spec.PBEKeySpec
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEParameterSpec
 
@@ -211,7 +211,7 @@ class Phase20Authorization(
             if (tokenScope != scope) return null
 
             // Check expiry
-            val now = clock().toEpochMilli()
+            val now = currentTime().toEpochMilli()
             if (now - timestamp > TOKEN_TTL_SECONDS * 1000L) {
                 vault.deleteSecret(tokenSecretName)
                 return null
@@ -239,14 +239,14 @@ class Phase20Authorization(
         SecureRandom().nextBytes(tokenBytes)
         val token = bytesToHex(tokenBytes)
         val tokenHash = sha256(token)
-        val timestamp = clock().toEpochMilli()
+        val timestamp = currentTime().toEpochMilli()
         val nonce = bytesToHex(ByteArray(16).also { SecureRandom().nextBytes(it) })
 
         val stored = "${bytesToHex(tokenHash)}:$scope:$timestamp:$nonce"
         vault.writeSecret(tokenSecretName, stored)
         vault.writeSecret("$tokenSecretName-nonce", nonce)
 
-        return AuthorizationToken(token = token, scope = scope, issuedAt = clock())
+        return AuthorizationToken(token = token, scope = scope, issuedAt = currentTime())
     }
 
     // --- Password hashing ---
@@ -281,13 +281,13 @@ class Phase20Authorization(
 
     private fun recordFailedAttempt() {
         val count = getFailedAttempts() + 1
-        val timestamp = clock().toEpochMilli()
+        val timestamp = currentTime().toEpochMilli()
         vault.writeSecret("phase20-failed-attempts", "$count:$timestamp")
     }
 
     private fun getFailedAttempts(): Int {
         val result = vault.readSecret("phase20-failed-attempts")
-        return result?.split(':').firstOrNull()?.toIntOrNull() ?: 0
+        return result?.split(':')?.firstOrNull()?.toIntOrNull() ?: 0
     }
 
     private fun clearFailedAttempts() {
@@ -301,16 +301,16 @@ class Phase20Authorization(
             ?.takeIf { it.isNotBlank() }
     }
 
-    // --- Clock for testability ---
+    // --- Clock for testability --
 
-    private fun clock(): java.time.Instant = clock()
+    private fun currentTime(): java.time.Instant = clock()
 }
 
 /**
  * Result of owner authorization setup.
  */
 sealed class SetupResult {
-    data class Success() : SetupResult()
+    object Success : SetupResult()
     data class Failed(val reason: String) : SetupResult()
 }
 

@@ -126,6 +126,24 @@ object ImmutableInvariants {
         )
     }
 
+    /**
+     * Classifies a proposal deficiency for invariant checking.
+     * Uses the same logic as the proposal classify but works with ProposalDeficiency.
+     */
+    fun classify(deficiency: ProposalDeficiency): InvariantVerdict {
+        val haystack = (listOf(deficiency.summary) + deficiency.territory)
+            .joinToString(" ").lowercase().replace(Regex("[^a-z0-9]"), "")
+
+        val touched = INVARIANT_TERMS.filterKeys { haystack.contains(it) }.values.distinct()
+        val meta = META_TERMS.filterKeys { haystack.contains(it) }
+
+        return InvariantVerdict(
+            invariantsTouched = touched,
+            metaLevelReasons = meta.values.toList(),
+            requiresHumanAuthorisation = touched.isNotEmpty() || meta.isNotEmpty()
+        )
+    }
+
     /** True when [name] is one of the twelve. */
     fun isInvariant(name: String): Boolean = name.trim().lowercase() in NAMES
 }
