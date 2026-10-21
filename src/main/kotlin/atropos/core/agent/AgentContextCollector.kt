@@ -84,7 +84,7 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         truncated = appendSection(builder, "# Selected Sources\n${selectedSources(files)}\n", truncated)
-        val sourcePack = sourcePack(defaultPackRoots(taskHint), targetWorkspace)
+        val sourcePack = sourcePack(taskPackPaths(taskHint, files, targetWorkspace), targetWorkspace)
         truncated = appendSection(
             builder,
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
@@ -127,9 +127,7 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
-        val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
-            .filter { it.isNotBlank() }
-            .ifEmpty { listOf("README.md") }
+        val roots = taskPackPaths(taskHint, files, targetWorkspace)
         val sourcePack = sourcePack(roots, targetWorkspace)
         truncated = appendSection(
             builder,
@@ -174,9 +172,7 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
-        val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
-            .filter { it.isNotBlank() }
-            .ifEmpty { listOf("README.md") }
+        val roots = taskPackPaths(taskHint, files, targetWorkspace)
         val sourcePack = sourcePack(roots, targetWorkspace)
         truncated = appendSection(
             builder,
@@ -219,7 +215,7 @@ class AgentContextCollector(
         }
     }
 
-    private fun taskHintFiles(taskHint: String?): List<Path> {
+    private fun taskHintFiles(taskHint: String?, root: Path = repoRoot): List<Path> {
         val task = taskHint?.trim().orEmpty()
         if (task.isBlank()) return emptyList()
 
@@ -227,14 +223,14 @@ class AgentContextCollector(
         val lower = task.lowercase()
 
         if ("readme" in lower) {
-            listOf("README.md", "README").forEach { candidates.add(repoRoot.resolve(it).normalize()) }
+            listOf("README.md", "README").forEach { candidates.add(root.resolve(it).normalize()) }
         }
 
         Regex("""(?:^|[\s"'`(])([A-Za-z0-9_./-]+\.[A-Za-z0-9_]+)""")
             .findAll(task)
             .mapNotNull { match ->
                 val relative = match.groupValues[1].trim().trim('"').trim('\'')
-                val candidate = repoRoot.resolve(relative).normalize()
+                val candidate = root.resolve(relative).normalize()
                 if (Files.isRegularFile(candidate) && !isExcluded(candidate)) candidate else null
             }
             .forEach { candidates.add(it) }
@@ -266,7 +262,10 @@ class AgentContextCollector(
         val binding = bindingResolver.resolve().binding
             ?: return SourcePackSelection(null, "SOURCE_BINDING_UNAVAILABLE")
         val effectiveAllowedPaths = if (targetWorkspace != null && targetWorkspace != repoRoot) {
-            listOf(".") // Pack the entire target workspace
+            // The target packer resolves paths relative to the target root.
+            // Callers that discovered a target through the task hint cannot
+            // safely reuse paths relative to the engine root.
+            allowedPaths.ifEmpty { listOf(".") }
         } else {
             allowedPaths
         }
@@ -288,12 +287,30 @@ class AgentContextCollector(
         return SourcePackSelection(pack, null)
     }
 
+    /**
+     * Keep the provider pack bounded to files named by the task. Passing a
+     * directory here makes a large external repository consume the whole
+     * budget in sorted-file order, which correctly produces a truncated pack
+     * but leaves the agent with no attested context. Exact file paths preserve
+     * the pack's fail-closed semantics while retaining the issue's useful
+     * source references.
+     */
+    private fun taskPackPaths(taskHint: String?, files: List<Path>, targetWorkspace: Path? = null): List<String> {
+        val effectiveRoot = targetWorkspace?.takeIf { it != repoRoot } ?: repoRoot
+        val taskFiles = taskHintFiles(taskHint, effectiveRoot)
+        val candidates = taskFiles.ifEmpty { files }
+        val hinted = candidates.mapNotNull { file ->
+            effectiveRoot.relativizeSafely(file)
+                ?.takeIf { it.isNotBlank() && Files.isRegularFile(file) && !isExcluded(file) }
+        }.distinct()
+        if (hinted.isNotEmpty()) return hinted
+
+        val defaults = defaultPackRoots(taskHint)
+        return defaults.ifEmpty { listOf("README.md") }
+    }
+
     private fun defaultPackRoots(taskHint: String?): List<String> {
-        // If repoRoot is not the ATROPOS engine root (i.e., we're in an external/target workspace),
-        // use "." to pack the entire workspace instead of hardcoded ATROPOS paths
-        if (!isAtroposEngineRoot(repoRoot)) {
-            return listOf(".")
-        }
+        if (!isAtroposEngineRoot(repoRoot)) return listOf("README.md")
         val lower = taskHint.orEmpty().lowercase()
         if ("self-host" in lower || "self host" in lower || "atropos" in lower) {
             return listOf(

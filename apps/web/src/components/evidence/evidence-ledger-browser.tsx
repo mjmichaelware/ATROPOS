@@ -50,7 +50,7 @@ export function EvidenceLedgerBrowser() {
           const fallback = await readEngine<{ ok: true; items: Array<{ id: string; kind: string; path: string; sha256: string; bytes: number; createdAt: string }> }>('/v1/evidence/list');
           if (cancelled) return;
           if (fallback.ok) {
-            setPayload({ items: fallback.data.items });
+            setPayload({ ok: true, items: fallback.data.items });
           } else {
             setError(`${fallback.detail} ${fallback.remedy}`);
           }
@@ -60,8 +60,8 @@ export function EvidenceLedgerBrowser() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-      return () => { cancelled = true; };
     })();
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
