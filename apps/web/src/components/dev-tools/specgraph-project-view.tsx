@@ -9,7 +9,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { specgraph, type SpecGraphSource, type SpecGraphAtom, type SpecGraphResearch, type SpecGraphExecution, type SpecGraphPlan, type SpecGraphResult } from '@/lib/specgraph/client';
+import { specgraph } from '@/lib/specgraph/client';
 
 type Tab = 'sources' | 'atoms' | 'research' | 'executions' | 'plan';
 
@@ -44,33 +44,57 @@ export function SpecGraphProjectView({ projectId }: SpecGraphProjectViewProps) {
     setErrors((prev) => ({ ...prev, [tab]: null }));
 
     try {
-      let result: SpecGraphResult<any>;
       switch (tab) {
-        case 'sources':
-          result = await specgraph.sources(projectId);
-          if (result.ok) setSources(result.data.sources);
-          else setErrors((p) => ({ ...p, sources: `${result.detail} ${result.remedy}` }));
+        case 'sources': {
+          const result = await specgraph.sources(projectId);
+          if (result.ok) {
+            setSources(result.data.sources);
+          } else {
+            const errorMsg = `${result.detail} ${result.remedy}`;
+            setErrors((p) => ({ ...p, sources: errorMsg }));
+          }
           break;
-        case 'atoms':
-          result = await specgraph.atoms(projectId);
-          if (result.ok) setAtoms(result.data.atoms);
-          else setErrors((p) => ({ ...p, atoms: `${result.detail} ${result.remedy}` }));
+        }
+        case 'atoms': {
+          const result = await specgraph.atoms(projectId);
+          if (result.ok) {
+            setAtoms(result.data.atoms);
+          } else {
+            const errorMsg = `${result.detail} ${result.remedy}`;
+            setErrors((p) => ({ ...p, atoms: errorMsg }));
+          }
           break;
-        case 'research':
-          result = await specgraph.research(projectId);
-          if (result.ok) setResearch(result.data.research);
-          else setErrors((p) => ({ ...p, research: `${result.detail} ${result.remedy}` }));
+        }
+        case 'research': {
+          const result = await specgraph.research(projectId);
+          if (result.ok) {
+            setResearch(result.data.research);
+          } else {
+            const errorMsg = `${result.detail} ${result.remedy}`;
+            setErrors((p) => ({ ...p, research: errorMsg }));
+          }
           break;
-        case 'executions':
-          result = await specgraph.executions(projectId);
-          if (result.ok) setExecutions(result.data.executions);
-          else setErrors((p) => ({ ...p, executions: `${result.detail} ${result.remedy}` }));
+        }
+        case 'executions': {
+          const result = await specgraph.executions(projectId);
+          if (result.ok) {
+            setExecutions(result.data.executions);
+          } else {
+            const errorMsg = `${result.detail} ${result.remedy}`;
+            setErrors((p) => ({ ...p, executions: errorMsg }));
+          }
           break;
-        case 'plan':
-          result = await specgraph.plan(projectId);
-          if (result.ok) setPlan(result.data.plan);
-          else setErrors((p) => ({ ...p, plan: `${result.detail} ${result.remedy}` }));
+        }
+        case 'plan': {
+          const result = await specgraph.plan(projectId);
+          if (result.ok) {
+            setPlan(result.data.plan);
+          } else {
+            const errorMsg = `${result.detail} ${result.remedy}`;
+            setErrors((p) => ({ ...p, plan: errorMsg }));
+          }
           break;
+        }
       }
     } catch (error) {
       setErrors((p) => ({ ...p, [tab]: error instanceof Error ? error.message : 'Failed to load' }));
