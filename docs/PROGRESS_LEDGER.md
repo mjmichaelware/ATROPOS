@@ -16580,3 +16580,12 @@ End of AGENTS.md
 - Why the delta is justified: The intent router bug was a routing defect, not missing functionality; fixing it restores correctness without changing phase completion. The dopamine listener extends existing `ProviderDopamineRewardTracker` and `LocalMemoryStore` — no new systems created.
 - New overall estimate: unchanged (≈ 42%)
 - Fingerprints: to be computed after commit
+
+### 2026-10-21T10:43:21Z · Agent: Codex GPT-5 · Batch: headless-console-npe
+- Paths touched: `src/main/kotlin/atropos/core/phase20/Phase20Authorization.kt` (+9/-5 lines); `src/test/kotlin/atropos/core/phase20/Phase20AuthorizationHeadlessTest.kt` (+27 lines); `docs/PROGRESS_LEDGER.md` (+9 lines)
+- Atoms / phases affected: Phase 11 headless self-build startup; Phase 20 authorization construction boundary.
+- Predicate moved: `Phase20Authorization` can now be constructed when `System.console()` is absent, and headless/`TERM=dumb` authorization requests return safely without attempting an interactive prompt or crashing the process.
+- % delta: Phase 11 baseline percentage unchanged; headless startup reliability predicate advanced from failing to statically covered. Overall estimate unchanged (≈42%).
+- Why the delta is justified: The constructor no longer assigns nullable `System.console()` to a non-null Kotlin property. `OutputModeDetector` also prevents prompt attempts in explicit headless modes, while valid pre-authorization tokens and fail-closed Phase 20 policy remain unchanged. A focused regression test covers absent-console construction and refusal without prompting. Local compilation was intentionally not run per task constraint; remote GitHub Actions is the required verification gate.
+- New overall estimate: unchanged (≈42%).
+- Fingerprints: `src/main/kotlin/atropos/core/phase20/Phase20Authorization.kt=b6f3c31bb537f6309c2eaddd47cbd36b3ce943c85510f0e06e8bcf84d4e1f547`; `src/test/kotlin/atropos/core/phase20/Phase20AuthorizationHeadlessTest.kt=bcdbad245d376426bcc30db24364a2c2b0fb1a6b9477166fafd8db89c8bd5f07`.

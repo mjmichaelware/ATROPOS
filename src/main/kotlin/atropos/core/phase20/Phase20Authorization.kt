@@ -8,6 +8,8 @@ import atropos.core.security.VaultPathResolver
 import atropos.core.security.VaultReadResult
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.output.OutputMode
+import atropos.core.output.OutputModeDetector
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -65,7 +67,8 @@ class Phase20Authorization(
     private val vault: TokenIsolationVault = TokenIsolationVault(),
     private val vaultPathResolver: VaultPathResolver = VaultPathResolver(AtroposConfig.configRoot().resolve("secrets")),
     private val clock: () -> java.time.Instant = { java.time.Instant.now() },
-    private val console: java.io.Console = System.console(),
+    private val console: java.io.Console? = System.console(),
+    private val outputMode: OutputMode = OutputModeDetector.detect(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val PBKDF2_ITERATIONS = 100_000
@@ -160,9 +163,10 @@ class Phase20Authorization(
             return validateToken(envToken, scope)
         }
 
-        // Interactive mode: require console
-        if (console == null) {
-            // No console available - cannot prompt for password
+        // Interactive mode is optional. A missing console or headless output
+        // mode must never abort construction or block a piped invocation.
+        // Phase 20 authorization remains fail-closed without a valid token.
+        if (console == null || outputMode == OutputMode.HEADLESS || outputMode == OutputMode.TERM_DUMB) {
             return null
         }
 
