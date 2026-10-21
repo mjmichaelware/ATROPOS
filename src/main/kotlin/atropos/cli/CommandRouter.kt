@@ -430,6 +430,10 @@ class CommandRouter(
                     if (tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true)) {
                         promptSupport.announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
                         uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                    } else if (atropos.core.intent.IntentRouter.isGenericFileMutation(trimmed)) {
+                        val routed = atropos.core.intent.IntentRouter.routeFallback(trimmed)
+                        promptSupport.announce(agentCommand.execute(routed))
+                        uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                     } else {
                         providerChatDispatcher.dispatch(trimmed, currentProviderName)
                     }

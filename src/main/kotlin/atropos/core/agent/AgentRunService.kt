@@ -28,7 +28,9 @@ class AgentRunService(
     private val repoStatus: AgentRunRepoStatus = AgentRunRepoStatus(collector.repoRoot),
     private val sourceResolver: AgentRunSourceResolver = AgentRunSourceResolver(collector.repoRoot, higZeroGuard, astSymbolGraph, memoryStore),
     private val outcomeMemory: AgentRunOutcomeMemory = AgentRunOutcomeMemory(memoryStore),
-    private val localPatchSynthesizer: AgentLocalPatchSynthesizer = AgentLocalPatchSynthesizer(patchStore)
+    private val localPatchSynthesizer: AgentLocalPatchSynthesizer = AgentLocalPatchSynthesizer(patchStore),
+    private val dopamineListener: atropos.core.dopamine.AutomaticDopamineExecutionListener =
+        atropos.core.dopamine.AutomaticDopamineExecutionListener(memoryStore = memoryStore)
 ) {
     private val prompts = AgentRunPromptComposer()
     private val lifecycle = AgentJobLifecycle(jobStore)
@@ -313,6 +315,7 @@ class AgentRunService(
             )
         )
         outcomeMemory.rememberFinalOutcome(refused, emptyList(), sourceEvidence, emptyList())
+        dopamineListener.onTaskCompleted(refused, emptyList(), smokeExitCode = 1, smokePassed = false)
 
         val contextPath = contextExporter.write(refused, emptyList())
         return lifecycle.persist(refused.copy(contextExportPath = contextPath.toString()))
@@ -352,6 +355,12 @@ class AgentRunService(
             )
         )
         outcomeMemory.rememberFinalOutcome(finalRecord, changedFiles, sourceEvidence, impactedSymbols)
+        dopamineListener.onTaskCompleted(
+            record = finalRecord,
+            changedFiles = changedFiles,
+            smokeExitCode = finalRecord.smokeExitCode,
+            smokePassed = smokePassed
+        )
 
         val contextPath = contextExporter.write(finalRecord, changedFiles)
         return lifecycle.persist(finalRecord.copy(contextExportPath = contextPath.toString()))

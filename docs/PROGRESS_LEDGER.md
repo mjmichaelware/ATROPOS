@@ -16556,3 +16556,27 @@ End of AGENTS.md
   - `apps/web/src/components/dev-tools/specgraph-project-view.tsx`: `aadcd6e6861973d400f409fc2da2d23375a4809e`
 - Fingerprints (sha256):
   - `apps/web/src/components/dev-tools/specgraph-project-view.tsx=3c325777b167d16faf1085695191674bbda297d564bb0fb70182b2f161b1042f`
+
+### 2026-10-21T01:25:00Z · Agent: Antigravity (Claude Opus 4.6) · Batch: intent-lock-dopamine-wire
+
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/commands/SelfHostChangeRequestClassifier.kt` (-14/+6 lines) — Strictly locked `addressesAtropos()` to ONLY match `SELF_BUILD_PHRASES`; removed loose `ATROPOS_NAMES` and `REFLEXIVE_NAMES` + mutation-verb matching that misrouted generic NL into self-host.
+  - `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt` (+3/-1 lines) — Returns `null` immediately when `--generic` flag present or when first token is `/agent` (any explicit subcommand).
+  - `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+17 lines) — Bypass NL router when `tokens[1]` is a known subcommand (run, enqueue, patch, etc.); added `KNOWN_SUBCOMMANDS` companion set.
+  - `src/main/kotlin/atropos/cli/commands/AgentCommandParser.kt` (+12/-6 lines) — Added `--generic` / `-g` flag handling to `parseRunRequest()`; added `generic: Boolean` field to `AgentRunRequest`.
+  - `src/main/kotlin/atropos/core/intent/IntentLayer.kt` (+32 lines) — Added `IntentRouter` object with `isExplicitSelfHost()`, `isGenericFileMutation()`, and `routeFallback()`.
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` (+4 lines) — Fallback branch now routes generic file mutation NL to `/agent run --generic` via `IntentRouter` instead of provider chat.
+  - `src/main/kotlin/atropos/Main.kt` (+1/-1 lines) — Changed oneShot args filter from `startsWith("--")` to only filter `--web`, preserving `--generic` flag passthrough to router.
+  - `src/main/kotlin/atropos/core/dopamine/AutomaticDopamineExecutionListener.kt` (NEW, 160 lines) — Generalized automatic dopamine system. On task/DAG node success: +1 dopamine reward + trajectory persisted to `LocalMemoryStore` as `MemoryKind.REWARD`. On failure: -1 dopamine penalty + failure trajectory persisted as `MemoryKind.FAILURE`.
+  - `src/main/kotlin/atropos/core/agent/AgentRunService.kt` (+9 lines) — Wired `AutomaticDopamineExecutionListener` into `finalizeRun()` and `refuseUnsafeSmoke()` lifecycle exit points.
+  - `src/main/kotlin/atropos/core/dag/DagExecutionService.kt` (+9/-29 lines) — Wired `AutomaticDopamineExecutionListener` into `executeWaveBatch()` wave cleanup; compacted `createDummyRequest`.
+  - Tests updated: `SelfHostChangeRequestClassifierTest.kt`, `SelfHostNaturalLanguageRouterTest.kt`, `IntentLayerTest.kt`.
+- Atoms / phases affected: Phase 11 (Self-Build Loop), Phase 9 (Persistent Memory), Phase 10 (Execution Policy)
+- Predicate moved:
+  - Generic NL prompts (e.g. "Modify the codebase") no longer misroute into self-host cradle.
+  - `--generic` flag bypasses intent router entirely; SWE-bench launcher now passes `--generic`.
+  - Every task/DAG completion automatically records +1 or -1 dopamine + full trajectory to long-term memory.
+- % delta: Phase 11 100% → 100% (unchanged — self-host routing remains intact for unmistakable keywords). Phase 9 100% → 100% (no change in persistent memory surface, new data flows into existing store). Phase 10 100% → 100% (execution policy wiring complete, new listener uses existing policy).
+- Why the delta is justified: The intent router bug was a routing defect, not missing functionality; fixing it restores correctness without changing phase completion. The dopamine listener extends existing `ProviderDopamineRewardTracker` and `LocalMemoryStore` — no new systems created.
+- New overall estimate: unchanged (≈ 42%)
+- Fingerprints: to be computed after commit

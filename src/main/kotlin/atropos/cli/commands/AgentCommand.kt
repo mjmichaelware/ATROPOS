@@ -145,8 +145,14 @@ class AgentCommand(
         private set
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
-        selfHostNaturalLanguageRouter.route(tokens)?.let { routed ->
-            return selfHostHandler.execute(routed)
+        val firstSubcommand = if (tokens.size >= 2 && tokens[0].equals("/agent", ignoreCase = true)) {
+            tokens[1].lowercase()
+        } else null
+
+        if (firstSubcommand == null || firstSubcommand !in KNOWN_SUBCOMMANDS) {
+            selfHostNaturalLanguageRouter.route(tokens)?.let { routed ->
+                return selfHostHandler.execute(routed)
+            }
         }
         if (tokens.size < 2) {
             return invalid(agentUsage())
@@ -271,6 +277,15 @@ class AgentCommand(
     private fun invalid(message: String): AgentCommandOutcome.Invalid {
         ui.renderError(message)
         return AgentCommandOutcome.Invalid(message, rendered = true)
+    }
+
+    private companion object {
+        val KNOWN_SUBCOMMANDS = setOf(
+            "context", "run", "enqueue", "queue", "daemon", "status", "jobs", "job",
+            "verify", "ask", "repair", "patch", "apply", "worker", "session", "runs",
+            "watch", "tree", "transcript", "diff", "tests", "export", "observe",
+            "dag", "recover", "worktree", "gate", "policy", "goal", "self-host"
+        )
     }
 
 }

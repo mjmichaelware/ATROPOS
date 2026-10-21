@@ -37,6 +37,9 @@ class SelfHostNaturalLanguageRouterTest {
             SelfHostNaturalLanguageRouter().route(listOf("build", "weather", "tracker", "for", "commuters"))
         )
         assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "self-host", "start", "build", "ATROPOS")))
+        assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "run", "--generic", "Modify", "the", "codebase")))
+        assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "run", "Modify", "the", "codebase", "files", "to", "implement", "the", "fix.")))
+        assertNull(SelfHostNaturalLanguageRouter().route(listOf("Modify", "the", "codebase", "files", "--generic")))
     }
 
     @Test

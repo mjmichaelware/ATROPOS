@@ -38,7 +38,9 @@ class DagExecutionService(
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(),
     private val contractSynthesizer: ContractLatticeSynthesizer = ContractLatticeSynthesizer(repoRoot),
     private val dagStore: DagStore = DagStore(repoRoot),
-    private val onboarding: atropos.core.provider.ProviderOnboardingService? = null
+    private val onboarding: atropos.core.provider.ProviderOnboardingService? = null,
+    private val dopamineListener: atropos.core.dopamine.AutomaticDopamineExecutionListener =
+        atropos.core.dopamine.AutomaticDopamineExecutionListener()
 ) {
     private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
     private val checkEvaluator = DagNodeCheckEvaluator(
@@ -141,11 +143,15 @@ class DagExecutionService(
             activeWorktrees.remove(worktreeRecord.jobId)
             // Worktree is removed by verifyAndMerge on success, or rollback on failure
             // Explicit removal only for any stragglers
-            if (worktreeRecord.verified && worktreeRecord.mergedBack) {
-                // Already cleaned up
-            } else {
+            if (!(worktreeRecord.verified && worktreeRecord.mergedBack)) {
                 worktreeService.removeWorktree(worktreeRecord.id)
             }
+        }
+
+        // Automatic Dopamine lifecycle trigger and trajectory persistence for every node in wave
+        for (node in waveNodes) {
+            val finalResult = results[node.id] ?: continue
+            dopamineListener.onDagNodeCompleted(node, finalResult)
         }
 
         return results
@@ -440,43 +446,23 @@ class DagExecutionService(
         return results
     }
 
-    private fun createDummyRequest(dagId: String): atropos.core.orchestration.WaveExecutionRequest {
-        return atropos.core.orchestration.WaveExecutionRequest(
+    private fun createDummyRequest(dagId: String): atropos.core.orchestration.WaveExecutionRequest =
+        atropos.core.orchestration.WaveExecutionRequest(
             requestId = dagId,
             prompt = "",
             projectSpec = atropos.core.factory.AppProjectSpec(
                 prompt = "",
-                intent = atropos.core.factory.AppIntent(
-                    name = "dummy",
-                    kind = "generic",
-                    features = emptyList()
-                )
+                intent = atropos.core.factory.AppIntent(name = "dummy", kind = "generic", features = emptyList())
             ),
             lineage = atropos.core.factory.FactoryLineage(
-                promptFingerprint = "",
-                promptSha256 = "",
-                researchSha256 = "",
-                researchDocument = "",
-                promptDocument = "",
-                projectId = "dummy",
-                confidence = atropos.core.factory.FactoryConfidence(
-                    score = 0,
-                    breakdown = "",
-                    questions = emptyList()
-                ),
-                promptSpans = "",
-                researchChannels = "",
-                researchState = "",
-                contextHash = null,
-                memoryPointers = emptyList(),
-                atomResearch = emptyList(),
-                atomizerStatus = "",
-                clarificationAnswersSha256 = null,
-                clarificationLineageSha256 = null,
-                acceptanceFreeze = null
+                promptFingerprint = "", promptSha256 = "", researchSha256 = "", researchDocument = "",
+                promptDocument = "", projectId = "dummy",
+                confidence = atropos.core.factory.FactoryConfidence(score = 0, breakdown = "", questions = emptyList()),
+                promptSpans = "", researchChannels = "", researchState = "", contextHash = null,
+                memoryPointers = emptyList(), atomResearch = emptyList(), atomizerStatus = "",
+                clarificationAnswersSha256 = null, clarificationLineageSha256 = null, acceptanceFreeze = null
             ),
             targetDirectory = repoRoot,
             plannedAtomIds = emptyList()
         )
-    }
 }

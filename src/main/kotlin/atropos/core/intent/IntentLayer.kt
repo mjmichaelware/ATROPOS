@@ -102,3 +102,35 @@ object ArgumentGuidance {
         return "Usage: ${meta.usage} (Parameters: ${meta.parameters.joinToString(", ")})"
     }
 }
+
+object IntentRouter {
+    val UNMISTAKABLE_SELF_HOST_KEYWORDS = setOf(
+        "self-host", "self host", "inside out", "inside-out",
+        "build itself", "build yourself", "improve itself", "improve yourself"
+    )
+
+    fun isExplicitSelfHost(input: String): Boolean {
+        val lower = input.lowercase()
+        return UNMISTAKABLE_SELF_HOST_KEYWORDS.any { lower.contains(it) }
+    }
+
+    fun isGenericFileMutation(input: String): Boolean {
+        if (isExplicitSelfHost(input)) return false
+        val lower = input.lowercase().trim()
+        val mutationVerbs = setOf(
+            "modify", "change", "update", "fix", "refactor", "patch", "edit",
+            "implement", "add", "remove", "delete", "create", "rewrite"
+        )
+        return mutationVerbs.any { verb ->
+            lower.startsWith("$verb ") || lower.contains(" $verb ") || lower.contains("codebase") || lower.contains("file")
+        }
+    }
+
+    fun routeFallback(input: String): List<String> {
+        val trimmed = input.trim()
+        if (isExplicitSelfHost(trimmed)) {
+            return listOf("/agent", "self-host", "run") + trimmed.split(" ").filter { it.isNotBlank() }
+        }
+        return listOf("/agent", "run", "--generic", trimmed)
+    }
+}

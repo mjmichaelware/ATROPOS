@@ -18,7 +18,8 @@ data class AgentJobRequest(
 
 data class AgentRunRequest(
     val smokeCommand: String? = null,
-    val task: String = ""
+    val task: String = "",
+    val generic: Boolean = false
 )
 
 data class AgentWorkerProposalRequest(
@@ -111,11 +112,16 @@ object AgentCommandParser {
         if (args.isEmpty()) return AgentRunRequest(task = "")
 
         var smokeCommand: String? = null
+        var generic = false
         val taskParts = mutableListOf<String>()
         var index = 0
         while (index < args.size) {
             val token = args[index]
             when {
+                token == "--generic" || token == "-g" -> {
+                    generic = true
+                    index++
+                }
                 token == "--smoke" -> {
                     val smoke = args.getOrNull(index + 1)?.trim()
                     if (smoke.isNullOrBlank() || smoke.startsWith("--")) return AgentRunRequest()
@@ -138,7 +144,8 @@ object AgentCommandParser {
 
         return AgentRunRequest(
             smokeCommand = smokeCommand?.takeIf { it.isNotBlank() },
-            task = taskParts.joinToString(" ").trim()
+            task = taskParts.joinToString(" ").trim(),
+            generic = generic
         )
     }
 

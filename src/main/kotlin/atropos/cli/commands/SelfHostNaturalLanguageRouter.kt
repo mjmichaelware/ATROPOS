@@ -7,7 +7,9 @@ class SelfHostNaturalLanguageRouter(
     private val classifier: SelfHostChangeRequestClassifier = SelfHostChangeRequestClassifier()
 ) {
     fun route(tokens: List<String>): List<String>? {
-        if (tokens.size >= 2 && tokens[0].equals("/agent", ignoreCase = true) && tokens[1].equals("self-host", ignoreCase = true)) {
+        if (tokens.any { it == "--generic" || it == "-g" }) return null
+        if (tokens.size >= 2 && tokens[0].equals("/agent", ignoreCase = true)) {
+            // Never hijack an explicit /agent subcommand or direct /agent self-host
             return null
         }
         val text = tokens.joinToString(" ").trim()

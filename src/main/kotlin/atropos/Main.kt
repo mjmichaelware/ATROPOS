@@ -237,7 +237,7 @@ fun main(args: Array<String>) {
         // Reads and writes both go through the same router the interactive
         // session uses, so a one-shot cannot do anything a typed command
         // could not, and there is no second dispatch path to keep in step.
-        val oneShot = args.filterNot { it.startsWith("--") }
+        val oneShot = args.filterNot { it == "--web" }
         if (oneShot.isNotEmpty()) {
             // Boot noise (the authority error, the continuity notice) has
             // already printed and is not this command's failure. Counting it

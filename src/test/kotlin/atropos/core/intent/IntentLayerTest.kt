@@ -66,4 +66,22 @@ class IntentLayerTest {
         assertTrue(guidance.contains("/schedule"))
         assertTrue(guidance.contains("cron-expr"))
     }
+
+    @Test
+    fun `IntentRouter distinguishes explicit self host and generic file mutation`() {
+        assertTrue(IntentRouter.isExplicitSelfHost("make ATROPOS build itself from inside out"))
+        assertTrue(IntentRouter.isExplicitSelfHost("run self-host Phase 11"))
+        assertTrue(!IntentRouter.isExplicitSelfHost("Modify the codebase files to implement the fix."))
+        assertTrue(!IntentRouter.isExplicitSelfHost("fix the bug in python project"))
+
+        assertTrue(IntentRouter.isGenericFileMutation("Modify the codebase files to implement the fix."))
+        assertTrue(IntentRouter.isGenericFileMutation("fix the bug in python project"))
+        assertTrue(!IntentRouter.isGenericFileMutation("make ATROPOS build itself from inside out"))
+
+        val genericFallback = IntentRouter.routeFallback("Modify the codebase files to implement the fix.")
+        assertEquals(listOf("/agent", "run", "--generic", "Modify the codebase files to implement the fix."), genericFallback)
+
+        val selfHostFallback = IntentRouter.routeFallback("run self-host Phase 11")
+        assertEquals(listOf("/agent", "self-host", "run", "run", "self-host", "Phase", "11"), selfHostFallback)
+    }
 }

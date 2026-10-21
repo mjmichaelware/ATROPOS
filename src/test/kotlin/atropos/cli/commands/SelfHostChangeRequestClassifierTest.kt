@@ -19,9 +19,8 @@ class SelfHostChangeRequestClassifierTest {
     // --- the gap this owner closes ---------------------------------------
 
     @Test
-    fun ordinary_change_requests_against_atropos_source_are_recognised() {
-        // None of these contain a phrase from the old demo list. Every one of
-        // them previously fell through to provider chat.
+    fun generic_change_requests_without_unmistakable_self_host_keywords_are_unrelated() {
+        // Natural language change requests must NOT trigger self-host without unmistakable keywords
         listOf(
             "change the bounded process timeout in ATROPOS to 60 seconds",
             "add a retry field to the ATROPOS endpoint manifest",
@@ -30,19 +29,20 @@ class SelfHostChangeRequestClassifierTest {
             "remove the unused parameter from ATROPOS BoundedProcessRunner",
             "rename the goal store in ATROPOS",
             "harden ATROPOS against malformed vault keys",
-            "wire the installed proof evidence into ATROPOS"
+            "wire the installed proof evidence into ATROPOS",
+            "Modify the codebase files to implement the fix.",
+            "the class modifies its own state"
         ).forEach { request ->
             assertEquals(
-                SelfHostUtterance.CHANGE_REQUEST,
+                SelfHostUtterance.UNRELATED,
                 classify(request),
-                "should route as a change request: $request"
+                "should be UNRELATED without unmistakable self-host keyword: $request"
             )
         }
     }
 
     @Test
-    fun the_original_demo_phrases_still_route() {
-        // Generalising must not cost the phrasings operators already use.
+    fun the_unmistakable_self_host_phrases_still_route() {
         listOf(
             "build yourself",
             "ATROPOS, improve yourself",
@@ -85,8 +85,8 @@ class SelfHostChangeRequestClassifierTest {
 
     @Test
     fun a_trailing_question_mark_decides_the_mood() {
-        assertEquals(SelfHostUtterance.CHANGE_REQUEST, classify("update the ATROPOS readme"))
-        assertEquals(SelfHostUtterance.QUESTION, classify("update the ATROPOS readme?"))
+        assertEquals(SelfHostUtterance.CHANGE_REQUEST, classify("update the ATROPOS self-host readme"))
+        assertEquals(SelfHostUtterance.QUESTION, classify("update the ATROPOS self-host readme?"))
     }
 
     // --- continuation stays distinct from mutation ------------------------
@@ -96,7 +96,7 @@ class SelfHostChangeRequestClassifierTest {
         listOf(
             "continue ATROPOS self-host after restart",
             "resume the ATROPOS self-host run",
-            "recover ATROPOS",
+            "recover ATROPOS self-host",
             "restart the ATROPOS self-host goal"
         ).forEach { request ->
             assertEquals(SelfHostUtterance.CONTINUATION, classify(request), request)
@@ -109,7 +109,7 @@ class SelfHostChangeRequestClassifierTest {
     fun verbs_match_on_word_boundaries_not_substrings() {
         // "address" contains "add"; "reset" contains "set". Substring matching
         // would make both of these change requests for no traceable reason.
-        assertEquals(SelfHostUtterance.QUESTION, classify("what is the ATROPOS address?"))
+        assertEquals(SelfHostUtterance.QUESTION, classify("what is the ATROPOS self-host address?"))
         assertEquals(SelfHostUtterance.UNRELATED, classify("the ATROPOS mindset"))
     }
 
