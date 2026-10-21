@@ -328,7 +328,7 @@ export function CommandTaxonomyPalette({
                     <div className="pl-5 space-y-1">
                       {domainItems.map((item) => (
                         <div key={`${item.action}-${item.target}`} className="text-slate-400">
-                          <span className="text-emerald-400">-> {item.action}</span>{' '}
+                          <span className="text-emerald-400">{'-> '}{item.action}</span>{' '}
                           <span className="text-cyan-400">{item.target}</span>: {item.leafResolution}
                         </div>
                       ))}
