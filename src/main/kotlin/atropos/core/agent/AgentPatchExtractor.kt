@@ -23,6 +23,12 @@ class AgentPatchExtractor {
         val banned = listOf(
             Regex("""(^|/)\.env($|\.)"""),
             Regex("""(^|/)\.atropos/secrets(/|$)"""),
+            Regex("""(^|/)\.atropos/agent(/|$)"""),
+            Regex("""(^|/)\.atropos/memory(/|$)"""),
+            Regex("""(^|/)\.atropos/autonomy(/|$)"""),
+            Regex("""(^|/)\.atropos/source-bindings(/|$)"""),
+            Regex("""(^|/)\.atropos/benchmarks(/|$)"""),
+            Regex("""(^|/)\.atropos/policy(/|$)"""),
             Regex("""(^|/)token\.json$"""),
             Regex("""(^|/)credentials\.json$"""),
             Regex("""(^|/)client_secret\.json$"""),
