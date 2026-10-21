@@ -19,6 +19,10 @@ class ProtectedPathPolicyTest {
     private val tempDir = Files.createTempDirectory("atropos-protected-path-test-")
     private val repoRoot = tempDir.toAbsolutePath().normalize()
 
+    /** The refusal reason, available on the sealed result the tests hold. */
+    private val ProtectedPathResult.reason: String
+        get() = (this as ProtectedPathResult.Protected).reason
+
     @Test
     fun `direct writes to protected ATROPOS source files are rejected`() {
         val policy = createPolicy(repoRoot)
@@ -92,7 +96,7 @@ class ProtectedPathPolicyTest {
     }
 
     @Test
-    fun `symlink escapes to .git directory are rejected`() {
+    fun `symlink escapes to git directory are rejected`() {
         val gitDir = repoRoot.resolve(".git")
         Files.createDirectories(gitDir.resolve("objects"))
 
@@ -113,7 +117,7 @@ class ProtectedPathPolicyTest {
     }
 
     @Test
-    fun `symlink escapes to .atropos/secrets are rejected`() {
+    fun `symlink escapes to atropos secrets directory are rejected`() {
         val secretsDir = repoRoot.resolve(".atropos/secrets")
         Files.createDirectories(secretsDir)
 

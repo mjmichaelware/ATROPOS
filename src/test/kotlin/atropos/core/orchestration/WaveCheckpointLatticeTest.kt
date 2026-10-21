@@ -22,7 +22,7 @@ class WaveCheckpointLatticeTest {
                 id = "node-1",
                 dagId = "dag-abc",
                 label = "Compile core module",
-                action = DagNodeAction.EXECUTE_COMMAND,
+                action = DagNodeAction.RUN_COMMAND,
                 actionPayload = "kotlinc",
                 state = DagNodeState.COMPLETE
             )
@@ -54,6 +54,7 @@ class WaveCheckpointLatticeTest {
 
         val dag = DagDefinition(
             id = "dag-1",
+            label = "dag-1",
             nodes = listOf(node1, node2, node3, node4)
         )
 

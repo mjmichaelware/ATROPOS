@@ -26,7 +26,7 @@ class DeterministicHeuristicRepairEngineTest {
                 id = "node-verify-suite",
                 dagId = "dag-test",
                 label = "Verify test suite",
-                action = DagNodeAction.EXECUTE_COMMAND,
+                action = DagNodeAction.RUN_COMMAND,
                 actionPayload = "python3 -c 'import pkg.module; assert pkg.module.hello() == \"world\"'"
             )
 
@@ -59,7 +59,7 @@ class DeterministicHeuristicRepairEngineTest {
                 id = "node-verify-suite",
                 dagId = "dag-test",
                 label = "Verify test suite",
-                action = DagNodeAction.EXECUTE_COMMAND,
+                action = DagNodeAction.RUN_COMMAND,
                 actionPayload = "python3 -c 'import script; script.get_cwd()'"
             )
 
@@ -98,7 +98,7 @@ class DeterministicHeuristicRepairEngineTest {
                 id = "node-verify-suite",
                 dagId = "dag-test",
                 label = "Verify test suite",
-                action = DagNodeAction.EXECUTE_COMMAND,
+                action = DagNodeAction.RUN_COMMAND,
                 actionPayload = "python3 -c 'import calc; assert calc.greet() == \"hello world\"'"
             )
 
@@ -132,7 +132,7 @@ class DeterministicHeuristicRepairEngineTest {
                 id = "node-verify-1",
                 dagId = "dag-test",
                 label = "Verify test suite",
-                action = DagNodeAction.EXECUTE_COMMAND,
+                action = DagNodeAction.RUN_COMMAND,
                 actionPayload = "python3 -c 'import math_util; assert math_util.add(2, 3) == 5'"
             )
 

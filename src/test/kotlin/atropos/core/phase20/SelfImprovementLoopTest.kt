@@ -79,8 +79,20 @@ class SelfImprovementLoopTest {
         depth = depth,
         proposalsInPeriod = proposalsInPeriod,
         estimatedLines = 100,
-        humanAuthorised = humanAuthorised,
-        subsystemUnderObservationUntil = observationUntil
+        subsystemUnderObservationUntil = observationUntil,
+        // Law 20.1 needs a live, correctly scoped owner token for an
+        // invariant-touching proposal. `humanAuthorised` supplies one; the
+        // default is a deliberately invalid token so the refusal path is
+        // exercised.
+        authorization = AuthorizationToken(
+            token = if (humanAuthorised) "owner-approved-test-token" else "unauthorised",
+            scope = if (humanAuthorised) {
+                deficiency.territory.distinct().joinToString("|")
+            } else {
+                "no-authorisation"
+            },
+            issuedAt = if (humanAuthorised) Instant.now() else at
+        )
     )
 
     // -- L01 / L02 ------------------------------------------------------------

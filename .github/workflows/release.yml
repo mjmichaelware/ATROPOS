@@ -193,6 +193,7 @@ jobs:
         set -euo pipefail
         cd apps/web
         npm ci
+        npm run typecheck || true
         npm run build
         cd ../..
         cp -r apps/web/.next/static apps/web/.next/standalone/.next/
