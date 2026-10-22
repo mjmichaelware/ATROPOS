@@ -132,7 +132,7 @@ class SourceAuthorityLaw(
                         path = file
                     )
                 } else {
-                    unindexed += file
+                    unindexed.add(file)
                 }
             }
         }

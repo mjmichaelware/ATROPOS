@@ -19,6 +19,21 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+data class BridgeRequestEnvelope(
+    val method: String,
+    val path: String,
+    val queryParams: Map<String, String> = emptyMap(),
+    val headers: Map<String, String> = emptyMap(),
+    val bodyText: String = ""
+)
+
+data class BridgeResponseEnvelope(
+    val statusCode: Int,
+    val contentType: String,
+    val bodyBytes: ByteArray,
+    val headers: Map<String, String> = emptyMap()
+)
+
 /**
  * The engine's request-reading listener.
  *
@@ -38,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference
  * engine to their network.
  */
 class EngineHttpServer(
-    private val routeTable: HttpRouteTable,
+    private val routeTable: HttpRouteTable = HttpRouteTable(),
     private val port: Int = DEFAULT_PORT,
     private val parser: HttpRequestParser = HttpRequestParser(),
     private val writer: HttpResponseWriter = HttpResponseWriter(),
@@ -52,6 +67,10 @@ class EngineHttpServer(
      */
     private val streamRoutes: List<HttpStreamRoute> = emptyList()
 ) {
+    constructor(port: Int = DEFAULT_PORT, repoRoot: java.nio.file.Path, actorId: String = "web-cockpit") :
+        this(routeTable = HttpRouteTable(), port = port)
+
+    private val sseClients = java.util.concurrent.ConcurrentHashMap<String, (String) -> Unit>()
     private val redactionFilter = RedactionFilter()
     private val running = AtomicBoolean(false)
     private val socketRef = AtomicReference<ServerSocket?>(null)
@@ -91,6 +110,37 @@ class EngineHttpServer(
         running.set(false)
         runCatching { socketRef.getAndSet(null)?.close() }
         workers.shutdownNow()
+    }
+
+    fun routeRequest(request: BridgeRequestEnvelope): BridgeResponseEnvelope {
+        val httpReq = HttpRequest(
+            method = request.method,
+            path = request.path,
+            query = request.queryParams,
+            headers = request.headers,
+            body = request.bodyText
+        )
+        val httpResp = routeTable.resolve(httpReq)
+        val bodyBytes = httpResp.body.toByteArray(StandardCharsets.UTF_8)
+        return BridgeResponseEnvelope(
+            statusCode = httpResp.status,
+            contentType = httpResp.contentType,
+            bodyBytes = bodyBytes,
+            headers = httpResp.headers
+        )
+    }
+
+    fun registerSseClient(sessionFilter: String?, emitter: (String) -> Unit): String {
+        val clientId = java.util.UUID.randomUUID().toString()
+        sseClients[clientId] = emitter
+        return clientId
+    }
+
+    fun broadcastEvent(eventType: String, payloadJson: String) {
+        val formatted = "event: $eventType\ndata: $payloadJson\n\n"
+        for ((_, emitter) in sseClients) {
+            runCatching { emitter(formatted) }
+        }
     }
 
     private fun acceptLoop(socket: ServerSocket) {

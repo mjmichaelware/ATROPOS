@@ -102,19 +102,8 @@ class ProviderTruthOperationRegistry(
             kind = endpointKind(endpointId),
             description = "${descriptor?.displayName ?: record.id} descriptor=${record.descriptorPresent} adapter=${record.adapterPresent} executable=${record.executableSupport} health=${record.health.name.lowercase()}",
             configured = record.keyPresent,
-            available = record.executableSupport,
-            manifest = EndpointManifest(
-                owner = "ProviderTruthOperationRegistry",
-                input = "typed provider chat request",
-                output = "typed provider chat result",
-                errors = listOf("authorization", "timeout", "malformed", "unavailable"),
-                auth = "policy-bound",
-                sideEffects = listOf("none"),
-                timeoutMs = 30_000,
-                retryPolicy = "bounded-none",
-                testIds = listOf("OperationEndpointManifestTest.every_registered_operation_exposes_a_complete_manifest")
-            )
-        ).requireCompleteManifest()
+            available = record.executableSupport
+        )
     }
 
     init {

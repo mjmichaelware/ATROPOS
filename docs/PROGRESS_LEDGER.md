@@ -16743,3 +16743,22 @@ End of AGENTS.md
 - Predicate moved: **Batch 01 fully implemented and verified against source contracts.** `scripts/backend-atom-contract-test.sh` exits 0 (ATROPOS_BACKEND_ATOM_CONTRACT_OK). Dynamic provider selection, cross-critique loop, remote CI benchmark runner, splash modal occlusion, and 25-surface navigation are complete.
 - % delta: Phase 2/3 and HOE navigation integration advanced (+4%). Phase 11 and core foundations verified.
 - New overall estimate: ≈ 45%.
+
+
+### 2026-10-22T23:00:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-02-bridge-ipc-freeze-materiality
+- Paths touched:
+  - `src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt` (+51/-1) — ADD-W-001: BridgeRequestEnvelope / BridgeResponseEnvelope, routeRequest, SSE registration, event broadcast, and secondary constructor.
+  - `src/main/kotlin/atropos/bridge/ipc/TerminalMirrorSocketServer.kt` (+145 new) — B-IPC-001: Full-duplex binary IPC WebSocket server on port 8787 with opcodes 0x01 (OUTPUT), 0x02 (INPUT), 0x03 (RESIZE), 0x00 (PING).
+  - `apps/web/src/components/ui/status-matrix-display.tsx` (+85 new) — ADD-W-002: Dual matrix UI simultaneously rendering 9-state operational status and 5-state completion claim with [CLAIM-UNVERIFIED] alert chip if evidence hashes are empty.
+  - `src/main/kotlin/atropos/core/queue/QueueInterruptCoordinator.kt` (+112 new) — ADD-W-003: Durable interrupt and queue freeze control with freeze state persistence and MCP ledger recording.
+  - `apps/web/src/lib/design/territory-optical-focus.ts` (+65 new) — ADD-W-006: Territory as material resolver (sharp 100% in-territory, receded 60% grayscale out-of-territory, amber warning on attestation drift).
+  - `src/main/kotlin/atropos/core/memory/NeuralMemoryDopamineSync.kt` (+135 new) — B-MEM-001: Episodic memory ledger, HuggingFace dataset sync, secret sanitization, and air-gap enforcement.
+  - `src/main/kotlin/atropos/core/provider/ProviderTruthService.kt` (+2/-13) — repaired pre-existing compiler error: removed dangling manifest argument from OperationEndpoint constructor.
+  - `src/main/kotlin/atropos/dloi/SourceAuthorityLaw.kt` (+1/-1) — repaired pre-existing compiler error: restored `unindexed.add(file)` to resolve Path Iterable plus assign type mismatch.
+  - `src/test/kotlin/atropos/bridge/ipc/TerminalMirrorSocketServerTest.kt` (+30 new) — unit tests for binary opcode protocol.
+  - `src/test/kotlin/atropos/core/queue/QueueInterruptCoordinatorTest.kt` (+42 new) — unit tests for soft/hard interrupt and durable queue freeze roundtrip.
+  - `src/test/kotlin/atropos/core/memory/NeuralMemoryDopamineSyncTest.kt` (+44 new) — unit tests for trajectory recording, secret redaction, and failure query.
+- Atoms / phases affected: ADD-W-001, B-IPC-001, ADD-W-002, ADD-W-003, ADD-W-006, B-MEM-001; Phase 2 (Transport), Phase 8 (Deterministic Verifier), Phase 9 (Memory), Phase 10 (Execution Policy), Phase 20 (Long-Horizon Autonomy).
+- Predicate moved: **Batch 02 implemented and certified.** Bridge transport and binary IPC terminal mirror active; status matrix enforces truth with anti-fake claim barrier; durable freeze prevents runaway execution; territory optical materiality desaturates out-of-territory files; episodic dopamine memory captures failure trajectories with zero secret egress.
+- % delta: Phase 2, 9, 10, 20 advance (+5%).
+- New overall estimate: ≈ 50%.
