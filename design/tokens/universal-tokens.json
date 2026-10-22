@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Universal Tri-Surface Design Tokens",
+  "description": "Single source of truth design tokens shared across Web, Android Compose, and CLI",
+  "color": {
+    "canvas": "#07100D",
+    "surface": "#0F172A",
+    "surfaceElevated": "#1E293B",
+    "border": "rgba(255, 255, 255, 0.08)",
+    "accent": {
+      "emerald": "#10B981",
+      "amber": "#F59E0B",
+      "ruby": "#EF4444",
+      "cobalt": "#3B82F6"
+    }
+  },
+  "status": {
+    "idle": "#94A3B8",
+    "planning": "#38BDF8",
+    "waiting": "#F59E0B",
+    "working": "#3B82F6",
+    "reviewRequired": "#FBBF24",
+    "blocked": "#EF4444",
+    "completed": "#10B981",
+    "failed": "#DC2626",
+    "cancelled": "#64748B"
+  },
+  "motion": {
+    "duration": {
+      "fast": "150ms",
+      "normal": "300ms",
+      "slow": "500ms"
+    }
+  },
+  "layout": {
+    "touchTargetMin": "48dp",
+    "borderRadius": "8px",
+    "backdropBlur": "16px"
+  }
+}

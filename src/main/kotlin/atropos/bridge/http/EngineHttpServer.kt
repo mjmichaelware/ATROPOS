@@ -53,7 +53,7 @@ data class BridgeResponseEnvelope(
  * engine to their network.
  */
 class EngineHttpServer(
-    private val routeTable: HttpRouteTable = HttpRouteTable(),
+    private val routeTable: HttpRouteTable = HttpRouteTable(emptyList()),
     private val port: Int = DEFAULT_PORT,
     private val parser: HttpRequestParser = HttpRequestParser(),
     private val writer: HttpResponseWriter = HttpResponseWriter(),
@@ -68,7 +68,7 @@ class EngineHttpServer(
     private val streamRoutes: List<HttpStreamRoute> = emptyList()
 ) {
     constructor(port: Int = DEFAULT_PORT, repoRoot: java.nio.file.Path, actorId: String = "web-cockpit") :
-        this(routeTable = HttpRouteTable(), port = port)
+        this(routeTable = HttpRouteTable(emptyList()), port = port)
 
     private val sseClients = java.util.concurrent.ConcurrentHashMap<String, (String) -> Unit>()
     private val redactionFilter = RedactionFilter()
