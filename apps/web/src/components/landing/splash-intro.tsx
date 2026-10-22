@@ -4,40 +4,62 @@ import { useEffect, useRef, useState } from "react";
 import { usePrefersReducedMotion } from "@/lib/graph/motion";
 import { useViewTransition } from "@/components/ui/view-transition";
 
-const AUTO_DISMISS_MS = 5200;
+const DEFAULT_AUTO_DISMISS_MS = 5200;
 
-export function SplashIntro() {
+export interface SplashIntroProps {
+  onDismiss?: () => void;
+  autoDismissMs?: number;
+}
+
+export function SplashIntro({ onDismiss, autoDismissMs }: SplashIntroProps = {}) {
   const [dismissed, setDismissed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const withViewTransition = useViewTransition();
 
+  const handleDismiss = () => {
+    withViewTransition(() => {
+      setDismissed(true);
+      onDismiss?.();
+    });
+  };
+
   useEffect(() => {
-    timerRef.current = setTimeout(() => withViewTransition(() => setDismissed(true)), reducedMotion ? 900 : AUTO_DISMISS_MS);
+    if (reducedMotion) {
+      setDismissed(true);
+      onDismiss?.();
+      return;
+    }
+
+    const duration = autoDismissMs ?? DEFAULT_AUTO_DISMISS_MS;
+    timerRef.current = setTimeout(handleDismiss, duration);
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
     };
-    // withViewTransition is stable across renders (useViewTransition only
-    // depends on the reducedMotion media query, not on component state), so
-    // omitting it here is intentional - including it would restart this
-    // timer on every media-query-driven re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reducedMotion]);
+  }, [reducedMotion, autoDismissMs]);
 
   useEffect(() => {
     if (dismissed) {
       return;
     }
-    function skip() {
-      withViewTransition(() => setDismissed(true));
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" || e.key === "Enter") {
+        e.preventDefault();
+        handleDismiss();
+      }
     }
-    window.addEventListener("keydown", skip);
-    window.addEventListener("pointerdown", skip);
+    function handlePointerDown() {
+      handleDismiss();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("pointerdown", handlePointerDown);
     return () => {
-      window.removeEventListener("keydown", skip);
-      window.removeEventListener("pointerdown", skip);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("pointerdown", handlePointerDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dismissed]);
@@ -47,7 +69,12 @@ export function SplashIntro() {
   }
 
   return (
-    <div className="sg-splash">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="SpecGraph Introduction"
+      className="fixed inset-0 z-50 bg-sg-canvas sg-splash"
+    >
       <div className="sg-data-grid" aria-hidden="true" />
       <div className="sg-splash-ambient" aria-hidden="true">
         <span className="sg-splash-blob sg-splash-blob-a" />
@@ -68,9 +95,9 @@ export function SplashIntro() {
       <button
         type="button"
         className="sg-button sg-button-secondary sg-splash-skip"
-        onClick={() => withViewTransition(() => setDismissed(true))}
+        onClick={handleDismiss}
       >
-        Skip intro <span aria-hidden="true">(press Enter)</span>
+        Skip intro <span aria-hidden="true">(press Enter or Esc)</span>
       </button>
     </div>
   );

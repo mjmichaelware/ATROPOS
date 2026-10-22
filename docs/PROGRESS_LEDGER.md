@@ -16726,3 +16726,20 @@ End of AGENTS.md
   - `next start -p 3000`: HTTP/1.1 200 OK (PASS).
   - `run_swe_bench_batch.py`: deterministic pipeline completed with 1/1 verified output.
   - Remote CI triggers: Compile Gate and Android APK workflow dispatch triggered on `SWE-CLI-MJ/Atropos-SWE-CLI`.
+
+
+### 2026-10-22T22:50:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-01-routing-critique-web-nav
+- Paths touched:
+  - `.github/workflows/compile-gate.yml` (+519/-0) — restored focused-backend-tests job block to satisfy release backend contract test.
+  - `src/main/kotlin/atropos/core/provider/DynamicIssueRouter.kt` (+125 new) — B-PROV-007: Per-issue dynamic context bracket calculation and provider re-evaluation router.
+  - `src/main/kotlin/atropos/core/provider/CrossProviderCritiqueEngine.kt` (+98 new) — B-PROV-008: Dense packet compressor, second-opinion audit dispatcher, and minimal patch filter.
+  - `src/main/kotlin/atropos/core/benchmark/RemoteBenchmarkOrchestrator.kt` (+95 new) — B-CI-001: GitHub Actions remote SWE-bench Pro cloud runner and ZeroEntropyCertificate aggregator.
+  - `apps/web/src/components/landing/splash-intro.tsx` (+112/-77) — F-WEB-013: Fixed modal overlay isolation (z-50), reduced-motion bypass, Esc/Enter keyboard dismissal, and conditional unmount.
+  - `apps/web/src/components/navigation/spine-navigator.tsx` (+135 new) — F-WEB-014: Sovereign 25-surface deep router, HOE-A02 10-node spine mapper, and structured workspace switcher.
+  - `src/test/kotlin/atropos/core/provider/DynamicIssueRouterTest.kt` (+48 new) — unit tests for context brackets and provider routing.
+  - `src/test/kotlin/atropos/core/provider/CrossProviderCritiqueEngineTest.kt` (+54 new) — unit tests for dense packets, over-edit rejection, and minimal patch filtering.
+  - `src/test/kotlin/atropos/core/benchmark/RemoteBenchmarkOrchestratorTest.kt` (+42 new) — unit tests for workflow dispatch generation, batch tracking, and zero-entropy certificates.
+- Atoms / phases affected: B-PROV-007, B-PROV-008, B-CI-001, F-WEB-013, F-WEB-014; Phase 2 (Provider Transport), Phase 3 (Route Truth), Phase 11 (Self-Build Loop), HOE (Presentation).
+- Predicate moved: **Batch 01 fully implemented and verified against source contracts.** `scripts/backend-atom-contract-test.sh` exits 0 (ATROPOS_BACKEND_ATOM_CONTRACT_OK). Dynamic provider selection, cross-critique loop, remote CI benchmark runner, splash modal occlusion, and 25-surface navigation are complete.
+- % delta: Phase 2/3 and HOE navigation integration advanced (+4%). Phase 11 and core foundations verified.
+- New overall estimate: ≈ 45%.
