@@ -68,7 +68,8 @@ class ProviderCascadeRouter(
         acceptResponse: (String) -> Boolean = { it.isNotBlank() },
         allowPaidProvider: Boolean = paidGate.status().active != null
     ): ProviderCascadeResult {
-        val order = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider)
+        val payloadTokens = ProviderContextWindow.estimateTokens("$prompt\n$context")
+        val order = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider, payloadTokens)
         val candidates = ArrayDeque(order)
         val errors = mutableListOf<ProviderError>()
         val blocked = mutableSetOf<String>()
@@ -116,7 +117,8 @@ class ProviderCascadeRouter(
                     ?: UniversalRequestAdapter.resolveApiKey(provider)
 
                 val adaptedPrompt = atropos.core.phase20.Phase20StructuralMetaAdapter.SHARED.adaptPrompt(provider, prompt)
-                val formatted = UniversalRequestAdapter.translate(provider, adaptedPrompt, context, apiKey = activeKey)
+                val dialectContext = ProviderPromptDialect.forProvider(provider).formatContext(context)
+                val formatted = UniversalRequestAdapter.translate(provider, adaptedPrompt, dialectContext, apiKey = activeKey)
 
                 atropos.core.thinking.Thinking.detail("provider", "Universal Request Adapter translated payload for $provider [schema=${formatted.schemaType}, model=${formatted.model}]")
 
@@ -129,7 +131,7 @@ class ProviderCascadeRouter(
                 val startedAt = System.currentTimeMillis()
                 val execResult: UniversalExecutionResult = try {
                     if (providerResolver != null) {
-                        val res = providerResolver.invoke(provider).complete(adaptedPrompt, context)
+                        val res = providerResolver.invoke(provider).complete(adaptedPrompt, dialectContext)
                         UniversalExecutionResult.Success(provider, res, res, System.currentTimeMillis() - startedAt)
                     } else {
                         UniversalRequestAdapter.execute(formatted)
@@ -207,6 +209,19 @@ class ProviderCascadeRouter(
                     }
                 }
 
+                // Context length exceeded on this provider: retrying the same
+                // provider cannot shrink the payload, so cascade immediately to
+                // the next capable free provider instead of burning strikes.
+                val isContextExceeded = execResult is UniversalExecutionResult.Failure &&
+                    FallbackChainRegistry.parseError(execResult.rawBody.ifBlank { execResult.message }).category ==
+                        UniversalErrorCategory.CONTEXT_EXCEEDED
+                if (isContextExceeded) {
+                    atropos.core.thinking.Thinking.step("provider", "$provider exceeded context length for this payload; cascading to next free provider")
+                    errors.add(classifiedError)
+                    onFailure(classifiedError)
+                    break
+                }
+
                 if (strike == 1) {
                     prevSnapshot = currentSnapshot
                     atropos.core.thinking.Thinking.step("provider", "Strike 1 failed on $provider ($classifiedError). Retrying SAME provider for strike 2...")
@@ -241,25 +256,31 @@ class ProviderCascadeRouter(
 
             when (decision.action) {
                 RoutingAction.ROUTE_HIGH_CONTEXT -> {
-                    candidates.removeAll { it.lowercase() in FallbackChainRegistry.LOW_CONTEXT_MODELS }
+                    // Re-rank remaining candidates so the highest-context free
+                    // provider for this payload is tried next. Never promote a
+                    // paid provider — hard stop before paid.
+                    val remaining = candidates.filter { it !in blocked && isRouteable(it, allowPaidProvider) }
+                    val reranked = FreeProviderCapabilityRanker.rankFreeFirst(remaining, payloadTokens, registry)
+                    candidates.clear()
+                    candidates.addAll(reranked)
                     val frontier = decision.targetProvider ?: "gemini"
-                    if (frontier !in blocked) {
-                        candidates.remove(frontier)
+                    if (frontier !in blocked && isRouteable(frontier, allowPaidProvider) && !candidates.contains(frontier)) {
                         candidates.addFirst(frontier)
                         ActiveProvider.set(frontier)
                     }
+                    candidates.firstOrNull()?.let { ActiveProvider.set(it) }
                 }
                 RoutingAction.ROTATE_KEY -> {
                     val attempts = keyAttempts.getOrDefault(provider, 0) + 1
                     keyAttempts[provider] = attempts
-                    if (attempts < 10 && FallbackChainRegistry.getActiveKey(provider) != null) {
+                    if (attempts < 10 && FallbackChainRegistry.getActiveKey(provider) != null && isRouteable(provider, allowPaidProvider)) {
                         blocked.remove(provider)
                         candidates.addFirst(provider)
                     }
                 }
                 RoutingAction.NEXT_PARALLEL_PROVIDER, RoutingAction.RELIABLE_FALLBACK -> {
                     decision.targetProvider?.let { next ->
-                        if (next !in blocked && !candidates.contains(next)) {
+                        if (next !in blocked && !candidates.contains(next) && isRouteable(next, allowPaidProvider)) {
                             candidates.addFirst(next)
                             ActiveProvider.set(next)
                         }
@@ -299,13 +320,15 @@ class ProviderCascadeRouter(
     fun providerOrderPreview(
         requestedProvider: String,
         providerOrderOverride: List<String>? = null,
-        allowPaidProvider: Boolean = paidGate.status().active != null
-    ): List<String> = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider)
+        allowPaidProvider: Boolean = paidGate.status().active != null,
+        payloadTokens: Int = 0
+    ): List<String> = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider, payloadTokens)
 
     private fun providerOrder(
         requestedProvider: String,
         providerOrderOverride: List<String>? = null,
-        allowPaidProvider: Boolean = false
+        allowPaidProvider: Boolean = false,
+        payloadTokens: Int = 0
     ): List<String> {
         if (!providerOrderOverride.isNullOrEmpty()) {
             val candidates = providerOrderOverride.map { it.trim().lowercase() }
@@ -314,7 +337,7 @@ class ProviderCascadeRouter(
                 .distinct()
             val active = candidates.filter { !ModelDiscoveryEngine.isPruned(it) && !ProviderCircuitBreaker.isQuarantined(it) }
             val effective = if (active.isEmpty() && candidates.isNotEmpty()) candidates else active
-            return ProviderCascadeOrder.order(effective, registry, allowPaidProvider, paidGate)
+            return FreeProviderCapabilityRanker.rankFreeFirst(effective, payloadTokens, registry)
         }
 
         val configured = System.getenv("ATROPOS_PROVIDER_ORDER")
@@ -335,7 +358,7 @@ class ProviderCascadeRouter(
         val active = candidates.filter { !ModelDiscoveryEngine.isPruned(it) && !ProviderCircuitBreaker.isQuarantined(it) }
         val effective = if (active.isEmpty() && candidates.isNotEmpty()) candidates else active
 
-        return ProviderCascadeOrder.order(effective, registry, allowPaidProvider, paidGate)
+        return FreeProviderCapabilityRanker.rankFreeFirst(effective, payloadTokens, registry)
     }
 
     private fun getDescriptor(id: String): ProviderDescriptor? {
@@ -355,6 +378,12 @@ class ProviderCascadeRouter(
                 )
         }
         return null
+    }
+
+    /** A provider is routable when it is free-tier, unknown, or explicitly unlocked and paid-allowed. */
+    private fun isRouteable(provider: String, allowPaid: Boolean): Boolean {
+        val descriptor = getDescriptor(provider)
+        return descriptor == null || descriptor.isFreeEligible() || (allowPaid && paidGate.isProviderUnlocked(provider))
     }
 
     private fun paidApprovalAfterFreeExhaustion(reason: String): ProviderApprovalCard? {

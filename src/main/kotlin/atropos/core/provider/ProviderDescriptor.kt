@@ -18,7 +18,8 @@ data class ProviderDescriptor(
     val requiredEnv: List<String> = emptyList(),
     val fallbackChain: List<String> = emptyList(),
     val endpointId: String? = null,
-    val notes: String = ""
+    val notes: String = "",
+    val contextWindowTokens: Int = ProviderContextWindow.DEFAULT_CONTEXT_WINDOW_TOKENS
 ) {
     fun billingClass(): BillingClass = when (costMode) {
         CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.OPTIONAL_FREE -> BillingClass.FREE

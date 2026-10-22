@@ -148,8 +148,11 @@ object FallbackChainRegistry {
 
         return when (error.category) {
             UniversalErrorCategory.CONTEXT_EXCEEDED -> {
-                val frontier = HIGH_CONTEXT_FRONTIER_MODELS.firstOrNull { it.lowercase() != cleanCurrent && getActiveKey(it) != null }
-                    ?: HIGH_CONTEXT_FRONTIER_MODELS.firstOrNull { it.lowercase() != cleanCurrent }
+                val freeFrontier = HIGH_CONTEXT_FRONTIER_MODELS.filter { id ->
+                    id.lowercase() != cleanCurrent && (StaticProviderDescriptorRegistry().getById(id)?.isFreeEligible() ?: true)
+                }
+                val frontier = freeFrontier.firstOrNull { getActiveKey(it) != null }
+                    ?: freeFrontier.firstOrNull()
                     ?: "gemini"
                 RoutingDecision(
                     action = RoutingAction.ROUTE_HIGH_CONTEXT,

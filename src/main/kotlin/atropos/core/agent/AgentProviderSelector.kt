@@ -3,6 +3,7 @@ package atropos.core.agent
 import atropos.core.AtroposConfig
 import atropos.core.OllamaHealthProbe
 import atropos.core.provider.ApiCapability
+import atropos.core.provider.FreeProviderCapabilityRanker
 import atropos.core.provider.ProviderCascadeOrder
 import atropos.core.provider.ProviderAdapterIntrospection
 import atropos.core.provider.ProviderConfigurationResolver
@@ -53,13 +54,16 @@ class AgentProviderSelector(
             .filter { it.isNotBlank() }
             .distinct()
 
-        // Free-first, cost-ordered. Descriptor order provides the stable
-        // peer preference; cost ordering outranks it and paid providers are
-        // removed before any attempt.
-        val orderedAsk = ProviderCascadeOrder.order(finalOrder)
-        val orderedPatch = ProviderCascadeOrder.order(
+        // Free-first, capability-ordered. Cost ordering outranks peer
+        // preference; paid providers are removed before any attempt. Within
+        // the free tier the cascade re-ranks by payload-fit and context
+        // window, so the mathematically best free provider is tried first.
+        val costOrderedAsk = ProviderCascadeOrder.order(finalOrder)
+        val orderedAsk = FreeProviderCapabilityRanker.rankFreeFirst(costOrderedAsk, 0, registry)
+        val costOrderedPatch = ProviderCascadeOrder.order(
             candidatesFor(ApiCapability.CODE, ApiCapability.REPAIR)
         )
+        val orderedPatch = FreeProviderCapabilityRanker.rankFreeFirst(costOrderedPatch, 0, registry)
 
         return AgentProviderSelection(
             askOrder = orderedAsk,
