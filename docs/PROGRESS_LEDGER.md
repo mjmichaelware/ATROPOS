@@ -16823,3 +16823,19 @@ End of AGENTS.md
 - Predicate moved: **Batch 05b implemented and certified.** SpecGraph DAG view confirmed tenanted under /developer/specgraph; surface contract parity asserted; MCP tool output safely gated; architectural shared core boundary verified clean.
 - % delta: Architecture compliance & MCP proposal gating advance (+5%).
 - New overall estimate: ≈ 70%.
+
+
+### 2026-10-22T23:55:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-06-storage-governance-android-shell
+- Paths touched:
+  - `apps/web/src/components/storage/free-space-gate-panel.tsx` (+78 new) — ADD-W-010: Storage quota and free-space gate component rendering warning/halt thresholds.
+  - `apps/web/src/components/storage/global-byte-ceiling-view.tsx` (+70 new) — ADD-W-011: Global byte ceiling and storage quota usage visualization with progress bars.
+  - `apps/web/src/components/storage/retention-tiers-view.tsx` (+60 new) — ADD-W-012: Retention policy tier inspector across hot, warm, cold, and archival artifact tiers.
+  - `apps/web/src/components/storage/hash-attest-authority-status.tsx` (+72 new) — ADD-W-013: SHA-256 CAS hash attestation authority status badge and verification banner.
+  - `apps/web/src/components/handoff/handoff-export-ui.tsx` (+102 new) — ADD-W-015: Territory-checked export modal with landing zone selection and automatic cryptographic redaction.
+  - `apps/atropos-android/src/main/kotlin/atropos/android/ui/AndroidSovereignShell.kt` (+182 new) — F-AND-001: Android Sovereign Shell with native command strip, 6 continuous answers grid, and live terminal mirror.
+  - `apps/atropos-android/src/main/kotlin/atropos/android/ui/CliParityConsoleScreen.kt` (+20 new) — F-AND-001: CLI parity console screen delegate.
+- Atoms / phases affected: ADD-W-010, ADD-W-011, ADD-W-012, ADD-W-013, ADD-W-015, F-AND-001; Storage Governance & Mobile Sovereign Shell.
+- Predicate moved: **Batch 06 implemented and certified.** Storage quotas, retention tiers, and CAS attestation views active in web cockpit; mobile sovereign shell with full CLI command bar and IPC terminal viewport implemented.
+- % delta: Storage governance & mobile parity advance (+6%).
+- New overall estimate: ≈ 76%.
+
