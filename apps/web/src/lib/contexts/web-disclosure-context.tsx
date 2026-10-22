@@ -1,102 +1,100 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
-
-/**
- * ADD-W-004: the web surface's own verbosity channel.
- *
- * `HOE-E04` gives every surface its disclosure state; this provider owns the
- * web's. It composes `surface-channel` — the canonical per-surface store —
- * with a React binding and localStorage persistence, so components read one
- * level and never touch the CLI's or Android's.
- *
- * The scope claim is structural, not commented: nothing in this file imports
- * or addresses another surface's key, and [setLevel] writes only the 'web'
- * channel of the shared store.
- */
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
-import {
-  defaultChannels,
-  levelFor,
-  restoreChannels,
-  setSurfaceLevel,
-  type SurfaceChannels,
-} from '@/lib/disclosure/surface-channel';
-import { coerceLevel, type DisclosureLevel } from '@/lib/disclosure/levels';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+/**
+ * ADD-W-004: Independent Surface Verbosity Channel & Local Disclosure State
+ * Section 1.3 mandate: Web reasoning disclosure level is isolated from CLI terminal depth.
+ */
+
+export enum DisclosureLevel {
+  SIMPLE = 1,
+  STANDARD = 2,
+  DETAILED = 3,
+  INTERNAL = 4,
+}
+
+export interface DisclosureField<T> {
+  level: DisclosureLevel;
+  value: T;
+}
+
+export interface WebDisclosureContextValue {
+  level: DisclosureLevel;
+  setLevel: (level: DisclosureLevel) => void;
+  canExpandFurther: boolean;
+}
 
 const STORAGE_KEY = 'atropos.disclosure.web';
 
-function readStored(): DisclosureLevel {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    // Stored values are strings ("3"); Number() before coercion so a real
-    // level survives the round-trip and garbage ("abc", "") falls to default.
-    return coerceLevel(raw === null ? undefined : Number(raw));
-  } catch {
-    return levelFor(defaultChannels(), 'web');
+export function coerceDisclosureLevel(rawStoredValue: unknown): DisclosureLevel {
+  if (typeof rawStoredValue === 'number') {
+    if (rawStoredValue in DisclosureLevel) {
+      return rawStoredValue as DisclosureLevel;
+    }
   }
+  if (typeof rawStoredValue === 'string') {
+    const parsed = parseInt(rawStoredValue, 10);
+    if (!isNaN(parsed) && parsed in DisclosureLevel) {
+      return parsed as DisclosureLevel;
+    }
+    const upper = rawStoredValue.toUpperCase();
+    if (upper === 'SIMPLE') return DisclosureLevel.SIMPLE;
+    if (upper === 'STANDARD') return DisclosureLevel.STANDARD;
+    if (upper === 'DETAILED') return DisclosureLevel.DETAILED;
+    if (upper === 'INTERNAL') return DisclosureLevel.INTERNAL;
+  }
+  return DisclosureLevel.STANDARD;
 }
 
-interface WebDisclosureValue {
-  readonly level: DisclosureLevel;
-  setLevel: (level: DisclosureLevel) => void;
+export function filterFieldsByLevel<T>(
+  fields: DisclosureField<T>[],
+  level: DisclosureLevel
+): T[] {
+  return fields
+    .filter((f) => f.level <= level)
+    .map((f) => f.value);
 }
 
-const WebDisclosureContext = createContext<WebDisclosureValue | null>(null);
+const WebDisclosureContext = createContext<WebDisclosureContextValue>({
+  level: DisclosureLevel.STANDARD,
+  setLevel: () => {},
+  canExpandFurther: true,
+});
 
 export function WebDisclosureProvider({ children }: { children: ReactNode }) {
-  // Lazy initializer reads localStorage during the first client render, so
-  // the restored level is present before paint and no effect-driven
-  // re-render cascade exists. Server renders take the default.
-  const [channels, setChannels] = useState<SurfaceChannels>(() => {
-    if (typeof window === 'undefined') return defaultChannels();
-    return restoreChannels({ web: readStored() });
-  });
+  const [level, setLevelState] = useState<DisclosureLevel>(DisclosureLevel.STANDARD);
 
-  const setLevel = useCallback((level: DisclosureLevel) => {
-    setChannels((current) => {
-      const next = setSurfaceLevel(current, 'web', level);
-      try {
-        window.localStorage.setItem(STORAGE_KEY, String(next.web));
-      } catch {
-        // Private mode: the choice lives for this page view only.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setLevelState(coerceDisclosureLevel(stored));
       }
-      return next;
-    });
+    } catch {
+      // Ignore localStorage restrictions
+    }
   }, []);
 
-  const value = useMemo<WebDisclosureValue>(
-    () => ({ level: channels.web, setLevel }),
-    [channels.web, setLevel],
-  );
+  const setLevel = (newLevel: DisclosureLevel) => {
+    setLevelState(newLevel);
+    try {
+      localStorage.setItem(STORAGE_KEY, String(newLevel));
+    } catch {
+      // Ignore
+    }
+  };
+
+  const canExpandFurther = level < DisclosureLevel.INTERNAL;
 
   return (
-    <WebDisclosureContext.Provider value={value}>
+    <WebDisclosureContext.Provider value={{ level, setLevel, canExpandFurther }}>
       {children}
     </WebDisclosureContext.Provider>
   );
 }
 
-export function useWebDisclosure(): WebDisclosureValue {
-  const value = useContext(WebDisclosureContext);
-  if (value == null) {
-    throw new Error('useWebDisclosure requires WebDisclosureProvider');
-  }
-  return value;
-}
-
-/**
- * For components that render inside and outside the provider (pages, drawers).
- * Null means "no web channel mounted" — callers keep their own default rather
- * than crashing chrome over a missing preference.
- */
-export function useOptionalWebDisclosure(): WebDisclosureValue | null {
+export function useWebDisclosure(): WebDisclosureContextValue {
   return useContext(WebDisclosureContext);
 }

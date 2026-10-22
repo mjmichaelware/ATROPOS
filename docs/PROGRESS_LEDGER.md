@@ -16877,4 +16877,22 @@ End of AGENTS.md
 - New overall estimate: ≈ 88%.
 
 
+### 2026-10-23T00:45:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-09-verbosity-progress-theme-recovery-lint
+- Paths touched:
+  - `apps/web/src/lib/contexts/web-disclosure-context.tsx` (+105 new) — ADD-W-004: Independent web reasoning disclosure context isolated from CLI terminal depth.
+  - `apps/web/src/components/app-shell/independent-verbosity-toggle.tsx` (+32 new) — ADD-W-004: Independent verbosity toggle component for Web UI app-shell.
+  - `apps/web/src/components/workbench/node-progress.tsx` (+85 new) — ADD-W-005: Verified node progress motion binding with anti-fake animation gate and prefers-reduced-motion bypass.
+  - `apps/web/src/components/workflow/verified-node-progress-card.tsx` (+4 new) — ADD-W-005: Workflow progress card re-export.
+  - `apps/web/src/lib/theme/status-retheme-engine.ts` (+112 new) — ADD-W-007: Canonical status-vocabulary retheme engine mapping 9 run states to colors, text, and geometric glyphs.
+  - `apps/web/src/components/status/canonical-status-badge.tsx` (+22 new) — ADD-W-007: Accessible canonical status badge component.
+  - `apps/web/src/lib/recovery/recovery-ribbon-composer.ts` (+86 new) — ADD-W-008: Recovery ribbon composer uniting continuity, storage, and authority into one non-collapsing scannable line.
+  - `apps/web/src/components/error/recovery-ribbon-one-liner.tsx` (+46 new) — ADD-W-008: App-shell recovery ribbon component with tri-state status reporting.
+  - `src/test/kotlin/atropos/core/mcp/McpArchitecturePolicyTest.kt` (+54 new) — ADD-MCP-006 & ADD-MCP-007: Architecture policy test enforcing zero per-server Kotlin wrapper adapters and memory non-authority over sovereign contracts.
+- Atoms / phases affected: ADD-W-004, ADD-W-005, ADD-W-007, ADD-W-008, ADD-MCP-006, ADD-MCP-007; Disclosure Architecture, Animation Integrity, Status Retheming, Recovery Ribbon & MCP Architecture Policy.
+- Predicate moved: **Batch 09 implemented and certified.** Web disclosure independently isolated; node progress motion bound to genuine computational delta; 9-state canonical status theme engine installed; recovery ribbon composable; anti-adapter file spam and memory non-authority policy assertions verified.
+- % delta: Front-end design systems & MCP architectural hygiene advance (+6%).
+- New overall estimate: ≈ 94%.
+
+
+
 
