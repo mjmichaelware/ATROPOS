@@ -16690,3 +16690,23 @@ End of AGENTS.md
 - % delta: SWE-bench context refusal moved from reproduced-failure → source-fixed-pending-CI; Release Web moved from known-failing type error → source-fixed-pending-CI. Phase percentages unchanged (bug fixes, not gate completion).
 - New overall estimate: unchanged (≈ 43%).
 - Fingerprints: computed after commit.
+
+### 2026-10-22T01:05:00Z · Agent: OpenCode (deepseek-v4.1-flash) · Batch: web-release-green-and-swe-context-refusal-verified
+
+- Paths touched (cumulative for this session, commit range `0ab42236..a9038183`):
+  - `apps/web/src/components/workbench/reproducibility-panel.tsx`, `visual-compare.tsx` — engine-result/payload union repair (failure variant has no `.data`).
+  - `apps/web/src/components/workbench/split-terminal-editor.tsx` (+ its test) — import `Terminal`/CSS from the installed `xterm`, not the absent `@xterm/xterm`.
+  - `apps/web/src/components/workbench/territory-focus.tsx` — import `listTerritoryAssignments`/`listTerritoryViolations`.
+  - `apps/web/src/components/workbench/terminal.tsx` — restore via `term.write()` instead of nonexistent `SerializeAddon.deserialize`.
+  - `apps/web/src/components/dev-tools/developer-tools-container.test.tsx` — match the container's real props.
+  - `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` — `resolveTargetWorkspace` (directory-only), escaping-path rejection in `taskPackPaths`, prompt-file hint scanning, bounded redacted `sourcePackDiagnostics`; `AgentPatchHandler`/`AgentAskHandler` name the concrete pack failure.
+  - `src/test/kotlin/.../AgentContextCollectorTest.kt` — three regression tests for the astropy workspace/prompt/paths case.
+  - Kotlin test compilation repairs: `DeterministicHeuristicRepairEngineTest`, `WaveCheckpointLatticeTest` (`RUN_COMMAND`, `DagDefinition.label`), `SelfImprovementLoopTest` (`AuthorizationToken`), `ProtectedPathPolicyTest` (sealed-result accessor + legal test names).
+- Predicate moved: **Release Web job is green** (was failing at type check). **SWE-bench context refusal root cause removed**: the engine no longer fabricates an empty target workspace for a free-form issue or adopts a prompt file as the workspace, so `MISSING_SOURCE_PACK` is no longer produced for `astropy__astropy-11693`.
+- Verification actually run:
+  - Remote GitHub Actions for `a9038183`: **Factory CI ✓**, **Release JAR ✓** (publish ✓, web ✓, apk ✓), **Build and Sign Android APK ✓**. (compile-gate `focused-backend-tests` is `continue-on-error` and not part of the acceptance set.)
+  - Local end-to-end smoke with the published `ATROPOS.jar` (sha256 `c48f6c9e…`) in a 157 KB `astropy/wcs/wcs.py` + `astropy/wcs/wcsapi/fitswcs.py` workspace and the exact issue text: the engine resolved the source binding, wrote `job-…-groq.meta` with `status=PLANNING`, and recorded a groq `context_length_exceeded` provider failure. No `MISSING_SOURCE_PACK` / "source context pack is unavailable" appears. The refusal is removed.
+  - Not run here (environment absent): the actual batch rerun `python3 run_swe_bench_batch.py` from `/data/data/com.termux/files/home/atropos-evals`, and no local Gradle/npm build was run.
+- % delta: Release Web type-check + Workbench component defects → source-fixed and CI-green; SWE-bench context refusal → source-fixed and verified end-to-end with the published JAR. Phase percentages unchanged (bug/refusal fixes, not gate completion).
+- New overall estimate: unchanged (≈ 43%).
+- Fingerprints: `a9038183`; JAR `c48f6c9e1b241395277576cfd5be93b5cf476fdec63bf3f19508c36000170096`.
