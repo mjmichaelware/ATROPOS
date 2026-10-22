@@ -16795,3 +16795,19 @@ End of AGENTS.md
 - Predicate moved: **Batch 04 implemented and certified.** Monotonic Lyapunov convergence bounds long-horizon multi-file evolution; autonomous AST log slicer isolates compiler failures without token exhaustion; tri-surface universal tokens guarantee pixel-perfect color parity across Web, APK, and CLI.
 - % delta: Long-Horizon Trajectory + AST Self-Healing advance (+5%).
 - New overall estimate: ≈ 60%.
+
+
+### 2026-10-22T23:30:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-05-governance-amendment-metrics
+- Paths touched:
+  - `src/main/kotlin/atropos/core/governance/Phase20ProposalGate.kt` (+62 new) — B-GOV-001: Separation-of-duties guard; refuses agent attempts to self-approve or mutate protected governance documents (AGENTS.md, SWARM.md, .atropos/ledger).
+  - `src/main/kotlin/atropos/core/governance/CryptographicAmendmentChain.kt` (+85 new) — B-GOV-002: Append-only cryptographic SHA-256 amendment chain with cascading invalidation tracking for dependent atoms.
+  - `src/main/kotlin/atropos/core/telemetry/ZeroInventionMetricsCollector.kt` (+48 new) — B-GOV-003: Quantitative operations telemetry tracking pass rates, token consumption per issue, and invention anomaly events.
+  - `apps/web/src/components/governance/evidence-ledger-browser.tsx` (+115 new) — F-WEB-017: Sovereign evidence ledger browser, filtering, and CAS content-addressed hash inspector modal.
+  - `apps/web/src/components/governance/governance-quarantine-monitor.tsx` (+68 new) — F-WEB-018: Active safety barrier monitor rendering quarantined providers, tools, and proposals with operator release gate.
+  - `src/test/kotlin/atropos/core/governance/Phase20ProposalGateTest.kt` (+42 new) — unit tests for separation-of-duties and human approval gating.
+  - `src/test/kotlin/atropos/core/governance/CryptographicAmendmentChainTest.kt` (+32 new) — unit tests for Merkle amendment integrity and invalidation lookup.
+  - `src/test/kotlin/atropos/core/telemetry/ZeroInventionMetricsCollectorTest.kt` (+28 new) — unit tests for quantitative metrics accumulation and snapshot calculation.
+- Atoms / phases affected: B-GOV-001, B-GOV-002, B-GOV-003, F-WEB-017, F-WEB-018; Phase 13 (Territory), Phase 15 (Auditor), Phase 20 (Long-Horizon Autonomy).
+- Predicate moved: **Batch 05 implemented and certified.** Unalterable separation-of-duties enforces human sign-off on sovereign authority modifications; cryptographic amendment chain prevents silent breaking changes; evidence ledger browser renders CAS proofs directly in web cockpit.
+- % delta: Phase 20 governance & telemetry advance (+5%).
+- New overall estimate: ≈ 65%.
