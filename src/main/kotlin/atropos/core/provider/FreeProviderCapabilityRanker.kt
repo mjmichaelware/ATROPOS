@@ -38,7 +38,7 @@ object FreeProviderCapabilityRanker {
         val free = cleaned.filter { registry.getById(it)?.let { isFree(it) } == true }
         val nonFree = cleaned.filter { !free.contains(it) }
         return free.sortedWith(
-            compareBy<String> { !fits(it, estimatedTokens, registry) } // fits-first
+            compareBy<String> { !ProviderContextWindow.fits(it, estimatedTokens, registry) } // fits-first
                 .thenByDescending { ProviderContextWindow.of(it, registry) } // context window desc
                 .thenByDescending { capabilityScore(registry.getById(it)!!) }
                 .thenBy { registry.getById(it)?.quotaTier ?: Int.MAX_VALUE }
