@@ -16811,3 +16811,15 @@ End of AGENTS.md
 - Predicate moved: **Batch 05 implemented and certified.** Unalterable separation-of-duties enforces human sign-off on sovereign authority modifications; cryptographic amendment chain prevents silent breaking changes; evidence ledger browser renders CAS proofs directly in web cockpit.
 - % delta: Phase 20 governance & telemetry advance (+5%).
 - New overall estimate: ≈ 65%.
+
+
+### 2026-10-22T23:40:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-05b-specgraph-parity-diff-bridge
+- Paths touched:
+  - `src/test/kotlin/atropos/core/parity/SurfaceContractParityTest.kt` (+25 new) — ADD-W-027: Parity verification for 10-node HOE-A02 primary spine destinations.
+  - `apps/web/src/components/workbench/delta-register-diff.tsx` (+56 new) — ADD-W-028: Unified delta diff component for dense operation patch inspection with line-by-line syntax highlighting.
+  - `src/main/kotlin/atropos/mcp/ActionProposalBridge.kt` (+26 new) — ADD-W-030: Translates inbound MCP tool edit outputs into formal ActionProposal records governed by Phase20ProposalGate.
+  - `src/test/kotlin/atropos/core/architecture/MultiplatformSharedCoreBoundaryTest.kt` (+36 new) — ADD-W-032: Architectural boundary guard enforcing zero illegal platform-specific UI imports inside core engine packages.
+- Atoms / phases affected: ADD-W-026, ADD-W-027, ADD-W-028, ADD-W-030, ADD-W-032; Architecture & Boundary Governance.
+- Predicate moved: **Batch 05b implemented and certified.** SpecGraph DAG view confirmed tenanted under /developer/specgraph; surface contract parity asserted; MCP tool output safely gated; architectural shared core boundary verified clean.
+- % delta: Architecture compliance & MCP proposal gating advance (+5%).
+- New overall estimate: ≈ 70%.
