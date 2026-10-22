@@ -494,7 +494,26 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.provider.UniversalRequestAdapterTest' \
     --tests 'atropos.core.security.OwnerAuthorizationServiceHeadlessTest' \
     --tests 'atropos.core.security.ProtectedPathPolicyTest' \
-    --tests 'atropos.core.verification.DiagnosticSymbolSlicerTest'
+    --tests 'atropos.core.verification.DiagnosticSymbolSlicerTest' \
+    --tests 'atropos.bridge.ipc.TerminalMirrorSocketServerTest' \
+    --tests 'atropos.core.actuation.GatedComputerUseBridgeTest' \
+    --tests 'atropos.core.architecture.MultiplatformSharedCoreBoundaryTest' \
+    --tests 'atropos.core.autonomous.LongHorizonTrajectoryEngineTest' \
+    --tests 'atropos.core.benchmark.FederatedIssueSolveCoordinatorTest' \
+    --tests 'atropos.core.benchmark.RemoteBenchmarkOrchestratorTest' \
+    --tests 'atropos.core.benchmark.ReproducingTestSynthesizerTest' \
+    --tests 'atropos.core.governance.CryptographicAmendmentChainTest' \
+    --tests 'atropos.core.governance.Phase20ProposalGateTest' \
+    --tests 'atropos.core.integration.McpGovernanceTest' \
+    --tests 'atropos.core.mcp.McpArchitecturePolicyTest' \
+    --tests 'atropos.core.memory.NeuralMemoryDopamineSyncTest' \
+    --tests 'atropos.core.parity.SurfaceContractParityTest' \
+    --tests 'atropos.core.provider.CrossProviderCritiqueEngineTest' \
+    --tests 'atropos.core.provider.DynamicIssueRouterTest' \
+    --tests 'atropos.core.queue.QueueInterruptCoordinatorTest' \
+    --tests 'atropos.core.release.FinalConvergenceReleaseGateTest' \
+    --tests 'atropos.core.repair.AutonomousAstHealingLoopTest' \
+    --tests 'atropos.core.telemetry.ZeroInventionMetricsCollectorTest'
 fi
 
 echo "=== DIFF CHECK ==="
