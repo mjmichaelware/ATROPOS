@@ -41,6 +41,7 @@ const nextConfig = {
     root: path.join(__dirname, "..", ".."),
   },
    
+  output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: false,
