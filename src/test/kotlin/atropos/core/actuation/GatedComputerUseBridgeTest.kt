@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.actuation
 
+import atropos.core.integration.InboundGateResult
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class GatedComputerUseBridgeTest {
@@ -21,7 +21,7 @@ class GatedComputerUseBridgeTest {
             payloadSummary = "click outside declared bounds"
         )
         val result = bridge.evaluateProposal(proposal, "agent-1", "grant-1")
-        assertFalse(result.allowed)
+        assertTrue(result is InboundGateResult.Refused)
         assertTrue(result.reason.contains("outside authorized territory"))
     }
 }

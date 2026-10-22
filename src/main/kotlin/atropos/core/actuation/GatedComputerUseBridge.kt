@@ -30,10 +30,7 @@ class GatedComputerUseBridge(
         territoryGrantId: String
     ): InboundGateResult {
         if (!proposal.target.withinTerritory) {
-            return InboundGateResult(
-                allowed = false,
-                reason = "Actuation refused: Target is outside authorized territory"
-            )
+            return InboundGateResult.Refused("Actuation refused: Target is outside authorized territory")
         }
         return delegate.judge(
             callerId = callerId,
