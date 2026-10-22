@@ -1,0 +1,104 @@
+{
+  "catalogVersion": "1.0.0",
+  "servers": [
+    {
+      "id": "github",
+      "tier": 0,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-github"],
+      "requiredEnvKeys": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "defaultEnabled": true,
+      "readOnly": false
+    },
+    {
+      "id": "filesystem",
+      "tier": 0,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "requiredEnvKeys": [],
+      "defaultEnabled": true,
+      "readOnly": false
+    },
+    {
+      "id": "playwright",
+      "tier": 0,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "requiredEnvKeys": [],
+      "defaultEnabled": true,
+      "readOnly": true
+    },
+    {
+      "id": "markitdown",
+      "tier": 1,
+      "command": "markitdown",
+      "defaultArgs": [],
+      "requiredEnvKeys": [],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "brave_search",
+      "tier": 1,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "requiredEnvKeys": ["BRAVE_API_KEY"],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "postgres_readonly",
+      "tier": 1,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-postgres"],
+      "requiredEnvKeys": ["POSTGRES_READONLY_URL"],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "docker_cli",
+      "tier": 1,
+      "command": "docker",
+      "defaultArgs": ["mcp"],
+      "requiredEnvKeys": [],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "code_intelligence",
+      "tier": 2,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-code-intel"],
+      "requiredEnvKeys": [],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "package_manager",
+      "tier": 2,
+      "command": "npm",
+      "defaultArgs": ["mcp"],
+      "requiredEnvKeys": [],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "deploy_evidence",
+      "tier": 2,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-deploy-evidence"],
+      "requiredEnvKeys": [],
+      "defaultEnabled": false,
+      "readOnly": true
+    },
+    {
+      "id": "devtools",
+      "tier": 2,
+      "command": "npx",
+      "defaultArgs": ["-y", "@modelcontextprotocol/server-devtools"],
+      "requiredEnvKeys": [],
+      "defaultEnabled": false,
+      "readOnly": true
+    }
+  ]
+}
