@@ -1,0 +1,73 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/**
+ * F-WEB-015: Military-Grade Glassmorphism HUD & HIG Surface Design System
+ */
+
+:root {
+  --sg-canvas: #07100D;
+  --sg-surface: rgba(15, 23, 42, 0.65);
+  --sg-surface-elevated: rgba(30, 41, 59, 0.75);
+  --sg-surface-border: rgba(255, 255, 255, 0.08);
+  --sg-accent-emerald: #10B981;
+  --sg-accent-amber: #F59E0B;
+  --sg-accent-ruby: #EF4444;
+  --sg-accent-cobalt: #3B82F6;
+  --sg-blur-card: blur(16px);
+  --sg-shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+.sg-hud-panel {
+  background: var(--sg-surface);
+  backdrop-filter: var(--sg-blur-card);
+  -webkit-backdrop-filter: var(--sg-blur-card);
+  border: 1px solid var(--sg-surface-border);
+  box-shadow: var(--sg-shadow-card);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sg-hud-panel-elevated {
+  background: var(--sg-surface-elevated);
+  backdrop-filter: var(--sg-blur-card);
+  -webkit-backdrop-filter: var(--sg-blur-card);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+}
+
+.sg-hud-header {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94A3B8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sg-hud-glow-emerald {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(16, 185, 129, 0.05);
+}
+
+.sg-hud-glow-amber {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2), inset 0 0 10px rgba(245, 158, 11, 0.05);
+}
+
+.sg-hud-glow-ruby {
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2), inset 0 0 10px rgba(239, 68, 68, 0.05);
+}
+
+.sg-metric-orbit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 9999px;
+  font-family: monospace;
+  font-weight: 700;
+}

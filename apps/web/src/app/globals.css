@@ -1,4 +1,5 @@
 @import "@atropos/design-tokens/web";
+@import "@/styles/hud-glassmorphism.css";
 
 * {
   box-sizing: border-box;
