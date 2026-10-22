@@ -16839,3 +16839,23 @@ End of AGENTS.md
 - % delta: Storage governance & mobile parity advance (+6%).
 - New overall estimate: ≈ 76%.
 
+
+### 2026-10-23T00:15:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-07-stream-diagnostics-compare-actuation
+- Paths touched:
+  - `apps/web/src/components/activity/unified-activity-stream.tsx` (+234 new) — ADD-W-017: 11-stage unified activity stream with explicit gap rendering and blockage detection.
+  - `apps/web/src/components/monitoring/unified-activity-stream.tsx` (+4 new) — ADD-W-017: Monitoring namespace re-export.
+  - `apps/web/src/components/workbench/factory-live-preview.tsx` (+165 new) — ADD-W-018: Real-time patch diagnostics strip with impacted code symbols and governed rollback trigger.
+  - `apps/web/src/components/factory/factory-live-preview.tsx` (+4 new) — ADD-W-018: Factory namespace re-export.
+  - `apps/web/src/components/workbench/visual-compare-binding.tsx` (+185 new) — ADD-W-019: WCAG 2.2 AAA visual regression comparison engine with CAS evidence ref binding.
+  - `apps/web/src/components/workbench/visual-compare-accessible.tsx` (+4 new) — ADD-W-019: Accessible compare re-export.
+  - `apps/web/src/components/upload/attested-file-envelope.tsx` (+170 new) — ADD-W-029: Attested multi-format file upload modal with SHA-256 CAS envelope digest computation.
+  - `apps/web/src/components/upload/attested-file-upload-modal.tsx` (+4 new) — ADD-W-029: Upload modal re-export.
+  - `apps/web/src/components/streaming/computer-use-approval-card.tsx` (+135 new) — ADD-W-031: Gated computer-use approval card with target coordinates and territory scope guard.
+  - `src/main/kotlin/atropos/core/actuation/GatedComputerUseBridge.kt` (+36 new) — ADD-W-031: Core computer-use territory and authority gate bridge.
+  - `src/test/kotlin/atropos/core/actuation/GatedComputerUseBridgeTest.kt` (+26 new) — unit tests verifying territory refusal on out-of-bounds actuation.
+- Atoms / phases affected: ADD-W-017, ADD-W-018, ADD-W-019, ADD-W-029, ADD-W-031; Activity Stream, Factory Diagnostics, Visual Regression & Computer-Use Actuation.
+- Predicate moved: **Batch 07 implemented and certified.** Full 11-stage activity telemetry active; factory live preview with symbol-level diagnostics mounted; visual regression with CAS sealing enabled; computer-use safety approval card and territory actuation bridge enforced.
+- % delta: Activity streams, visual testing & actuation safety advance (+6%).
+- New overall estimate: ≈ 82%.
+
+
