@@ -1,0 +1,181 @@
+:root[data-theme="light"] {
+  color-scheme: light;
+  --sg-canvas: #f4f1e8;
+  --sg-surface: #fffaf0;
+  --sg-elevated: #ffffff;
+  --sg-overlay: rgba(255, 250, 240, 0.9);
+  --sg-text-primary: #17211d;
+  --sg-text-secondary: #405149;
+  --sg-text-muted: #586760;
+  --sg-text-inverse: #fffaf0;
+  --sg-border: #cbd6ce;
+  --sg-divider: #dfe7e1;
+  --sg-accent: #106b4b;
+  /* Light is tuned independently, not an inverted dark theme: shadows are
+     softer/warmer, glow becomes a hairline tint instead of a bloom, and the
+     graph panel goes fully opaque since translucency reads as murky on a
+     light ground. */
+  --sg-shadow-sm: 0 2px 10px rgba(23, 33, 29, 0.08);
+  --sg-shadow-md: 0 16px 40px rgba(23, 33, 29, 0.12);
+  --sg-glow: 0 0 0 1px rgba(16, 107, 75, 0.14);
+  --sg-graph-panel-opacity: 96%;
+  --sg-focus: #a9440c;
+}
+
+@supports (background: color-mix(in srgb, red, blue)) {
+  :root[data-theme="light"] {
+    --sg-surface-hover: color-mix(in srgb, var(--sg-elevated) 96%, black 4%);
+    --sg-surface-pressed: color-mix(in srgb, var(--sg-elevated) 90%, black 10%);
+    --sg-border-hover: color-mix(in srgb, var(--sg-border) 55%, var(--sg-text-secondary) 45%);
+  }
+}
+
+:root[data-theme="high-contrast"] {
+  --sg-canvas: #000;
+  --sg-surface: #050505;
+  --sg-elevated: #111;
+  --sg-text-primary: #fff;
+  --sg-text-secondary: #f5f5f5;
+  --sg-text-muted: #d6d6d6;
+  --sg-border: #fff;
+  --sg-focus: #ffff00;
+  --sg-accent: #00ffff;
+  --sg-graph-panel-opacity: 1;
+  --sg-semantic-source: #00e5ff;
+  --sg-semantic-research: #ffe14d;
+  --sg-semantic-planning: #c9a8ff;
+  --sg-semantic-verified: #57ff9e;
+  --sg-semantic-blocked: #ff8a80;
+  --sg-semantic-unknown: #d6d6d6;
+  --sg-semantic-source-subtle: var(--sg-surface);
+  --sg-semantic-research-subtle: var(--sg-surface);
+  --sg-semantic-planning-subtle: var(--sg-surface);
+  --sg-semantic-verified-subtle: var(--sg-surface);
+  --sg-semantic-blocked-subtle: var(--sg-surface);
+  --sg-semantic-unknown-subtle: var(--sg-surface);
+  --sg-semantic-source-border: var(--sg-semantic-source);
+  --sg-semantic-research-border: var(--sg-semantic-research);
+  --sg-semantic-planning-border: var(--sg-semantic-planning);
+  --sg-semantic-verified-border: var(--sg-semantic-verified);
+  --sg-semantic-blocked-border: var(--sg-semantic-blocked);
+  --sg-semantic-unknown-border: var(--sg-semantic-unknown);
+}
+
+/* Route-context accents shift the shell's ambient tint per section without
+   ever touching semantic warning/error/success/status tokens above. */
+:root[data-accent="sources"] { --sg-route-accent: var(--sg-semantic-source); }
+:root[data-accent="research"] { --sg-route-accent: var(--sg-semantic-research); }
+:root[data-accent="planning"] { --sg-route-accent: var(--sg-semantic-planning); }
+:root[data-accent="handoff"],
+:root[data-accent="execution"] { --sg-route-accent: var(--sg-semantic-verified); }
+:root[data-accent="routing"] { --sg-route-accent: var(--sg-semantic-planning); }
+:root { --sg-route-accent: var(--sg-accent-2); }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    transition: background-color var(--sg-duration-morph) var(--sg-ease-standard);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    color-scheme: light;
+    --sg-canvas: #f4f1e8;
+    --sg-surface: #fffaf0;
+    --sg-elevated: #ffffff;
+    --sg-text-primary: #17211d;
+    --sg-text-secondary: #405149;
+    --sg-text-muted: #586760;
+    --sg-border: #cbd6ce;
+    --sg-accent: #106b4b;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sg-duration-fast: 1ms;
+    --sg-duration-normal: 1ms;
+    --sg-duration-slow: 1ms;
+    --sg-duration-press: 1ms;
+    --sg-duration-reveal: 1ms;
+    --sg-duration-morph: 1ms;
+    --sg-distance-xs: 0px;
+    --sg-distance-sm: 0px;
+    --sg-distance-md: 0px;
+    --sg-scale-press: 1;
+    --sg-scale-lift: 1;
+    --sg-stagger-step: 0ms;
+  }
+
+  * {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --sg-focus: Highlight;
+    --sg-border: CanvasText;
+    --sg-graph-cyan: CanvasText;
+    --sg-graph-amber: CanvasText;
+    --sg-graph-violet: CanvasText;
+    --sg-graph-emerald: CanvasText;
+    --sg-graph-coral: CanvasText;
+    --sg-graph-graphite: CanvasText;
+    --sg-semantic-source: CanvasText;
+    --sg-semantic-research: CanvasText;
+    --sg-semantic-planning: CanvasText;
+    --sg-semantic-verified: CanvasText;
+    --sg-semantic-blocked: CanvasText;
+    --sg-semantic-unknown: CanvasText;
+    --sg-semantic-source-subtle: Canvas;
+    --sg-semantic-research-subtle: Canvas;
+    --sg-semantic-planning-subtle: Canvas;
+    --sg-semantic-verified-subtle: Canvas;
+    --sg-semantic-blocked-subtle: Canvas;
+    --sg-semantic-unknown-subtle: Canvas;
+    --sg-shadow-sm: none;
+    --sg-shadow-md: none;
+    --sg-glow: none;
+  }
+
+  .sg-graph-node,
+  .sg-graph-edge,
+  .sg-card,
+  .sg-hud-panel,
+  .sg-status {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+  }
+
+  .sg-button {
+    forced-color-adjust: none;
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+
+  .sg-button-primary {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --sg-graph-panel-opacity: 1;
+    --sg-blur: 0px;
+  }
+
+  .sg-header,
+  .sg-mobile-panel,
+  .sg-hud-panel,
+  [data-material="glass"] {
+    backdrop-filter: none !important;
+    background: var(--sg-elevated) !important;
+  }
+}

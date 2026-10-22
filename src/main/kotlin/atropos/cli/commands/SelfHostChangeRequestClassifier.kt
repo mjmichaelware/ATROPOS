@@ -45,14 +45,22 @@ class SelfHostChangeRequestClassifier {
     }
 
     /**
-     * Strictly locked: True ONLY when an unmistakable self-host keyword is present,
-     * and NOT explicitly marked as generic file mutation.
-     * Loose reflexive pronouns (e.g. "itself", "its own") or mere mention of "ATROPOS"
-     * in generic natural language or SWE-bench problem descriptions must NOT trigger self-host.
+     * True when the runtime itself is the subject.
+     *
+     * Three ways to name it, in descending explicitness:
+     *  - by name ("ATROPOS");
+     *  - by naming the self-host machinery ("run self-host Phase 11") — nothing
+     *    but this runtime has a self-host phase, so the phrase identifies the
+     *    subject even with no name in the line;
+     *  - reflexively ("build yourself"), which counts only alongside a build-ish
+     *    verb because it is otherwise ambiguous — "write a script that documents
+     *    itself" is not an instruction to ATROPOS.
      */
     private fun addressesAtropos(text: String): Boolean {
-        if (text.contains("--generic") || text.contains("-g")) return false
-        return SELF_BUILD_PHRASES.any { it in text }
+        if (ATROPOS_NAMES.any { it in text }) return true
+        if (SELF_BUILD_PHRASES.any { it in text }) return true
+        val reflexive = REFLEXIVE_NAMES.any { it in text }
+        return reflexive && asksMutation(text)
     }
 
     private fun isQuestion(text: String): Boolean {

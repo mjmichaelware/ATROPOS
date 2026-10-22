@@ -50,15 +50,16 @@ data class ProviderMistakeRecord(
 }
 
 /**
- * Short-Term Memory & Long-Term Memory Escalation Engine (2-Strike Rule).
+ * Short-Term Memory & Long-Term Memory Escalation Engine (3-Strike Rule).
  *
  * Tracks provider imperfections, syntax violations, and patch failures immediately
  * in session Short-Term Memory (TEMPORARY_MEMORY). When the exact same mistake occurs
- * twice for a provider, automatically escalates the record into permanent Long-Term
- * Memory (KNOWLEDGE_LAYER & AUTHORITY_AND_POLICY) to enforce durable constraints.
+ * three times for a provider (STRIKE_THRESHOLD), automatically escalates the record into permanent
+ * Long-Term Memory (KNOWLEDGE_LAYER & AUTHORITY_AND_POLICY) to enforce durable constraints.
  */
 class ProviderFailureMemoryStore(
-    private val lattice: MemoryLayerLattice = MemoryLayerLattice()
+    private val lattice: MemoryLayerLattice = MemoryLayerLattice(),
+    private val strikeThreshold: Int = STRIKE_THRESHOLD
 ) {
     private val sessionShortTermMemory = ConcurrentHashMap<String, ProviderMistakeRecord>()
 
@@ -74,36 +75,42 @@ class ProviderFailureMemoryStore(
         val existing = sessionShortTermMemory[stmKey]
 
         return if (existing != null) {
-            // Second strike of the exact same mistake: escalate to Long-Term Memory
-            val escalated = existing.copy(
-                strikeCount = existing.strikeCount + 1,
+            val newStrikeCount = existing.strikeCount + 1
+            val shouldPromote = newStrikeCount >= strikeThreshold
+
+            val updatedRecord = existing.copy(
+                strikeCount = newStrikeCount,
                 lastSeenEpochMs = System.currentTimeMillis(),
-                promotedToLongTerm = true
+                promotedToLongTerm = existing.promotedToLongTerm || shouldPromote
             )
-            sessionShortTermMemory[stmKey] = escalated
+            sessionShortTermMemory[stmKey] = updatedRecord
 
             // Update in lattice Short-Term Memory
-            lattice.put(MemoryLayerLattice.LayerType.TEMPORARY_MEMORY, stmKey, escalated.toJson())
+            lattice.put(MemoryLayerLattice.LayerType.TEMPORARY_MEMORY, stmKey, updatedRecord.toJson())
 
-            // 2-Strike Rule Promotion into Long-Term Memory
-            val ltmKey = "ltm:constraint:$cleanProvider:$signature"
-            val constraintDirective = buildConstraintDirective(cleanProvider, signature, exactMistake)
-            val ltmPayload = JSONObject().apply {
-                put("provider", cleanProvider)
-                put("errorSignature", signature)
-                put("exactMistake", exactMistake)
-                put("strikeCount", escalated.strikeCount)
-                put("promotedAtEpochMs", System.currentTimeMillis())
-                put("constraintDirective", constraintDirective)
-            }.toString()
+            if (shouldPromote && !existing.promotedToLongTerm) {
+                // 3-Strike Rule Promotion into Long-Term Memory
+                val ltmKey = "ltm:constraint:$cleanProvider:$signature"
+                val constraintDirective = buildConstraintDirective(cleanProvider, signature, exactMistake)
+                val ltmPayload = JSONObject().apply {
+                    put("provider", cleanProvider)
+                    put("errorSignature", signature)
+                    put("exactMistake", exactMistake)
+                    put("strikeCount", updatedRecord.strikeCount)
+                    put("promotedAtEpochMs", System.currentTimeMillis())
+                    put("constraintDirective", constraintDirective)
+                }.toString()
 
-            lattice.put(MemoryLayerLattice.LayerType.KNOWLEDGE_LAYER, ltmKey, ltmPayload)
-            lattice.put(MemoryLayerLattice.LayerType.AUTHORITY_AND_POLICY, ltmKey, ltmPayload)
+                lattice.put(MemoryLayerLattice.LayerType.KNOWLEDGE_LAYER, ltmKey, ltmPayload)
+                lattice.put(MemoryLayerLattice.LayerType.AUTHORITY_AND_POLICY, ltmKey, ltmPayload)
 
-            Thinking.outline("memory", "2-STRIKE PROMOTION: Provider [$cleanProvider] repeated mistake [$signature]")
-            Thinking.step("memory", "Escalated mistake to permanent Long-Term Memory constraint: $constraintDirective")
+                Thinking.outline("memory", "3-STRIKE PROMOTION: Provider [$cleanProvider] repeated mistake [$signature] (strike $newStrikeCount/$strikeThreshold)")
+                Thinking.step("memory", "Escalated mistake to permanent Long-Term Memory constraint: $constraintDirective")
+            } else {
+                Thinking.detail("memory", "Incremented Short-Term Memory strike for [$cleanProvider]: $signature (strike $newStrikeCount/$strikeThreshold)")
+            }
 
-            escalated
+            updatedRecord
         } else {
             // First strike: record in session Short-Term Memory
             val newRecord = ProviderMistakeRecord(
@@ -118,7 +125,7 @@ class ProviderFailureMemoryStore(
             sessionShortTermMemory[stmKey] = newRecord
             lattice.put(MemoryLayerLattice.LayerType.TEMPORARY_MEMORY, stmKey, newRecord.toJson())
 
-            Thinking.detail("memory", "Recorded failure in session Short-Term Memory for [$cleanProvider]: $signature (strike 1/2)")
+            Thinking.detail("memory", "Recorded failure in session Short-Term Memory for [$cleanProvider]: $signature (strike 1/$strikeThreshold)")
             newRecord
         }
     }
@@ -188,6 +195,8 @@ class ProviderFailureMemoryStore(
     }
 
     companion object {
+        const val STRIKE_THRESHOLD = 3
+
         val SHARED: ProviderFailureMemoryStore by lazy {
             ProviderFailureMemoryStore()
         }

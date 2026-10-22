@@ -46,7 +46,7 @@ class ProviderDopamineRewardTracker(
             "Assigned dopamine penalty ($penaltyValue) to provider [$cleanProvider] for $errorType: ${exactMistake.take(80)}"
         )
 
-        // 2. Record immediately in session Short-Term Memory and check 2-strike rule
+        // 2. Record immediately in session Short-Term Memory and enforce 3-strike rule
         val mistakeRecord = memoryStore.recordMistake(
             provider = cleanProvider,
             errorType = errorType,

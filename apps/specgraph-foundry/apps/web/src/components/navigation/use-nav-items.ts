@@ -2,17 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
-import {
-  activeProjectSection,
-  developerToolsItem,
-  engineStateGroup,
-  globalRoutes,
-  isActiveGlobalRoute,
-  navigationSpine,
-  projectSections,
-} from "./routes";
+import { activeProjectSection, globalRoutes, isActiveGlobalRoute, projectSections } from "./routes";
 import { projectIdFromPathname } from "./route-utils";
-import { useOptionalSessionState } from "@/lib/contexts/session-state-context";
 
 export type NavItem = {
   id: string;
@@ -25,31 +16,15 @@ export type NavItem = {
  * Single computed nav-item list consumed identically by the header, the
  * desktop sidebar, and the mobile sheet, so route identity, label, and
  * active-state can never drift out of sync between surfaces.
- *
- * The list is the §2.0 spine. It previously carried SpecGraph's workspaces
- * (Sources, Research, Graph, Handoff, Routing) as the project navigation,
- * which promoted a compiler subsystem to primary information architecture and
- * left every ATROPOS page reachable only by typing its URL. SpecGraph is now
- * reached through Developer Tools, which §2.10 hides until asked for.
  */
-export function useNavItems(): {
-  global: NavItem[];
-  project: NavItem[];
-  engineState: NavItem[];
-  developer: NavItem[];
-  projectId: string | undefined;
-} {
+export function useNavItems(): { global: NavItem[]; project: NavItem[]; projectId: string | undefined } {
   const pathname = usePathname() ?? "/";
   const projectId = projectIdFromPathname(pathname);
-  // Without a provider the safe default applies: Developer Tools stay hidden.
-  const session = useOptionalSessionState()?.session;
 
-  const global: NavItem[] = navigationSpine.map((item) => ({
-    id: item.id,
-    label: item.label,
-    href: item.href,
-    active: isActiveGlobalRoute(pathname, item.href),
-  }));
+  const global: NavItem[] = [
+    { id: "projects", label: "Projects", href: globalRoutes.projects, active: isActiveGlobalRoute(pathname, globalRoutes.projects) },
+    { id: "new-project", label: "New project", href: globalRoutes.newProject, active: pathname === globalRoutes.newProject },
+  ];
 
   const activeSection = projectId ? activeProjectSection(pathname, projectId) : undefined;
   const project: NavItem[] = projectId
@@ -61,31 +36,5 @@ export function useNavItems(): {
       }))
     : [];
 
-  // Engine-state surfaces are always offered. They are kept out of `global`
-  // so HOE-A02's ten-entry spine stays exactly ten and remains assertable.
-  const engineState: NavItem[] = engineStateGroup.map((item) => ({
-    id: item.id,
-    label: item.label,
-    href: item.href,
-    active: isActiveGlobalRoute(pathname, item.href),
-  }));
-
-  // §2.10: hidden by default. Revealed only by an explicit operator
-  // preference, and shown regardless while the operator is already inside it
-  // so the surface can never strand them without a way back.
-  const developerVisible =
-    (session?.developerToolsEnabled ?? false) || pathname.startsWith(globalRoutes.devTools);
-
-  const developer: NavItem[] = developerVisible
-    ? [
-        {
-          id: developerToolsItem.id,
-          label: developerToolsItem.label,
-          href: developerToolsItem.href,
-          active: pathname.startsWith(globalRoutes.devTools),
-        },
-      ]
-    : [];
-
-  return { global, project, engineState, developer, projectId };
+  return { global, project, projectId };
 }
