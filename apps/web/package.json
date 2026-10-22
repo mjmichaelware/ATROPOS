@@ -9,7 +9,7 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "dev:webpack": "next dev --webpack",
     "build": "next build",
     "build:webpack": "next build --webpack",
