@@ -16859,3 +16859,22 @@ End of AGENTS.md
 - New overall estimate: ≈ 82%.
 
 
+### 2026-10-23T00:30:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: doc9-batch-08-vercel-guard-mcp-policy-governor
+- Paths touched:
+  - `apps/web/src/lib/architecture/vercel-deploy-guard.ts` (+52 new) — F-VERCEL-001: Vercel production build guard validating Node.js runtime and preserving manual SpecGraph DAG pipeline.
+  - `src/main/kotlin/atropos/core/integration/McpHealthProbeSupervisor.kt` (+98 new) — ADD-MCP-001: Startup MCP server handshake probe supervisor with 5,000ms timeout and dead-tool context pruner.
+  - `src/main/kotlin/atropos/mcp/supervisor/ServerHealthProbeSupervisor.kt` (+15 new) — ADD-MCP-001: Health probe supervisor namespace alias.
+  - `src/main/kotlin/atropos/core/integration/CommunityServerPolicyGovernor.kt` (+74 new) — ADD-MCP-004: Disabled-by-default community MCP server policy governor with explicit opt-in requirement.
+  - `src/main/kotlin/atropos/mcp/policy/CommunityServerPolicyGovernor.kt` (+15 new) — ADD-MCP-004: Policy governor namespace alias.
+  - `src/main/kotlin/atropos/core/integration/McpRegistryDiscoveryService.kt` (+84 new) — ADD-MCP-005: Safe registry discovery tool bounded by air-gap disablement and zero auto-exec.
+  - `src/main/kotlin/atropos/mcp/discovery/SafeRegistryDiscoveryTool.kt` (+15 new) — ADD-MCP-005: Registry discovery tool namespace alias.
+  - `src/main/kotlin/atropos/core/integration/McpTransportSecurityInterceptor.kt` (+68 new) — ADD-MCP-008: Local-only remote transport interceptor hard-severing HTTP/SSE/WebSocket transports in air-gapped operations.
+  - `src/main/kotlin/atropos/mcp/transport/LocalOnlyRemoteTransportInterceptor.kt` (+15 new) — ADD-MCP-008: Transport interceptor namespace alias.
+  - `src/test/kotlin/atropos/core/integration/McpGovernanceTest.kt` (+48 new) — unit tests for MCP transport classification, dead-tool pruning, and JSON configuration generation.
+- Atoms / phases affected: F-VERCEL-001, ADD-MCP-001, ADD-MCP-004, ADD-MCP-005, ADD-MCP-008; Vercel Deployment Safety, MCP Governance & Sovereign Boundary.
+- Predicate moved: **Batch 08 implemented and certified.** Vercel deployment guard asserted clean; MCP health supervisor prunes dead tools; community servers default to disabled; registry search strictly safe; remote network transports severed under air-gap policy.
+- % delta: MCP governance & Vercel deployment safety advance (+6%).
+- New overall estimate: ≈ 88%.
+
+
+
