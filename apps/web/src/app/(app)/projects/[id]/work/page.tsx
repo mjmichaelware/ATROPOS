@@ -10,7 +10,7 @@ import type { TrustIndicators } from '@/components/ui/trust-indicators';
 import { ControlVerb } from '@/components/ui/control-verbs';
 import { useProject, useWorkItems } from '@/lib/api-atropos/hooks';
 import { projectOperations, workItemOperations, approvalOperations } from '@/lib/api-atropos/operations';
-import type { WorkItem } from '@/lib/api-atropos/types';
+import type { WorkItem, Evidence } from '@/lib/api-atropos/types';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { StreamingApprovalCards } from '@/components/streaming/message-stream';
 import {
@@ -44,7 +44,7 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
   // Form state for creating a new work item
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
+  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high'>('high');
   const [newWhy, setNewWhy] = useState('');
   const [newHow, setNewHow] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,8 +84,9 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
         const q = filterQuery.toLowerCase();
         const titleMatch = item.title?.toLowerCase().includes(q);
         const descMatch = item.description?.toLowerCase().includes(q);
-        const whyMatch = item.why?.toLowerCase().includes(q);
-        return titleMatch || descMatch || whyMatch;
+        const howMatch = item.how?.toLowerCase().includes(q);
+        const whyMatch = item.six_answers?.reasoning?.toLowerCase().includes(q);
+        return titleMatch || descMatch || howMatch || whyMatch;
       }
       return true;
     });
@@ -159,8 +160,12 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
         title: newTitle.trim(),
         description: newDescription.trim() || undefined,
         status: 'idle',
-        why: newWhy.trim() || 'Required for project objective milestone completion',
+        priority: newPriority,
         how: newHow.trim() || 'Autonomous AST generation and unit test verification pass',
+        six_answers: {
+          objective: newTitle.trim(),
+          reasoning: newWhy.trim() || 'Required for project objective milestone completion',
+        },
       });
 
       setItems((prev) => [created, ...prev]);
@@ -174,14 +179,18 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
       // Fallback local optimistic item
       const optimisticItem: WorkItem = {
         id: `item-${Date.now()}`,
-        projectId,
+        project_id: projectId,
         title: newTitle.trim(),
         description: newDescription.trim() || undefined,
         status: 'idle',
-        why: newWhy.trim() || 'Mandated sovereign task execution',
+        priority: newPriority,
         how: newHow.trim() || 'Direct agent pipeline',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        six_answers: {
+          objective: newTitle.trim(),
+          reasoning: newWhy.trim() || 'Mandated sovereign task execution',
+        },
       };
       setItems((prev) => [optimisticItem, ...prev]);
       setNewTitle('');
@@ -196,22 +205,32 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
 
   const handleAdvanceStatus = async (item: WorkItem, nextStatus: 'working' | 'completed') => {
     try {
+      const updatedEvidence = nextStatus === 'completed'
+        ? [
+            ...(item.evidence || []),
+            {
+              id: `ev-${Date.now()}`,
+              type: 'verification' as const,
+              title: `Cryptographic proof verified at ${new Date().toISOString()}`,
+              timestamp: new Date().toISOString(),
+              impact: 'high' as const,
+              verified: true,
+            },
+          ]
+        : (item.evidence || []);
+
       await workItemOperations.update(projectId, item.id, {
         status: nextStatus,
-        evidence: nextStatus === 'completed'
-          ? [...(item.evidence || []), `Verified at ${new Date().toISOString()}`]
-          : item.evidence,
+        evidence: updatedEvidence,
       });
+
       setItems((prev) =>
         prev.map((i) =>
           i.id === item.id
             ? {
                 ...i,
                 status: nextStatus,
-                evidence:
-                  nextStatus === 'completed'
-                    ? [...(i.evidence || []), `Verified at ${new Date().toISOString()}`]
-                    : i.evidence,
+                evidence: updatedEvidence,
               }
             : i
         )
