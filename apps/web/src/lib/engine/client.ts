@@ -254,6 +254,10 @@ export const engine = {
   runCommand: (command: string, issuedBy: string = WEB_ACTOR) =>
     writeEngine<EngineCommandResult>('/v1/command', { command, issuedBy }),
 
+  /** Alias for runCommand to execute instructions across terminal and command palette */
+  execute: (command: string, issuedBy: string = WEB_ACTOR) =>
+    writeEngine<EngineCommandResult>('/v1/command', { command, issuedBy }),
+
   /** The command families this surface may run, so the palette can say so. */
   allowedCommands: () => readEngine<{ families: string[]; forbidden: string[] }>('/v1/command/allowed'),
 
