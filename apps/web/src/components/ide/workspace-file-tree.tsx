@@ -16,9 +16,12 @@ import {
 } from 'lucide-react';
 
 export interface FileTreeItem {
+  id?: string;
   path: string;
   name: string;
-  isDirectory: boolean;
+  isDirectory?: boolean;
+  type?: 'file' | 'directory';
+  size?: number;
   sizeBytes?: number;
   children?: FileTreeItem[];
 }
@@ -146,11 +149,13 @@ function FileTreeNodeRow({
     return <FileCode className="h-3.5 w-3.5 text-slate-400" />;
   };
 
+  const isDir = Boolean(item.isDirectory ?? (item.type === 'directory') ?? item.children);
+
   return (
     <div>
       <div
         onClick={() => {
-          if (item.isDirectory) {
+          if (isDir) {
             onToggleFolder(item.path);
           } else {
             onSelectFile(item);
@@ -164,7 +169,7 @@ function FileTreeNodeRow({
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          {item.isDirectory ? (
+          {isDir ? (
             <>
               {isExpanded ? (
                 <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" />
@@ -183,16 +188,16 @@ function FileTreeNodeRow({
           <span className="truncate text-xs">{item.name}</span>
         </div>
 
-        {item.sizeBytes !== undefined && !item.isDirectory && (
+        {(item.sizeBytes !== undefined || item.size !== undefined) && !isDir && (
           <span className="text-[10px] text-slate-600 font-mono ml-2 shrink-0">
-            {item.sizeBytes < 1024
-              ? `${item.sizeBytes}B`
-              : `${(item.sizeBytes / 1024).toFixed(1)}K`}
+            {((item.sizeBytes ?? item.size) ?? 0) < 1024
+              ? `${(item.sizeBytes ?? item.size) ?? 0}B`
+              : `${(((item.sizeBytes ?? item.size) ?? 0) / 1024).toFixed(1)}K`}
           </span>
         )}
       </div>
 
-      {item.isDirectory && isExpanded && item.children && (
+      {isDir && isExpanded && item.children && (
         <div className="space-y-0.5">
           {item.children.map((child) => (
             <FileTreeNodeRow
