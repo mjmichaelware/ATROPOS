@@ -29,7 +29,8 @@ export interface FileTreeItem {
 export type FileNode = FileTreeItem;
 
 export interface WorkspaceFileTreeProps {
-  rootItems: FileTreeItem[];
+  rootItems?: FileTreeItem[];
+  nodes?: FileTreeItem[];
   selectedPath?: string;
   onSelectFile: (item: FileTreeItem) => void;
   onRefresh?: () => void;
@@ -37,10 +38,12 @@ export interface WorkspaceFileTreeProps {
 
 export function WorkspaceFileTree({
   rootItems,
+  nodes,
   selectedPath,
   onSelectFile,
   onRefresh
 }: WorkspaceFileTreeProps) {
+  const items = nodes ?? rootItems ?? [];
   const [filterQuery, setFilterQuery] = useState('');
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
     new Set(['src', 'src/main', 'src/main/kotlin', 'apps', 'apps/web'])
@@ -96,7 +99,7 @@ export function WorkspaceFileTree({
 
       {/* Tree View Item Hierarchy */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {rootItems.map((item) => (
+        {items.map((item) => (
           <FileTreeNodeRow
             key={item.path}
             item={item}
