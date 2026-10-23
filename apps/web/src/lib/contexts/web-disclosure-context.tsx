@@ -98,3 +98,7 @@ export function WebDisclosureProvider({ children }: { children: ReactNode }) {
 export function useWebDisclosure(): WebDisclosureContextValue {
   return useContext(WebDisclosureContext);
 }
+
+export function useOptionalWebDisclosure(): WebDisclosureContextValue | null {
+  return useContext(WebDisclosureContext) ?? null;
+}

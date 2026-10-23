@@ -1,53 +1,42 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 'use client';
 
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
-import { TrustIndicators } from '@/components/ui/trust-indicators';
-import { Network } from 'lucide-react';
+import { ModelArenaComparator } from '@/components/models/model-arena-comparator';
+import { Cpu, Server, Activity } from 'lucide-react';
 
 export default function ModelsPage() {
   const modelsAnswers: SixAnswer = {
-    objective: 'Present available providers and routing decisions.',
-    currentOperation: 'No providers configured. System ready for setup.',
-    reasoning: 'Models surface is presentation of routing reality, not a second policy engine. Shows every available provider and current selection reasoning.',
-    progress: { percent: 0, stage: 'Setup' },
-    nextAction: 'Configure available providers and set routing preferences.',
-  };
-
-  const providerAnswers: SixAnswer = {
-    objective: 'Display every available provider, routing decision, quota, and cost.',
-    currentOperation: 'Idle - No providers available.',
-    reasoning: 'Provider dashboard shows availability, current routing, fallback chain, latency, quota, cost, tokens, retries, failures, and health.',
-    progress: { percent: 0, stage: 'Idle' },
-    nextAction: 'Set up your first provider.',
+    objective: 'Present configured model providers, routing topologies, and real-time benchmark telemetry.',
+    currentOperation: 'Dynamic multi-provider routing active across frontier, standard, and local air-gapped backends.',
+    reasoning: 'Routing reality reflects strict latency budgets and mathematical token burn constraints. Zero opaque vendor lock-in.',
+    progress: { percent: 100, stage: 'Active Routing' },
+    nextAction: 'Run benchmark duels or register custom local inference endpoints.',
   };
 
   return (
-    <div className="space-y-8 p-8 max-w-4xl mx-auto">
-      {/* Page Context */}
+    <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto font-sans">
+      {/* Page Header */}
       <section className="space-y-3">
-        <h1 className="text-3xl font-bold text-sg-neutral-900 dark:text-sg-neutral-50">
-          Models & Providers
-        </h1>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-cyan-600/10 border border-cyan-500/20 text-cyan-400">
+            <Cpu className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+              Sovereign Models & Provider Arena
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Multi-backend latency benchmarking, side-by-side deterministic duel comparisons, and dynamic routing policies.
+            </p>
+          </div>
+        </div>
+
         <SixAnswersPanel answers={modelsAnswers} compact={false} />
       </section>
 
-      {/* Provider Dashboard */}
-      <section className="space-y-4">
-        <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
-          Provider Status
-        </h2>
-        <SixAnswersPanel answers={providerAnswers} compact={false} expandable={true} />
-
-        <div className="text-center py-12 border border-dashed border-sg-neutral-300 dark:border-sg-neutral-700 rounded-lg bg-sg-neutral-50 dark:bg-sg-neutral-900">
-          <Network className="w-16 h-16 text-sg-neutral-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 mb-1">
-            No providers configured
-          </h3>
-          <p className="text-sg-neutral-600 dark:text-sg-neutral-400 mb-4">
-            Configure providers in settings to enable model routing and autonomous work.
-          </p>
-        </div>
-      </section>
+      {/* Arena Component */}
+      <ModelArenaComparator />
     </div>
   );
 }

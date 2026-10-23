@@ -890,34 +890,3 @@ function CommandRow({
     </div>
   );
 }
-  return (
-    <div className="flex items-center justify-between p-3.5 rounded-xl border border-sg-border-dim bg-sg-card-surface/70 hover:bg-sg-panel-surface transition-colors font-mono">
-      <div className="flex-1 min-w-0 pr-4">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-cyan-400 text-sm">{command.name}</span>
-          <span className="text-[10px] text-sg-text-muted px-1.5 py-0.5 rounded bg-sg-gutter-bg border border-sg-border-dim">
-            {command.safetyTier}
-          </span>
-        </div>
-        <p className="text-xs text-sg-text-secondary mt-1 font-sans truncate">{command.synopsis}</p>
-        <p className="text-[11px] text-sg-text-muted mt-0.5 truncate">{command.usage}</p>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onInspect}
-          title="Inspect Documentation"
-          className="p-1.5 rounded-lg border border-sg-border-dim bg-sg-gutter-bg text-sg-text-secondary hover:text-white transition-colors"
-        >
-          <Info className="h-4 w-4" />
-        </button>
-        <button
-          onClick={onSelect}
-          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400/10 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-colors"
-        >
-          Use
-        </button>
-      </div>
-    </div>
-  );
-}
