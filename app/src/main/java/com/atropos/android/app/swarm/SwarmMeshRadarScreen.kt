@@ -248,7 +248,7 @@ fun SwarmMeshRadarScreen(
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text("TOTAL BURN", style = AtroposTypography.hudLabel, color = colors.textMuted, fontSize = 9.sp)
                         val totalTokens = agents.sumOf { it.tokensBurned }
-                        Text("${totalTokens / 1000}k tok", style = AtroposTypography.monoTitle, color = colors.accentAmber, fontSize = 14.sp)
+                        Text("${totalTokens / 1000}k tok", style = AtroposTypography.monoToken, color = colors.accentAmber, fontSize = 14.sp)
                     }
                 }
 
@@ -262,7 +262,7 @@ fun SwarmMeshRadarScreen(
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text("AVG CPU", style = AtroposTypography.hudLabel, color = colors.textMuted, fontSize = 9.sp)
                         val avgCpu = agents.map { it.cpuPercent }.average().toInt()
-                        Text("$avgCpu%", style = AtroposTypography.monoTitle, color = colors.accentCyan, fontSize = 14.sp)
+                        Text("$avgCpu%", style = AtroposTypography.monoToken, color = colors.accentCyan, fontSize = 14.sp)
                     }
                 }
 
@@ -275,7 +275,7 @@ fun SwarmMeshRadarScreen(
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text("SWARM HEALTH", style = AtroposTypography.hudLabel, color = colors.textMuted, fontSize = 9.sp)
-                        Text("OPTIMAL", style = AtroposTypography.monoTitle, color = colors.accentEmerald, fontSize = 14.sp)
+                        Text("OPTIMAL", style = AtroposTypography.monoToken, color = colors.accentEmerald, fontSize = 14.sp)
                     }
                 }
             }
@@ -368,13 +368,13 @@ fun SwarmMeshRadarScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .background(colors.accentPurple.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                            .background(colors.accentViolet.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
                                         Text(
                                             text = agent.role.name,
                                             style = AtroposTypography.monoToken,
-                                            color = colors.accentPurple,
+                                            color = colors.accentViolet,
                                             fontSize = 9.sp
                                         )
                                     }

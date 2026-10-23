@@ -317,7 +317,7 @@ fun SettingsMatrixScreen(
                             onClick = { showSwarmRadar = true },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colors.cardSurface,
-                                contentColor = colors.accentPurple
+                                contentColor = colors.accentViolet
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {

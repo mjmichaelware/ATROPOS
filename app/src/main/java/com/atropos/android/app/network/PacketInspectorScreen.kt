@@ -275,7 +275,7 @@ fun PacketInspectorScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "SOCKET & PACKET DISSECTOR",
-                            style = AtroposTypography.monoTitle,
+                            style = AtroposTypography.monoToken,
                             color = colors.accentCyan
                         )
                     }
@@ -284,8 +284,8 @@ fun PacketInspectorScreen(
                     Button(
                         onClick = { isCapturing = !isCapturing },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isCapturing) colors.accentRuby.copy(alpha = 0.2f) else colors.accentGreen.copy(alpha = 0.2f),
-                            contentColor = if (isCapturing) colors.accentRuby else colors.accentGreen
+                            containerColor = if (isCapturing) colors.accentRuby.copy(alpha = 0.2f) else colors.accentEmerald.copy(alpha = 0.2f),
+                            contentColor = if (isCapturing) colors.accentRuby else colors.accentEmerald
                         ),
                         shape = RoundedCornerShape(6.dp),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
@@ -333,7 +333,7 @@ fun PacketInspectorScreen(
                         Text(
                             text = String.format("AVG LATENCY: %.1f ms", avgLatency),
                             style = AtroposTypography.monoToken,
-                            color = colors.accentGreen
+                            color = colors.accentEmerald
                         )
                     }
 
@@ -346,7 +346,7 @@ fun PacketInspectorScreen(
                         Text(
                             text = String.format("JITTER: %.1f ms", jitter),
                             style = AtroposTypography.monoToken,
-                            color = colors.neonAmber
+                            color = colors.accentAmber
                         )
                     }
                 }
@@ -396,8 +396,8 @@ fun PacketInspectorScreen(
             placeholder = {
                 Text(
                     "Filter packet stream by sequence, payload text, or IP...",
-                    style = AtroposTypography.monoBody.copy(fontSize = 11.sp),
-                    color = colors.textDisabled
+                    style = AtroposTypography.monoCode.copy(fontSize = 11.sp),
+                    color = colors.textMuted
                 )
             },
             leadingIcon = {
@@ -428,7 +428,7 @@ fun PacketInspectorScreen(
                 cursorColor = colors.accentCyan
             ),
             singleLine = true,
-            textStyle = AtroposTypography.monoBody.copy(fontSize = 12.sp)
+            textStyle = AtroposTypography.monoCode.copy(fontSize = 12.sp)
         )
 
         // Packet Stream List
@@ -461,7 +461,7 @@ fun PacketInspectorScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 // Direction Icon
-                                val dirColor = if (packet.direction == PacketDirection.OUTBOUND) colors.accentCyan else colors.accentGreen
+                                val dirColor = if (packet.direction == PacketDirection.OUTBOUND) colors.accentCyan else colors.accentEmerald
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
@@ -478,13 +478,13 @@ fun PacketInspectorScreen(
                             Text(
                                 text = packet.protocol.label,
                                 style = AtroposTypography.monoToken,
-                                color = colors.accentPurple
+                                color = colors.accentViolet
                             )
 
                             Text(
                                 text = "${packet.latencyMs} ms",
                                 style = AtroposTypography.monoToken,
-                                color = if (packet.latencyMs > 30) colors.neonAmber else colors.accentGreen
+                                color = if (packet.latencyMs > 30) colors.accentAmber else colors.accentEmerald
                             )
                         }
 
@@ -492,7 +492,7 @@ fun PacketInspectorScreen(
 
                         Text(
                             text = "${packet.sourceEndpoint} -> ${packet.destinationEndpoint}",
-                            style = AtroposTypography.monoBody.copy(fontSize = 11.sp),
+                            style = AtroposTypography.monoCode.copy(fontSize = 11.sp),
                             color = colors.textSecondary
                         )
 
@@ -500,7 +500,7 @@ fun PacketInspectorScreen(
 
                         Text(
                             text = packet.payloadSummary,
-                            style = AtroposTypography.monoBody.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace),
+                            style = AtroposTypography.monoCode.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace),
                             color = colors.textPrimary,
                             maxLines = if (isSelected) 8 else 1
                         )
@@ -537,17 +537,17 @@ fun PacketInspectorScreen(
                                     Text(
                                         text = "RAW HEX PREVIEW:",
                                         style = AtroposTypography.monoToken,
-                                        color = colors.textDisabled
+                                        color = colors.textMuted
                                     )
 
                                     Text(
                                         text = packet.rawBytesHex,
-                                        style = AtroposTypography.monoBody.copy(
+                                        style = AtroposTypography.monoCode.copy(
                                             fontSize = 10.sp,
                                             fontFamily = FontFamily.Monospace,
                                             fontWeight = FontWeight.Bold
                                         ),
-                                        color = colors.neonAmber
+                                        color = colors.accentAmber
                                     )
                                 }
                             }

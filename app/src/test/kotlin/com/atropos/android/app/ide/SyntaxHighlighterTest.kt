@@ -10,19 +10,7 @@ import org.junit.Test
 
 class SyntaxHighlighterTest {
 
-    private val testColors = CyberHudColors(
-        surface = Color(0xFF0F172A),
-        surfaceRaised = Color(0xFF1E293B),
-        hudBorder = Color(0xFF06B6D4),
-        accentCyan = Color(0xFF00E5FF),
-        accentPurple = Color(0xFFB388FF),
-        accentEmerald = Color(0xFF00E676),
-        accentAmber = Color(0xFFFFD600),
-        textPrimary = Color(0xFFFFFFFF),
-        textSecondary = Color(0xFF94A3B8),
-        textMuted = Color(0xFF64748B),
-        terminalBg = Color(0xFF020617)
-    )
+    private val testColors = CyberHudColors()
 
     @Test
     fun testHighlightKotlinCodeProducesValidAnnotatedString() {

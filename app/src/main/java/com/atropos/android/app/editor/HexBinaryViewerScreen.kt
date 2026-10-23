@@ -251,7 +251,7 @@ fun HexBinaryViewerScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "HEX & BYTECODE INSPECTOR",
-                            style = AtroposTypography.monoTitle,
+                            style = AtroposTypography.hudHeader,
                             color = colors.accentCyan
                         )
                     }
@@ -324,13 +324,13 @@ fun HexBinaryViewerScreen(
                                 imageVector = Icons.Default.ViewColumn,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
-                                tint = colors.accentPurple
+                                tint = colors.accentViolet
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "${bytesPerRow} COLS",
                                 style = AtroposTypography.monoToken,
-                                color = colors.accentPurple
+                                color = colors.accentViolet
                             )
                         }
 
@@ -350,13 +350,13 @@ fun HexBinaryViewerScreen(
                                 imageVector = Icons.Default.Flip,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
-                                tint = colors.neonAmber
+                                tint = colors.accentAmber
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = if (endianness == ByteEndianness.BIG_ENDIAN) "BIG-ENDIAN" else "LIL-ENDIAN",
                                 style = AtroposTypography.monoToken,
-                                color = colors.neonAmber
+                                color = colors.accentAmber
                             )
                         }
                     }
@@ -411,8 +411,8 @@ fun HexBinaryViewerScreen(
                     placeholder = {
                         Text(
                             "Search Hex (e.g. 'CA FE') or ASCII ('dex')",
-                            style = AtroposTypography.monoBody.copy(fontSize = 11.sp),
-                            color = colors.textDisabled
+                            style = AtroposTypography.monoCode.copy(fontSize = 11.sp),
+                            color = colors.textMuted
                         )
                     },
                     leadingIcon = {
@@ -443,7 +443,7 @@ fun HexBinaryViewerScreen(
                         cursorColor = colors.accentCyan
                     ),
                     singleLine = true,
-                    textStyle = AtroposTypography.monoBody.copy(fontSize = 12.sp)
+                    textStyle = AtroposTypography.monoCode.copy(fontSize = 12.sp)
                 )
 
                 if (searchMatches.isNotEmpty()) {
@@ -451,7 +451,7 @@ fun HexBinaryViewerScreen(
                     Text(
                         text = "${activeMatchIndex + 1}/${searchMatches.size}",
                         style = AtroposTypography.monoToken,
-                        color = colors.accentGreen
+                        color = colors.accentEmerald
                     )
                     IconButton(
                         onClick = {
@@ -530,7 +530,7 @@ fun HexBinaryViewerScreen(
                         // Offset Column
                         Text(
                             text = String.format("%08X: ", rowStart),
-                            style = AtroposTypography.monoBody.copy(
+                            style = AtroposTypography.monoCode.copy(
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
@@ -554,14 +554,14 @@ fun HexBinaryViewerScreen(
 
                                     val bg = when {
                                         isSelected -> colors.accentCyan.copy(alpha = 0.4f)
-                                        isMatch -> colors.neonAmber.copy(alpha = 0.35f)
+                                        isMatch -> colors.accentAmber.copy(alpha = 0.35f)
                                         else -> Color.Transparent
                                     }
 
                                     val textColor = when {
                                         isSelected -> colors.accentCyan
-                                        isMatch -> colors.neonAmber
-                                        b.toInt() == 0 -> colors.textDisabled
+                                        isMatch -> colors.accentAmber
+                                        b.toInt() == 0 -> colors.textMuted
                                         else -> colors.textPrimary
                                     }
 
@@ -573,7 +573,7 @@ fun HexBinaryViewerScreen(
                                     ) {
                                         Text(
                                             text = HexBinaryUtils.byteToHex(b),
-                                            style = AtroposTypography.monoBody.copy(
+                                            style = AtroposTypography.monoCode.copy(
                                                 fontSize = 11.sp,
                                                 fontFamily = FontFamily.Monospace,
                                                 fontWeight = if (isSelected || isMatch) FontWeight.Bold else FontWeight.Normal
@@ -584,7 +584,7 @@ fun HexBinaryViewerScreen(
                                 } else {
                                     Text(
                                         text = "  ",
-                                        style = AtroposTypography.monoBody.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace),
+                                        style = AtroposTypography.monoCode.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace),
                                         color = Color.Transparent
                                     )
                                 }
@@ -605,13 +605,13 @@ fun HexBinaryViewerScreen(
 
                                 val textColor = when {
                                     isSelected -> colors.accentCyan
-                                    isMatch -> colors.neonAmber
-                                    else -> colors.accentGreen
+                                    isMatch -> colors.accentAmber
+                                    else -> colors.accentEmerald
                                 }
 
                                 Text(
                                     text = HexBinaryUtils.byteToAscii(b).toString(),
-                                    style = AtroposTypography.monoBody.copy(
+                                    style = AtroposTypography.monoCode.copy(
                                         fontSize = 11.sp,
                                         fontFamily = FontFamily.Monospace,
                                         fontWeight = if (isSelected || isMatch) FontWeight.Bold else FontWeight.Normal
@@ -664,12 +664,12 @@ fun HexBinaryViewerScreen(
                                 Text(
                                     text = "HEX: 0x${HexBinaryUtils.byteToHex(currentByte)}",
                                     style = AtroposTypography.monoToken,
-                                    color = colors.neonAmber
+                                    color = colors.accentAmber
                                 )
                                 Text(
                                     text = "DEC: $unsignedVal",
                                     style = AtroposTypography.monoToken,
-                                    color = colors.accentGreen
+                                    color = colors.accentEmerald
                                 )
                                 Text(
                                     text = "CHAR: '${HexBinaryUtils.byteToAscii(currentByte)}'",
@@ -698,12 +698,12 @@ fun HexBinaryViewerScreen(
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            if (isSet) colors.accentGreen.copy(alpha = 0.25f) else colors.panelSurface,
+                                            if (isSet) colors.accentEmerald.copy(alpha = 0.25f) else colors.panelSurface,
                                             RoundedCornerShape(4.dp)
                                         )
                                         .border(
                                             1.dp,
-                                            if (isSet) colors.accentGreen else colors.borderSubtle,
+                                            if (isSet) colors.accentEmerald else colors.borderSubtle,
                                             RoundedCornerShape(4.dp)
                                         )
                                         .clickable {
@@ -718,16 +718,16 @@ fun HexBinaryViewerScreen(
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
                                             text = "b$bit",
-                                            style = AtroposTypography.monoBody.copy(fontSize = 9.sp),
-                                            color = colors.textDisabled
+                                            style = AtroposTypography.monoCode.copy(fontSize = 9.sp),
+                                            color = colors.textMuted
                                         )
                                         Text(
                                             text = if (isSet) "1" else "0",
-                                            style = AtroposTypography.monoTitle.copy(
+                                            style = AtroposTypography.monoToken.copy(
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold
                                             ),
-                                            color = if (isSet) colors.accentGreen else colors.textSecondary
+                                            color = if (isSet) colors.accentEmerald else colors.textSecondary
                                         )
                                     }
                                 }
