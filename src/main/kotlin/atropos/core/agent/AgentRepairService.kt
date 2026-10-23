@@ -45,7 +45,7 @@ class AgentRepairService(
         editMaterializer = AgentEditMaterializer(collector.repoRoot)
     )
     private val attempts = AgentPatchAttemptFactory(patchExtractor, patchValidator, redactionFilter)
-    private val attestation = AgentPatchAttestationGate()
+    private val attestation = AgentPatchAttestationGate(validator = patchValidator)
     private val repairValidator = AgentRepairValidator(patchValidator, attestation, memoryStore)
     private val repairCascade = AgentRepairCascade(router, collector, repairValidator, attempts, agencyGate)
     private val repairFinalization = AgentRepairFinalization(memoryStore)

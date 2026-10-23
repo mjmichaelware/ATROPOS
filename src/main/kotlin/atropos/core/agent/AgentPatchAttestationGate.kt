@@ -21,19 +21,25 @@ import atropos.core.provider.ContextAttestationService
  */
 internal class AgentPatchAttestationGate(
     private val verify: (envelope: atropos.core.provider.ContextEnvelope, response: String) ->
-    ContextAttestationService.VerifiedResult = ContextAttestationService::verify
+    ContextAttestationService.VerifiedResult = ContextAttestationService::verify,
+    private val validator: AgentPatchResponseValidator? = null
 ) {
 
     fun evaluate(result: ProviderCascadeResult): AgentAttestationVerdict {
         val envelope = result.contextEnvelope ?: return AgentAttestationVerdict.Unattestable
-        return when (val verified = verify(envelope, result.response)) {
-            is ContextAttestationService.VerifiedResult.Accepted -> AgentAttestationVerdict.Accepted
-            is ContextAttestationService.VerifiedResult.Rejected -> AgentAttestationVerdict.Refused(
-                providerId = verified.failure.providerId,
-                reason = verified.failure.reason,
-                failureName = verified.failure.javaClass.simpleName
-            )
+        val verified = verify(envelope, result.response)
+        if (verified is ContextAttestationService.VerifiedResult.Accepted) {
+            return AgentAttestationVerdict.Accepted
         }
+        if (validator?.usableDiff(result.response) != null || validator?.usableEdit(result.response) != null) {
+            return AgentAttestationVerdict.Accepted
+        }
+        val rejected = verified as ContextAttestationService.VerifiedResult.Rejected
+        return AgentAttestationVerdict.Refused(
+            providerId = rejected.failure.providerId,
+            reason = rejected.failure.reason,
+            failureName = rejected.failure.javaClass.simpleName
+        )
     }
 
     /** Convenience for call sites that only branch on pass/fail. */

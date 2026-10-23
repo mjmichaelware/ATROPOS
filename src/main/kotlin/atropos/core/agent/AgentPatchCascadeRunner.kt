@@ -59,7 +59,7 @@ class AgentPatchCascadeRunner(
         editMaterializer = AgentEditMaterializer(repoRoot)
     )
     private val attempts = AgentPatchAttemptFactory(patchExtractor, validator, redactionFilter)
-    private val attestation = AgentPatchAttestationGate()
+    private val attestation = AgentPatchAttestationGate(validator = validator)
 
     internal fun run(
         patchOrder: List<String>,
