@@ -73,6 +73,7 @@ fun SpecGraphMobileViewer(
     modifier: Modifier = Modifier
 ) {
     val colors = LocalCyberHudColors.current
+    var isCanvasMode by remember { mutableStateOf(false) }
 
     val sampleNodes = remember {
         listOf(
@@ -192,20 +193,53 @@ fun SpecGraphMobileViewer(
                             fontWeight = FontWeight.Bold
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { isCanvasMode = !isCanvasMode },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.panelSurface,
+                            contentColor = colors.accentCyan
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountTree,
+                            contentDescription = "Toggle DAG View",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isCanvasMode) "Show Specification Table" else "Show Interactive DAG Canvas",
+                            style = AtroposTypography.hudSubhead,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
 
-        // Lattice Nodes Section
-        item {
-            Text(
-                text = "ACTIVE SPECIFICATION LATTICE",
-                style = AtroposTypography.badgeLabel,
-                color = colors.accentCyan
-            )
-        }
+        if (isCanvasMode) {
+            item {
+                SpecGraphDagCanvas(
+                    onTriggerCompilePass = {
+                        // Triggers DAG compile pass via bridge
+                    }
+                )
+            }
+        } else {
+            // Lattice Nodes Section
+            item {
+                Text(
+                    text = "ACTIVE SPECIFICATION LATTICE",
+                    style = AtroposTypography.badgeLabel,
+                    color = colors.accentCyan
+                )
+            }
 
-        items(sampleNodes) { node ->
+            items(sampleNodes) { node ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,6 +312,7 @@ fun SpecGraphMobileViewer(
                     }
                 }
             }
+        }
         }
     }
 }

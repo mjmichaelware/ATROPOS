@@ -20,19 +20,27 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atropos.android.app.governance.CryptographicJournalScreen
 import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
@@ -50,6 +58,46 @@ fun AboutSovereignManifestScreen(
     modifier: Modifier = Modifier
 ) {
     val colors = LocalCyberHudColors.current
+    var showJournal by remember { mutableStateOf(false) }
+
+    if (showJournal) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(colors.voidAbyss)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = colors.accentCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "MERKLE AUDIT JOURNAL",
+                        style = AtroposTypography.monoToken,
+                        color = colors.accentCyan
+                    )
+                }
+                Button(
+                    onClick = { showJournal = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.panelSurface)
+                ) {
+                    Text("View Manifest", style = AtroposTypography.monoToken, color = colors.textPrimary)
+                }
+            }
+            CryptographicJournalScreen(modifier = Modifier.weight(1f))
+        }
+        return
+    }
 
     val rt = Runtime.getRuntime()
     val maxMemoryMb = rt.maxMemory() / (1024 * 1024)
@@ -107,6 +155,28 @@ fun AboutSovereignManifestScreen(
                         color = colors.textSecondary,
                         lineHeight = 20.sp
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = { showJournal = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.accentCyan),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = colors.voidAbyss,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Inspect Merkle Audit Journal",
+                            style = AtroposTypography.monoToken,
+                            color = colors.voidAbyss,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

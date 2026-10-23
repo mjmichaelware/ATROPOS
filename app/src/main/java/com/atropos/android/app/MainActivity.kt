@@ -167,6 +167,33 @@ fun main(args: Array<String>) {
         )
     }
 
+    var workspaceFileTree by remember { mutableStateOf(sampleFileTree) }
+
+    LaunchedEffect(Unit) {
+        scope.launch(Dispatchers.IO) {
+            when (val outcome = repository.fetchWorkspaceTree()) {
+                is com.atropos.android.app.bridge.WorkspaceTreeOutcome.Tree -> {
+                    fun convert(node: com.atropos.android.app.bridge.WorkspaceTreeNode): VirtualFileEntry {
+                        return VirtualFileEntry(
+                            path = node.path,
+                            name = node.name,
+                            isDirectory = node.isDirectory,
+                            children = node.children.map { convert(it) },
+                            sizeBytes = node.sizeBytes
+                        )
+                    }
+                    val converted = outcome.roots.map { convert(it) }
+                    if (converted.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            workspaceFileTree = converted
+                        }
+                    }
+                }
+                else -> {}
+            }
+        }
+    }
+
     val diagnostics = remember { mutableStateListOf<String>() }
 
     val tabs = listOf(
@@ -227,7 +254,7 @@ fun main(args: Array<String>) {
                         currentFile = activeFilePath,
                         fileContent = activeFileContent,
                         originalContent = originalFileContent,
-                        fileTree = sampleFileTree,
+                        fileTree = workspaceFileTree,
                         onOpenFile = { entry ->
                             activeFilePath = entry.path
                             scope.launch(Dispatchers.IO) {
@@ -256,7 +283,26 @@ fun main(args: Array<String>) {
                         },
                         onRefreshTree = {
                             scope.launch(Dispatchers.IO) {
-                                repository.fetchWorkspaceTree()
+                                when (val outcome = repository.fetchWorkspaceTree()) {
+                                    is com.atropos.android.app.bridge.WorkspaceTreeOutcome.Tree -> {
+                                        fun convert(node: com.atropos.android.app.bridge.WorkspaceTreeNode): VirtualFileEntry {
+                                            return VirtualFileEntry(
+                                                path = node.path,
+                                                name = node.name,
+                                                isDirectory = node.isDirectory,
+                                                children = node.children.map { convert(it) },
+                                                sizeBytes = node.sizeBytes
+                                            )
+                                        }
+                                        val converted = outcome.roots.map { convert(it) }
+                                        if (converted.isNotEmpty()) {
+                                            withContext(Dispatchers.Main) {
+                                                workspaceFileTree = converted
+                                            }
+                                        }
+                                    }
+                                    else -> {}
+                                }
                             }
                         },
                         diagnosticsList = diagnostics

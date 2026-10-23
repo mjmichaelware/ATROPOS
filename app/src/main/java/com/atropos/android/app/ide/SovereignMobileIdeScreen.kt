@@ -20,9 +20,11 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Difference
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
@@ -67,62 +69,85 @@ fun SovereignMobileIdeScreen(
 ) {
     val colors = LocalCyberHudColors.current
     var currentTab by remember { mutableStateOf(if (currentFile.isNotBlank()) SovereignIdeTab.EDITOR else SovereignIdeTab.EXPLORER) }
+    var showFileSearch by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.voidAbyss)
     ) {
-        // Sovereign IDE Tab Bar
-        ScrollableTabRow(
-            selectedTabIndex = currentTab.ordinal,
-            containerColor = colors.panelSurface,
-            contentColor = colors.accentCyan,
-            edgePadding = 8.dp,
-            indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[currentTab.ordinal]),
-                    color = colors.accentCyan,
-                    height = 2.dp
-                )
-            },
-            divider = {}
+        // Sovereign IDE Tab Bar with Quick Search Trigger
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(colors.panelSurface),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            SovereignIdeTab.values().forEach { tab ->
-                val selected = currentTab == tab
-                Tab(
-                    selected = selected,
-                    onClick = { currentTab = tab },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = tab.icon,
-                                contentDescription = tab.title,
-                                modifier = Modifier.size(16.dp),
-                                tint = if (selected) colors.accentCyan else colors.textMuted
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = tab.title,
-                                style = AtroposTypography.monoToken,
-                                color = if (selected) colors.textPrimary else colors.textSecondary
-                            )
-                            if (tab == SovereignIdeTab.DIAGNOSTICS && diagnosticsList.isNotEmpty()) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .background(colors.accentRuby.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                                ) {
-                                    Text(
-                                        text = "${diagnosticsList.size}",
-                                        style = AtroposTypography.badgeLabel,
-                                        color = colors.accentRuby
-                                    )
+            ScrollableTabRow(
+                modifier = Modifier.weight(1f),
+                selectedTabIndex = currentTab.ordinal,
+                containerColor = colors.panelSurface,
+                contentColor = colors.accentCyan,
+                edgePadding = 8.dp,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[currentTab.ordinal]),
+                        color = colors.accentCyan,
+                        height = 2.dp
+                    )
+                },
+                divider = {}
+            ) {
+                SovereignIdeTab.values().forEach { tab ->
+                    val selected = currentTab == tab
+                    Tab(
+                        selected = selected,
+                        onClick = { currentTab = tab },
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = tab.icon,
+                                    contentDescription = tab.title,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = if (selected) colors.accentCyan else colors.textMuted
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = tab.title,
+                                    style = AtroposTypography.monoToken,
+                                    color = if (selected) colors.textPrimary else colors.textSecondary
+                                )
+                                if (tab == SovereignIdeTab.DIAGNOSTICS && diagnosticsList.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .background(colors.accentRuby.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "${diagnosticsList.size}",
+                                            style = AtroposTypography.badgeLabel,
+                                            color = colors.accentRuby
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = { showFileSearch = true },
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Quick Search Files",
+                    tint = colors.accentCyan,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -179,6 +204,18 @@ fun SovereignMobileIdeScreen(
                 }
             }
         }
+
+        FileSearchModal(
+            isOpen = showFileSearch,
+            onClose = { showFileSearch = false },
+            allFiles = fileTree,
+            recentFiles = listOf("Main.kt", "build.gradle.kts"),
+            onSelectFile = { entry ->
+                onOpenFile(entry)
+                currentTab = SovereignIdeTab.EDITOR
+                showFileSearch = false
+            }
+        )
     }
 }
 

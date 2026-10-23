@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atropos.android.app.quota.TokenBurnTelemetryScreen
 import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
@@ -83,6 +85,46 @@ fun SettingsMatrixScreen(
     var bridgePortText by remember { mutableStateOf(currentPort.toString()) }
     var pingStatus by remember { mutableStateOf<String?>(null) }
     var isTestingPing by remember { mutableStateOf(false) }
+    var showTokenBurn by remember { mutableStateOf(false) }
+
+    if (showTokenBurn) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(colors.voidAbyss)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Speed,
+                        contentDescription = null,
+                        tint = colors.accentCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "TOKEN BURN & QUOTA TELEMETRY",
+                        style = AtroposTypography.monoToken,
+                        color = colors.accentCyan
+                    )
+                }
+                Button(
+                    onClick = { showTokenBurn = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.panelSurface)
+                ) {
+                    Text("View Settings", style = AtroposTypography.monoToken, color = colors.textPrimary)
+                }
+            }
+            TokenBurnTelemetryScreen(modifier = Modifier.weight(1f))
+        }
+        return
+    }
 
     // Policy States
     var localOnlyMode by remember { mutableStateOf(false) }
@@ -196,6 +238,25 @@ fun SettingsMatrixScreen(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Button(
+                            onClick = { showTokenBurn = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.cardSurface,
+                                contentColor = colors.accentAmber
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Speed,
+                                contentDescription = "Token Quota",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Quota", style = AtroposTypography.badgeLabel)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Button(
                             onClick = {
                                 isTestingPing = true

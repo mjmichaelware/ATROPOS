@@ -70,6 +70,7 @@ import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
 import com.atropos.android.app.ui.MobileMessage
+import com.atropos.android.app.vis.RadarTelemetryView
 
 /**
  * Sovereign Autonomous Workstation & Interactive Terminal Console for Android.
@@ -278,6 +279,8 @@ private fun SixAnswersRadarStrip(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Divider(color = colors.borderDim, thickness = 0.5.dp)
+                    RadarTelemetryView(sixAnswers = answers)
+                    Spacer(modifier = Modifier.height(6.dp))
                     AnswerRow(label = "Objective", value = answers?.objective?.value ?: "Waiting for autonomous goal")
                     AnswerRow(label = "Doing", value = answers?.doing?.value ?: "Idle / Listening on Bridge")
                     AnswerRow(label = "Why", value = answers?.why?.value ?: "Operator supervisory session")
