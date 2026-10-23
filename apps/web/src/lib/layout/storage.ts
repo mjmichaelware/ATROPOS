@@ -5,8 +5,8 @@
  *
  * F-WEB-003 fixes two layouts and one default. "Session-first" is the default:
  * a conversation surface with the stream as the hero. "Workbench" is the
- * switchable VS Code arrangement — left explorer, center tabs, bottom log
- * panel, right AI rail — for operators who want Cursor's spatial memory
+ * switchable IDE arrangement — left explorer, center tabs, bottom log
+ * panel, right AI rail — for operators who want a sovereign spatial memory
  * without forking an editor.
  *
  * This module owns only the choice and its persistence. It knows nothing about

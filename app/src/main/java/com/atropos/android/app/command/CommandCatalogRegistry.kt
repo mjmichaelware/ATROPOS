@@ -157,7 +157,7 @@ object CommandCatalogRegistry {
             name = "/providers",
             category = CommandCategory.PROVIDERS_MODELS,
             synopsis = "List all configured model providers and live health status",
-            proseDescription = "Queries ProviderOnboardingService and StaticProviderDescriptorRegistry to list all supported AI providers (Anthropic, OpenAI, Groq, Gemini, DeepSeek, Bedrock, Ollama), showing credential availability, latency, and operational health.",
+            proseDescription = "Queries ProviderOnboardingService and StaticProviderDescriptorRegistry to list all supported neural providers (Groq, Gemini, DeepSeek, Bedrock, Ollama, Frontier Alpha, Frontier Omega), showing credential availability, latency, and operational health.",
             usage = "/providers",
             safetyTier = SafetyTier.READ_ONLY,
             exampleUsages = listOf("/providers")
@@ -169,11 +169,11 @@ object CommandCatalogRegistry {
             proseDescription = "Sends a zero-token or minimal probe request to verify network connectivity, authentication validity, and rate limit headroom for a target provider.",
             usage = "/providers test <provider-id>",
             arguments = listOf(
-                CommandArgSpec("provider-id", "Target provider (e.g. anthropic, gemini, groq, openai)", required = true)
+                CommandArgSpec("provider-id", "Target provider (e.g. gemini, groq, deepseek, ollama)", required = true)
             ),
             safetyTier = SafetyTier.NETWORK_EGRESS,
             exampleUsages = listOf(
-                "/providers test anthropic",
+                "/providers test gemini",
                 "/providers test groq"
             )
         ),
@@ -199,7 +199,7 @@ object CommandCatalogRegistry {
                 CommandArgSpec("provider-id", "Preferred provider identifier", required = true)
             ),
             safetyTier = SafetyTier.LOCAL_MUTATION,
-            exampleUsages = listOf("/providers prefer anthropic")
+            exampleUsages = listOf("/providers prefer gemini")
         ),
         AtroposCommandSpec(
             name = "/model",
@@ -208,19 +208,19 @@ object CommandCatalogRegistry {
             proseDescription = "Allows overriding the dynamically selected model for the current interactive conversation or worker lane.",
             usage = "/model [model-identifier]",
             arguments = listOf(
-                CommandArgSpec("model-identifier", "Model name (e.g. claude-3-7-sonnet, gemini-2.5-pro, qwen2.5-coder)", required = false)
+                CommandArgSpec("model-identifier", "Model name (e.g. sovereign-v1, frontier-fast, qwen2.5-coder)", required = false)
             ),
             safetyTier = SafetyTier.LOCAL_MUTATION,
             exampleUsages = listOf(
                 "/model",
-                "/model claude-3-7-sonnet"
+                "/model sovereign-v1"
             )
         ),
         AtroposCommandSpec(
             name = "/cascade",
             category = CommandCategory.PROVIDERS_MODELS,
             synopsis = "View and configure multi-tier cost/performance cascade",
-            proseDescription = "Inspects the Free-to-Paid fallback ladder: Free/Local (Groq/Ollama) -> Mid-tier (DeepSeek/Gemini) -> Frontier (Claude/GPT-4o).",
+            proseDescription = "Inspects the Free-to-Paid fallback ladder: Free/Local -> Mid-tier -> Frontier Tier.",
             usage = "/cascade [--mode <auto|local-only|paid-unlocked>]",
             flags = listOf(
                 CommandFlagSpec("--mode", "-m", "Operating cascade policy mode", takesValue = true)

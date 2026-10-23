@@ -1976,7 +1976,7 @@ a:focus-visible {
 }
 
 /* ============================================================
-   Workbench layout theme (F-WEB-003) — VS Code spatial grammar:
+   Workbench layout theme (F-WEB-003) — Sovereign IDE spatial grammar:
    left explorer · center editor/tabs · bottom output · right AI rail.
    Applied via html[data-layout="workbench"] from LayoutThemeProvider.
    Session layout is untouched: these rules only exist under the

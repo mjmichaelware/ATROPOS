@@ -42,7 +42,7 @@ import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
 
-enum class VsCodeTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+enum class SovereignIdeTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     EXPLORER("Explorer", Icons.Default.Folder),
     EDITOR("Editor", Icons.Default.Code),
     DIFF("Diff Viewer", Icons.Default.Difference),
@@ -50,11 +50,11 @@ enum class VsCodeTab(val title: String, val icon: androidx.compose.ui.graphics.v
 }
 
 /**
- * Mobile VS Code Main Screen.
+ * Sovereign Mobile IDE Main Screen.
  * Unites the File Tree, Code Editor, Diff Viewer, and Diagnostics into a cohesive IDE.
  */
 @Composable
-fun MobileVsCodeScreen(
+fun SovereignMobileIdeScreen(
     currentFile: String,
     fileContent: String,
     originalContent: String,
@@ -66,14 +66,14 @@ fun MobileVsCodeScreen(
     modifier: Modifier = Modifier
 ) {
     val colors = LocalCyberHudColors.current
-    var currentTab by remember { mutableStateOf(if (currentFile.isNotBlank()) VsCodeTab.EDITOR else VsCodeTab.EXPLORER) }
+    var currentTab by remember { mutableStateOf(if (currentFile.isNotBlank()) SovereignIdeTab.EDITOR else SovereignIdeTab.EXPLORER) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.voidAbyss)
     ) {
-        // VS Code Tab Bar
+        // Sovereign IDE Tab Bar
         ScrollableTabRow(
             selectedTabIndex = currentTab.ordinal,
             containerColor = colors.panelSurface,
@@ -88,7 +88,7 @@ fun MobileVsCodeScreen(
             },
             divider = {}
         ) {
-            VsCodeTab.values().forEach { tab ->
+            SovereignIdeTab.values().forEach { tab ->
                 val selected = currentTab == tab
                 Tab(
                     selected = selected,
@@ -107,7 +107,7 @@ fun MobileVsCodeScreen(
                                 style = AtroposTypography.monoToken,
                                 color = if (selected) colors.textPrimary else colors.textSecondary
                             )
-                            if (tab == VsCodeTab.DIAGNOSTICS && diagnosticsList.isNotEmpty()) {
+                            if (tab == SovereignIdeTab.DIAGNOSTICS && diagnosticsList.isNotEmpty()) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Box(
                                     modifier = Modifier
@@ -134,18 +134,18 @@ fun MobileVsCodeScreen(
                 .weight(1f)
         ) {
             when (currentTab) {
-                VsCodeTab.EXPLORER -> {
+                SovereignIdeTab.EXPLORER -> {
                     FileTreeExplorer(
                         rootEntries = fileTree,
                         selectedPath = currentFile,
                         onSelectFile = { entry ->
                             onOpenFile(entry)
-                            currentTab = VsCodeTab.EDITOR
+                            currentTab = SovereignIdeTab.EDITOR
                         },
                         onRefresh = onRefreshTree
                     )
                 }
-                VsCodeTab.EDITOR -> {
+                SovereignIdeTab.EDITOR -> {
                     MobileCodeEditor(
                         filePath = currentFile,
                         initialContent = fileContent,
@@ -153,27 +153,27 @@ fun MobileVsCodeScreen(
                             onSaveFile(currentFile, newContent)
                         },
                         onViewDiff = { _, _ ->
-                            currentTab = VsCodeTab.DIFF
+                            currentTab = SovereignIdeTab.DIFF
                         },
                         onRunDiagnostics = {
-                            currentTab = VsCodeTab.DIAGNOSTICS
+                            currentTab = SovereignIdeTab.DIAGNOSTICS
                         }
                     )
                 }
-                VsCodeTab.DIFF -> {
+                SovereignIdeTab.DIFF -> {
                     CodeDiffViewer(
                         filePath = currentFile,
                         originalText = originalContent,
                         modifiedText = fileContent,
-                        onClose = { currentTab = VsCodeTab.EDITOR }
+                        onClose = { currentTab = SovereignIdeTab.EDITOR }
                     )
                 }
-                VsCodeTab.DIAGNOSTICS -> {
+                SovereignIdeTab.DIAGNOSTICS -> {
                     DiagnosticsPanel(
                         diagnostics = diagnosticsList,
                         onClear = {},
                         onOpenFile = {
-                            currentTab = VsCodeTab.EDITOR
+                            currentTab = SovereignIdeTab.EDITOR
                         }
                     )
                 }

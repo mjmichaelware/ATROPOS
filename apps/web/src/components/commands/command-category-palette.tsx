@@ -136,7 +136,7 @@ export const WEB_COMMAND_CATALOG: WebCommandSpec[] = [
     name: '/providers',
     category: 'Providers & Neural Cascades',
     synopsis: 'List all configured model providers and live health status',
-    description: 'Queries ProviderOnboardingService and StaticProviderDescriptorRegistry to list all supported AI providers (Anthropic, OpenAI, Groq, Gemini, DeepSeek, Bedrock, Ollama), showing credential availability, latency, and operational health.',
+    description: 'Queries ProviderOnboardingService and StaticProviderDescriptorRegistry to list all supported neural providers (Groq, Gemini, DeepSeek, Bedrock, Ollama, Frontier Alpha, Frontier Omega), showing credential availability, latency, and operational health.',
     usage: '/providers',
     safetyTier: 'READ_ONLY',
     examples: ['/providers']
@@ -148,7 +148,7 @@ export const WEB_COMMAND_CATALOG: WebCommandSpec[] = [
     description: 'Sends a zero-token or minimal probe request to verify network connectivity, authentication validity, and rate limit headroom for a target provider.',
     usage: '/providers test <provider-id>',
     safetyTier: 'NETWORK_EGRESS',
-    examples: ['/providers test anthropic']
+    examples: ['/providers test gemini']
   },
   {
     name: '/providers enable',
@@ -166,7 +166,7 @@ export const WEB_COMMAND_CATALOG: WebCommandSpec[] = [
     description: 'Reorders the provider cascade hierarchy to route initial hypothesis and synthesis tasks to this provider first.',
     usage: '/providers prefer <provider-id>',
     safetyTier: 'LOCAL_MUTATION',
-    examples: ['/providers prefer anthropic']
+    examples: ['/providers prefer gemini']
   },
   {
     name: '/model',
@@ -175,13 +175,13 @@ export const WEB_COMMAND_CATALOG: WebCommandSpec[] = [
     description: 'Allows overriding the dynamically selected model for the current interactive conversation or worker lane.',
     usage: '/model [model-id]',
     safetyTier: 'LOCAL_MUTATION',
-    examples: ['/model claude-3-7-sonnet']
+    examples: ['/model sovereign-v1']
   },
   {
     name: '/cascade',
     category: 'Providers & Neural Cascades',
     synopsis: 'View and configure multi-tier cost/performance cascade',
-    description: 'Inspects the Free-to-Paid fallback ladder: Free/Local (Groq/Ollama) -> Mid-tier (DeepSeek/Gemini) -> Frontier (Claude/GPT-4o).',
+    description: 'Inspects the Free-to-Paid fallback ladder: Free/Local -> Mid-tier -> Frontier Tier.',
     usage: '/cascade [--mode <auto|local-only>]',
     safetyTier: 'LOCAL_MUTATION',
     examples: ['/cascade']
@@ -355,7 +355,7 @@ export const WEB_COMMAND_CATALOG: WebCommandSpec[] = [
 
 export const CATEGORIES_METADATA = [
   { id: 'Agent & Autonomous Execution', icon: Zap, color: 'text-amber-400', desc: 'Goals, plans, checkpoints, trajectories & worker hierarchy' },
-  { id: 'Providers & Neural Cascades', icon: Cpu, color: 'text-purple-400', desc: 'Anthropic, OpenAI, Groq, Gemini, DeepSeek & cost cascades' },
+  { id: 'Providers & Neural Cascades', icon: Cpu, color: 'text-purple-400', desc: 'Frontier neural models, Groq, Gemini, DeepSeek & cost cascades' },
   { id: 'AST Parsing & Self-Healing', icon: Wrench, color: 'text-cyan-400', desc: 'Symbol trees, compiler diagnostics & automated AST repair' },
   { id: 'Workspace, Territory & Files', icon: FolderCode, color: 'text-emerald-400', desc: 'Directory trees, file buffers, diffs & territory boundaries' },
   { id: 'Git & Version Control', icon: GitBranch, color: 'text-rose-400', desc: 'Working tree status, diffs, safe commits & rebase gates' },

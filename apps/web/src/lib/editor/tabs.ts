@@ -88,7 +88,7 @@ export function markClean(store: TabStore, path: string): TabStore {
 /**
  * Closes a tab and moves focus to its right neighbour, then left on the edge.
  *
- * Closing the active tab must never leave focus dangling: VS Code moves right
+ * Closing the active tab must never leave focus dangling: standard IDE moves right
  * first, and matching that keeps spatial memory intact.
  */
 export function closeTab(store: TabStore, path: string): TabStore {

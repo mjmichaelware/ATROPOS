@@ -56,7 +56,7 @@ import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
 
 /**
- * Mobile VS Code Syntactic Code Editor.
+ * Sovereign Mobile Syntactic Code Editor.
  *
  * Implements:
  * - Real-time line number gutter

@@ -72,7 +72,7 @@ import com.atropos.android.app.theme.cyberGlass
 import com.atropos.android.app.ui.MobileMessage
 
 /**
- * Claude Code Workstation & Interactive Autonomous Console for Android.
+ * Sovereign Autonomous Workstation & Interactive Terminal Console for Android.
  *
  * Implements:
  * - High-density streaming conversational transcript
@@ -83,7 +83,7 @@ import com.atropos.android.app.ui.MobileMessage
  * - Emergency preemption and interrupt coordinator
  */
 @Composable
-fun ClaudeCodeWorkstationScreen(
+fun SovereignConsoleWorkstationScreen(
     messages: List<MobileMessage>,
     isOnline: Boolean,
     onSendMessage: (String) -> Unit,
@@ -93,7 +93,7 @@ fun ClaudeCodeWorkstationScreen(
     thinking: MobileThinking?,
     approvals: List<MobileApproval>,
     onApprove: (String, Boolean) -> Unit,
-    activeProvider: String = "claude-3-7-sonnet",
+    activeProvider: String = "sovereign-neural-1",
     isBusy: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -690,7 +690,7 @@ private fun WorkstationWelcomeCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Welcome to the mobile autonomous software development environment. Type naturally to launch goal trajectories, explore code in the mobile VS Code editor, or use the '/' command palette to control the engine.",
+                text = "Welcome to the mobile autonomous software development environment. Type naturally to launch goal trajectories, explore code in the mobile IDE, or use the '/' command palette to control the engine.",
                 style = AtroposTypography.hudBody,
                 color = colors.textSecondary,
                 lineHeight = 20.sp

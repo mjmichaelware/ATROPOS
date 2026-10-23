@@ -48,8 +48,8 @@ import com.atropos.android.app.bridge.CommandOutcome
 import com.atropos.android.app.bridge.DirectInProcessEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.command.CommandPaletteOverlay
-import com.atropos.android.app.console.ClaudeCodeWorkstationScreen
-import com.atropos.android.app.ide.MobileVsCodeScreen
+import com.atropos.android.app.console.SovereignConsoleWorkstationScreen
+import com.atropos.android.app.ide.SovereignMobileIdeScreen
 import com.atropos.android.app.ide.VirtualFileEntry
 import com.atropos.android.app.settings.SettingsMatrixScreen
 import com.atropos.android.app.specgraph.SpecGraphMobileViewer
@@ -68,8 +68,8 @@ import kotlinx.coroutines.withContext
  * ATROPOS Sovereign Android Application.
  *
  * Implements a dual-personality mobile IDE and autonomous console:
- * - Claude Code conversational workstation with real-time reasoning drawer
- * - Mobile VS Code IDE with file tree, syntactic editor, and unified diff viewer
+ * - Sovereign conversational workstation with real-time reasoning drawer
+ * - Sovereign Mobile IDE with file tree, syntactic editor, and unified diff viewer
  * - Non-overload Slash (/) Command Category Launcher
  * - SpecGraph Foundry lattice visualizer
  * - Multi-column Settings Matrix
@@ -106,7 +106,7 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
     var currentTab by remember { mutableStateOf(0) }
     var isCommandPaletteOpen by remember { mutableStateOf(false) }
 
-    // VS Code Editor State
+    // Sovereign Mobile IDE Editor State
     var activeFilePath by remember { mutableStateOf("src/main/kotlin/atropos/Main.kt") }
     var activeFileContent by remember {
         mutableStateOf(
@@ -171,7 +171,7 @@ fun main(args: Array<String>) {
 
     val tabs = listOf(
         TabItem(0, "Console", Icons.Default.Terminal),
-        TabItem(1, "VS Code", Icons.Default.Code),
+        TabItem(1, "IDE", Icons.Default.Code),
         TabItem(2, "Commands", Icons.Default.Widgets),
         TabItem(3, "SpecGraph", Icons.Default.AccountTree),
         TabItem(4, "Settings", Icons.Default.Settings),
@@ -190,7 +190,7 @@ fun main(args: Array<String>) {
                     .weight(1f)
             ) {
                 when (currentTab) {
-                    0 -> ClaudeCodeWorkstationScreen(
+                    0 -> SovereignConsoleWorkstationScreen(
                         messages = state.messages,
                         isOnline = state.isOnline,
                         onSendMessage = { text ->
@@ -220,10 +220,10 @@ fun main(args: Array<String>) {
                                 mvi.dispatch(MobileAppIntent.ApprovalRemoved(id, localNotice("Decision recorded")))
                             }
                         },
-                        activeProvider = state.activeProvider ?: "claude-3-7-sonnet"
+                        activeProvider = state.activeProvider ?: "sovereign-neural-1"
                     )
 
-                    1 -> MobileVsCodeScreen(
+                    1 -> SovereignMobileIdeScreen(
                         currentFile = activeFilePath,
                         fileContent = activeFileContent,
                         originalContent = originalFileContent,

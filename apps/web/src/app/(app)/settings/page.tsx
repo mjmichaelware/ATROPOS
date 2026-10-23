@@ -53,12 +53,12 @@ export default function SettingsMatrixPage() {
 
   // Column 2: Provider Matrix
   const [providers, setProviders] = useState<ProviderConfig[]>([
-    { id: 'anthropic', name: 'Anthropic Claude', envKey: 'ANTHROPIC_API_KEY', key: '', enabled: true, tier: 'frontier', status: 'unknown' },
-    { id: 'openai', name: 'OpenAI GPT-4o', envKey: 'OPENAI_API_KEY', key: '', enabled: true, tier: 'frontier', status: 'unknown' },
-    { id: 'gemini', name: 'Google Gemini Pro', envKey: 'GEMINI_API_KEY', key: '', enabled: true, tier: 'standard', status: 'unknown' },
-    { id: 'groq', name: 'Groq LPU (Fast Free)', envKey: 'GROQ_API_KEY', key: '', enabled: true, tier: 'free', status: 'unknown' },
-    { id: 'deepseek', name: 'DeepSeek Direct', envKey: 'DEEPSEEK_API_KEY', key: '', enabled: true, tier: 'standard', status: 'unknown' },
-    { id: 'ollama', name: 'Ollama Local (Offline)', envKey: 'OLLAMA_HOST', key: 'http://127.0.0.1:11434', enabled: true, tier: 'free', status: 'unknown' }
+    { id: 'anthropic', name: 'Frontier Neural Engine Alpha', envKey: 'ANTHROPIC_API_KEY', key: '', enabled: true, tier: 'frontier', status: 'unknown' },
+    { id: 'openai', name: 'Frontier Neural Engine Omega', envKey: 'OPENAI_API_KEY', key: '', enabled: true, tier: 'frontier', status: 'unknown' },
+    { id: 'gemini', name: 'Frontier Multimodal Engine', envKey: 'GEMINI_API_KEY', key: '', enabled: true, tier: 'standard', status: 'unknown' },
+    { id: 'groq', name: 'High-Throughput Fast LPU', envKey: 'GROQ_API_KEY', key: '', enabled: true, tier: 'free', status: 'unknown' },
+    { id: 'deepseek', name: 'Autonomous Reasoning Engine', envKey: 'DEEPSEEK_API_KEY', key: '', enabled: true, tier: 'standard', status: 'unknown' },
+    { id: 'ollama', name: 'Sovereign Local Air-Gapped Daemon', envKey: 'OLLAMA_HOST', key: 'http://127.0.0.1:11434', enabled: true, tier: 'free', status: 'unknown' }
   ]);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 

@@ -157,7 +157,7 @@ export const SessionOpenFrame: FC<SessionFrameProps> = ({ children }) => {
  * - Bottom: streaming logs (collapsible)
  * - Right: AI rail (checkpoint, approvals, evidence)
  *
- * Depends on: F-WEB-003 (VS Code four-pane layout)
+ * Depends on: F-WEB-003 (Sovereign four-pane layout)
  */
 export interface WorkbenchFrameProps {
   children: React.ReactNode;

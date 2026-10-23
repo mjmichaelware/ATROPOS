@@ -60,7 +60,7 @@ data class VirtualFileEntry(
 )
 
 /**
- * Mobile VS Code Interactive File Tree Explorer.
+ * Sovereign Mobile Interactive File Tree Explorer.
  * Supports directory folding, search filtering, file metadata badges, and click-to-edit.
  */
 @Composable

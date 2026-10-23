@@ -3,10 +3,10 @@
 /**
  * The four-pane workbench arrangement (F-WEB-003).
  *
- * VS Code's parts are named for what they do, and this shell keeps the same
+ * The IDE workbench parts are named for what they do, and this shell keeps the same
  * spatial grammar so an operator's muscle memory transfers: left explorer,
  * center editor tabs, bottom log/output panel, right auxiliary rail (here the
- * AI/evidence rail instead of Copilot chat). The agent stays outside the
+ * AI/evidence rail instead of generic assistant chat). The agent stays outside the
  * editor process — the whole point of HOE-C02 — so panes are presentation over
  * bridge endpoints and nothing more.
  *

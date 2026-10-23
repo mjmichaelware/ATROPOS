@@ -12,7 +12,7 @@
  *
  * Center-pane rule (F-WEB-005): an open file tab replaces the routed page in
  * the center until every tab closes, mirroring how an editor takes over the
- * center of VS Code. With no tabs open the routed page is the center content,
+ * center of the sovereign IDE. With no tabs open the routed page is the center content,
  * so switching layouts never blanks the surface.
  */
 'use client';

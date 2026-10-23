@@ -26,7 +26,7 @@ import com.atropos.android.app.bridge.AndroidEngineBridge
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * F-AND-012: File tree sheet (VS Code IA lite).
+ * F-AND-012: File tree sheet (Sovereign IDE IA lite).
  *
  * Mobile file browse without four-pane. Bottom sheet tree; open file preview.
  * Uses project files API; preview is read-only v1.

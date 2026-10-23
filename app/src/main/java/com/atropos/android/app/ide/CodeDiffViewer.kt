@@ -51,7 +51,7 @@ data class DiffLine(
 )
 
 /**
- * Mobile VS Code Syntactic Unified Diff Viewer.
+ * Sovereign Mobile Syntactic Unified Diff Viewer.
  * Visualizes line additions (+), deletions (-), and chunk headers.
  */
 @Composable

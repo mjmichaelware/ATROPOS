@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class MobileVsCodeTest {
+class SovereignMobileIdeTest {
 
     @Test
     fun virtual_file_entry_hierarchy_resolves_cleanly() {

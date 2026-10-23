@@ -30,7 +30,7 @@ enum class CommandCategory(
     PROVIDERS_MODELS(
         "providers",
         "Providers & Neural Cascades",
-        "Configure Anthropic, OpenAI, Groq, Gemini, DeepSeek, Bedrock, and free-tier cascades",
+        "Configure frontier neural models, Groq, Gemini, DeepSeek, Bedrock, and free-tier cascades",
         "🧠"
     ),
     CODE_AST_HEAL(

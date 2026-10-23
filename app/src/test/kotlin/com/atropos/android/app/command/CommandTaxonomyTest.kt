@@ -38,7 +38,7 @@ class CommandTaxonomyTest {
         assertTrue(results.isNotEmpty())
         assertTrue(results.any { it.name == "/heal" })
 
-        val providerResults = CommandCatalogRegistry.search("anthropic")
+        val providerResults = CommandCatalogRegistry.search("gemini")
         assertTrue(providerResults.isNotEmpty())
 
         val emptyResults = CommandCatalogRegistry.search("xyznonexistent999")

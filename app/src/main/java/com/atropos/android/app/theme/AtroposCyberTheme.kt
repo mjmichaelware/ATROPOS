@@ -31,8 +31,8 @@ import androidx.compose.ui.unit.dp
 /**
  * Ultra-HIG Cyber-HUD design tokens and amorphic glassmorphism system for ATROPOS Android.
  *
- * Designed to provide the density and ergonomic precision of mobile VS Code,
- * with the ambient intelligence and aesthetics of Claude Code.
+ * Designed to provide the density and ergonomic precision of an advanced IDE,
+ * with the ambient intelligence and aesthetics of a sovereign autonomous console.
  */
 @Immutable
 data class CyberHudColors(
