@@ -3,6 +3,7 @@
 
 import SpecGraphPage from './specgraph/page';
 import { EvidenceLedgerBrowser } from '@/components/evidence/evidence-ledger-browser';
+import { CryptographicEvidenceExplorer } from '@/components/evidence/cryptographic-evidence-explorer';
 
 export default function DeveloperPage() {
   return (
@@ -12,9 +13,21 @@ export default function DeveloperPage() {
           Developer Tools
         </h1>
         <p className="text-sg-neutral-600 dark:text-sg-neutral-400">
-          Runtime internals: SpecGraph subsystem and evidence ledger.
+          Runtime internals: SpecGraph subsystem, evidence ledger, and cryptographic proofs.
         </p>
       </header>
+
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Cryptographic State & Merkle Proofs
+          </h2>
+          <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400 mt-1">
+            Verifiable attestation trees validating integrity of AST mutations and execution receipts.
+          </p>
+        </div>
+        <CryptographicEvidenceExplorer />
+      </section>
 
       <section className="space-y-4">
         <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">

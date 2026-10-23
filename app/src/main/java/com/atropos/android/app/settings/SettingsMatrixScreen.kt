@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -57,6 +59,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atropos.android.app.quota.TokenBurnTelemetryScreen
+import com.atropos.android.app.swarm.SwarmMeshRadarScreen
+import com.atropos.android.app.editor.HexBinaryViewerScreen
 import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
@@ -86,6 +90,61 @@ fun SettingsMatrixScreen(
     var pingStatus by remember { mutableStateOf<String?>(null) }
     var isTestingPing by remember { mutableStateOf(false) }
     var showTokenBurn by remember { mutableStateOf(false) }
+    var showSwarmRadar by remember { mutableStateOf(false) }
+    var showHexViewer by remember { mutableStateOf(false) }
+
+    if (showSwarmRadar) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(colors.voidAbyss)
+        ) {
+            SwarmMeshRadarScreen(
+                onNavigateBack = { showSwarmRadar = false },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        return
+    }
+
+    if (showHexViewer) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(colors.voidAbyss)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Memory,
+                        contentDescription = null,
+                        tint = colors.accentCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "BYTECODE & MEMORY INSPECTOR",
+                        style = AtroposTypography.monoToken,
+                        color = colors.accentCyan
+                    )
+                }
+                Button(
+                    onClick = { showHexViewer = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.panelSurface)
+                ) {
+                    Text("View Settings", style = AtroposTypography.monoToken, color = colors.textPrimary)
+                }
+            }
+            HexBinaryViewerScreen(modifier = Modifier.weight(1f))
+        }
+        return
+    }
 
     if (showTokenBurn) {
         Column(
@@ -238,6 +297,44 @@ fun SettingsMatrixScreen(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Button(
+                            onClick = { showSwarmRadar = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.cardSurface,
+                                contentColor = colors.accentPurple
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Hub,
+                                contentDescription = "Swarm Radar",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Swarm", style = AtroposTypography.badgeLabel)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            onClick = { showHexViewer = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.cardSurface,
+                                contentColor = colors.accentCyan
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Memory,
+                                contentDescription = "Bytecode Hex Viewer",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Hex", style = AtroposTypography.badgeLabel)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Button(
                             onClick = { showTokenBurn = true },
                             colors = ButtonDefaults.buttonColors(

@@ -23,6 +23,8 @@ export interface FileTreeItem {
   children?: FileTreeItem[];
 }
 
+export type FileNode = FileTreeItem;
+
 export interface WorkspaceFileTreeProps {
   rootItems: FileTreeItem[];
   selectedPath?: string;

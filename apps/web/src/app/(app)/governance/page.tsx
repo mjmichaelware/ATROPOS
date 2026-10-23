@@ -2,6 +2,7 @@
 import { GovernancePanel } from '@/components/governance/governance-panel';
 import { AmendmentChain } from '@/components/governance/amendment-chain';
 import { OpsDashboard } from '@/components/governance/ops-dashboard';
+import { GovernancePolicyEditor } from '@/components/governance/governance-policy-editor';
 
 export default function GovernancePage() {
   return (
@@ -15,6 +16,7 @@ export default function GovernancePage() {
           result was better.
         </p>
       </header>
+      <GovernancePolicyEditor />
       <GovernancePanel />
       <AmendmentChain />
       <OpsDashboard />
