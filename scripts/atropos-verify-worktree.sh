@@ -513,7 +513,11 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.queue.QueueInterruptCoordinatorTest' \
     --tests 'atropos.core.release.FinalConvergenceReleaseGateTest' \
     --tests 'atropos.core.repair.AutonomousAstHealingLoopTest' \
-    --tests 'atropos.core.telemetry.ZeroInventionMetricsCollectorTest'
+    --tests 'atropos.core.telemetry.ZeroInventionMetricsCollectorTest' \
+    --tests 'atropos.core.telemetry.AntiGamingFraudHarvesterTest' \
+    --tests 'atropos.core.telemetry.NeuralPathwayRewardEngineTest' \
+    --tests 'atropos.core.telemetry.TelemetryRingBufferTest' \
+    --tests 'atropos.core.telemetry.TelemetrySanitizationGateTest'
 fi
 
 echo "=== DIFF CHECK ==="
