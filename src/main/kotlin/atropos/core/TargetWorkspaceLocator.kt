@@ -22,7 +22,7 @@ object TargetWorkspaceLocator {
         if (targetHint != null) {
             val candidate = targetHint.toAbsolutePath().normalize()
             if (candidate.startsWith(engineRoot)) {
-                throw IllegalArgumentException(
+                throw EngineDomainViolationException(
                     "Domain decoupling violation: target workspace cannot be inside engine repository: $candidate"
                 )
             }

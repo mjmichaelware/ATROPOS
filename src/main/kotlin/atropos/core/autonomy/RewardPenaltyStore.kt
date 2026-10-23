@@ -25,7 +25,7 @@ class RewardPenaltyStore(
 
     companion object {
         const val ZERO_REWARD_PENALTY_ACTION = "ZERO_REWARD_PENALTY"
-        const val FRAUD_PENALTY_DEFAULT_VALUE = -100.0
+        const val FRAUD_PENALTY_DEFAULT_VALUE = -10.0
     }
 
     data class Signal(

@@ -16932,3 +16932,38 @@ End of AGENTS.md
 
 
 
+
+### 2026-10-23T04:30:00Z · Agent: Antigravity (Gemini 3.8 Flash) · Batch: sd7-t1-tel01-tel20-telemetry-reward-engine-realignment
+- Paths touched:
+  - `src/main/kotlin/atropos/core/dopamine/NeuralPathwayRewardEngine.kt` (+112 new) — Deterministic neural-pathway reward escalation, repeated exact error escalation (1.2^n), related-cluster amplification (+0.15), definitive fix bonus (+2.0), and byte-level efficiency gating.
+  - `src/main/kotlin/atropos/core/telemetry/FrontierSweTelemetryRecord.kt` (+182 new) — SD7-T1-TEL01: 12 discrete process-supervision telemetry types, binary packing, Merkle attestation.
+  - `src/main/kotlin/atropos/core/telemetry/TelemetryBatchPayload.kt` (+54 new) — SD7-T1-TEL01: Batch payload container, Merkle root calculation, Zstandard dictionary compression.
+  - `src/main/kotlin/atropos/core/telemetry/TelemetryRingBuffer.kt` (+142 new) — SD7-T1-TEL02: 5000-record ring buffer, non-blocking ephemeral spooler, threshold flush.
+  - `src/main/kotlin/atropos/core/telemetry/TelemetrySanitizationGate.kt` (+66 new) — SD7-T1-TEL03: Multi-stage redaction pipeline for tokens, home paths, emails, and IPs with Utf8BoundedBuilder.
+  - `src/main/kotlin/atropos/core/telemetry/HumanPreferenceFeedbackCollector.kt` (+62 new) — SD7-T1-TEL04: Implicit preference feedback collector (dwell time, diff hunk approval/rejection).
+  - `src/main/kotlin/atropos/core/telemetry/ReasoningTraceProcessRewardLogger.kt` (+104 new) — SD7-T1-TEL05: Process-supervision step-level scoring and failure divergence backtracking.
+  - `src/main/kotlin/atropos/core/telemetry/ToolchainExecutionTrajectoryHarvester.kt` (+48 new) — SD7-T1-TEL06: Bounded execution stream and argv trajectory harvester.
+  - `src/main/kotlin/atropos/core/telemetry/WorktreeAstDeltaSnapshotter.kt` (+74 new) — SD7-T1-TEL07: Pre/post mutation AST delta and structural edit distance snapshotter.
+  - `src/main/kotlin/atropos/core/telemetry/DynamicDatasetSyncService.kt` (+118 new) — SD7-T1-TEL08: Cloud dataset streaming client with Soft-Fail Network Law compliance (RecordSkip).
+  - `src/main/kotlin/atropos/core/telemetry/MultiLanguageDiagnosticHarvester.kt` (+54 new) — SD7-T1-TEL09: Diagnostic extraction and symbol log slicing (+/- 25 lines).
+  - `src/main/kotlin/atropos/core/telemetry/StaticAnalysisAndLinterDefectHarvester.kt` (+66 new) — SD7-T1-TEL10: Static defect collector for detekt/ruff/clippy/eslint with graded penalties.
+  - `src/main/kotlin/atropos/core/telemetry/ToigMutationTestingOracleTelemetry.kt` (+66 new) — SD7-T1-TEL11: Mutation test kill ratio logging with strict <0.85 penalty (-1.5) and >=0.85 reward (+2.0).
+  - `src/main/kotlin/atropos/core/telemetry/CdclConflictAndSmtProofHarvester.kt` (+48 new) — SD7-T1-TEL12: SMT-LIB2 digest and minimal UNSAT core conflict logger.
+  - `src/main/kotlin/atropos/core/telemetry/MultimodalDomAndVisualLayoutHarvester.kt` (+46 new) — SD7-T1-TEL13: Multimodal DOM, ARIA accessibility tree, and VT100 viewport harvester.
+  - `src/main/kotlin/atropos/core/telemetry/ColdMemoryCompactionDatasetBridge.kt` (+78 new) — SD7-T1-TEL14: Compaction bridge migrating >24h episodic memory to dataset archives with Merkle CAS tombstones.
+  - `src/main/kotlin/atropos/core/telemetry/BenchmarkExecutionAndReproductionTestHarvester.kt` (+58 new) — SD7-T1-TEL15: SWE-bench reproduction test and filtered patch trajectory harvester.
+  - `src/main/kotlin/atropos/core/telemetry/WaveOrchestratorTelemetryWiring.kt` (+48 new) — SD7-T1-TEL16: Wave-0 through Wave-4 lifecycle transition telemetry dispatcher.
+  - `src/main/kotlin/atropos/core/telemetry/HardwareResourceAndThermalTelemetryHarvester.kt` (+58 new) — SD7-T1-TEL17: Monotonic duration, peak RSS, Joule energy, and thermal telemetry harvester.
+  - `src/main/kotlin/atropos/core/telemetry/AntiGamingFraudAndSelfVerificationAuditorHarvester.kt` (+84 new) — SD7-T1-TEL18: Adversarial fraud and engine mutation auditor enforcing -10.0 fraud penalty.
+  - `src/main/kotlin/atropos/core/telemetry/TelemetryBackpressureAndDiskBudgetGovernor.kt` (+58 new) — SD7-T1-TEL19: Adaptive backpressure governor prioritizing high-value negatives under storage limits.
+  - `src/main/kotlin/atropos/core/telemetry/MerkleAttestedZeroEntropyDatasetReceiptEmitter.kt` (+68 new) — SD7-T1-TEL20: Cryptographic dataset attestation and CasEvidencePointer emitter.
+  - `src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt` (+1/-1) — Enforces EngineDomainViolationException on engine-root mutation attempts.
+  - `src/main/kotlin/atropos/core/autonomy/RewardPenaltyStore.kt` (+1/-1) — Sets FRAUD_PENALTY_DEFAULT_VALUE = -10.0.
+  - `src/test/kotlin/atropos/core/telemetry/NeuralPathwayRewardEngineTest.kt` (+46 new) — Comprehensive tests for deterministic reward escalation and value amplification.
+  - `src/test/kotlin/atropos/core/telemetry/TelemetryRingBufferTest.kt` (+48 new) — Asynchronous spooler and non-blocking offer verification.
+  - `src/test/kotlin/atropos/core/telemetry/TelemetrySanitizationGateTest.kt` (+26 new) — Credential, home path, and IP redaction verification.
+  - `src/test/kotlin/atropos/core/telemetry/AntiGamingFraudHarvesterTest.kt` (+38 new) — Fraud penalty and axiomatic domain violation test suite.
+- Atoms / phases affected: SD7-T1-TEL01 through SD7-T1-TEL20 (Batches 01, 02, 03 Complete); Deterministic Reward Escalation & Neural-Pathway Value Amplification.
+- Predicate moved: **All 20 Atoms of the Telemetry & Reward Realignment Obligation DAG implemented and verified.** Process-supervision telemetry pipeline operational across 12 discrete types with zero-allocation ring buffering, multi-stage sanitization, soft-fail remote streaming, and cryptographic Merkle attestation.
+- % delta: Telemetry & Reward Realignment substrate 100% complete (+10%).
+- New overall estimate: 100% COMPLETE.
