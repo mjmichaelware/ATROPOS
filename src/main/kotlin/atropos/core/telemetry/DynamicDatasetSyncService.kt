@@ -16,12 +16,12 @@ import java.util.concurrent.TimeUnit
  * SD7-T1-TEL08: Dynamic Dataset Streaming Client.
  *
  * Streams compressed Parquet and JSONL telemetry batches into remote cloud datasets
- * (e.g. Hugging Face datasets) asynchronously.
+ * asynchronously and without schema rigidity.
  * Enforces SOFT_FAIL_NETWORK_LAW: network disconnects, HTTP 429, or authentication
  * timeouts record RecordSkip(reason) and continue without stalling local execution.
  */
 class DynamicDatasetSyncService(
-    private val datasetRepo: String = System.getenv("ATROPOS_HF_DATASET_REPO") ?: "ScaleAI/SWE-bench_Pro",
+    private val datasetRepo: String = System.getenv("ATROPOS_DATASET_REPO") ?: System.getenv("ATROPOS_HF_DATASET_REPO") ?: "atropos/telemetry-corpus",
     private val hfToken: String? = System.getenv("HF_TOKEN") ?: System.getenv("HUGGINGFACE_HUB_TOKEN"),
     private val client: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 ) {
@@ -55,7 +55,7 @@ class DynamicDatasetSyncService(
         }
 
         val jsonLines = payload.toJsonLines()
-        val endpoint = "https://huggingface.co/api/datasets/$datasetRepo"
+        val endpoint = System.getenv("ATROPOS_DATASET_ENDPOINT") ?: "https://huggingface.co/api/datasets/$datasetRepo"
 
         var backoffMs = 1000L
         val maxBackoffMs = 30000L

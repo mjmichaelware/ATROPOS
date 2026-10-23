@@ -9,12 +9,24 @@ import java.util.UUID
  * ATOM-ISO-001: Isolated Target Workspace Locator.
  *
  * Enforces strict mathematical domain decoupling:
- * Cap(P_theta) ∩ Cap(A_write) = ∅.
+ * Cap(P_theta) ∩ Cap(A_write) = ∅ ; Cap(Engine_Write) ∩ Cap(Target_Write) = ∅.
  * Guarantees that target workspaces reside exclusively in isolated external
  * directories and can never resolve to or mutate the engine installation root.
  */
 object TargetWorkspaceLocator {
     private const val WORKSPACE_PREFIX = "atropos-target-workspace-"
+
+    /**
+     * Mathematical validation of capability domain severance.
+     */
+    fun assertAxiomaticIsolation(engineCapabilities: Set<String>, targetCapabilities: Set<String>) {
+        val intersection = engineCapabilities.intersect(targetCapabilities)
+        if (intersection.isNotEmpty()) {
+            throw EngineDomainViolationException(
+                "Axiomatic Isolation violation: Cap(Engine) ∩ Cap(Target) = ∅ required, but found intersecting capabilities: $intersection"
+            )
+        }
+    }
 
     fun resolveTargetWorkspace(targetHint: Path? = null): Path {
         val engineRoot = AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()

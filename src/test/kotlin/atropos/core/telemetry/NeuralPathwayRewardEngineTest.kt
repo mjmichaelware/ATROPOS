@@ -5,6 +5,7 @@ import atropos.core.dopamine.NeuralPathwayRewardEngine
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class NeuralPathwayRewardEngineTest {
@@ -49,5 +50,28 @@ class NeuralPathwayRewardEngineTest {
 
         assertTrue(abs(related.finalScore) > abs(standalone.finalScore))
         assertEquals(-1.15, related.finalScore, 1e-6)
+    }
+
+    @Test
+    fun `test trajectory tracker detects relational clusters and definitive fix bonus`() {
+        val tracker = NeuralPathwayRewardEngine.TrajectoryTracker()
+        val errorA = NeuralPathwayRewardEngine.DiagnosticFingerprint("src/A.kt", "funA", "E001", "ast-1")
+        val errorB = NeuralPathwayRewardEngine.DiagnosticFingerprint("src/B.kt", "funB", "E002", "ast-2")
+
+        tracker.linkRelatedErrors(errorA, errorB)
+        assertTrue(tracker.areInSameCluster(errorA, errorB))
+
+        // Record occurrence and advance steps
+        tracker.advanceStep()
+        tracker.recordOccurrence(errorA, -1.0)
+        tracker.advanceStep()
+        tracker.advanceStep()
+        tracker.advanceStep()
+        tracker.advanceStep()
+
+        // 4 steps elapsed >= STABILITY_HORIZON_STEPS -> definitive fix bonus awarded
+        val bonus = tracker.evaluateDefinitiveFix(errorA)
+        assertNotNull(bonus)
+        assertTrue(bonus >= 2.0)
     }
 }
