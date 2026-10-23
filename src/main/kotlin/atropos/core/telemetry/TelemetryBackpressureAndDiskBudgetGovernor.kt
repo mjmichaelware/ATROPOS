@@ -2,7 +2,7 @@
 package atropos.core.telemetry
 
 import atropos.core.dopamine.NeuralPathwayRewardEngine
-import atropos.core.storage.FreeSpaceGate
+import atropos.core.storage.StorageSupervisor
 import java.io.File
 import java.nio.file.Path
 
@@ -16,7 +16,7 @@ import java.nio.file.Path
  */
 class TelemetryBackpressureAndDiskBudgetGovernor(
     private val spoolDir: Path,
-    private val freeSpaceGate: FreeSpaceGate = FreeSpaceGate(),
+    private val storageSupervisor: StorageSupervisor = StorageSupervisor(),
     private val maxSpoolBytesMobile: Long = 100 * 1024 * 1024L, // 100 MB
     private val maxSpoolBytesDesktop: Long = 1024 * 1024 * 1024L // 1 GB
 ) {
@@ -32,7 +32,7 @@ class TelemetryBackpressureAndDiskBudgetGovernor(
         val currentSpoolBytes = measureSpoolSize()
 
         // 1. Check physical disk watermark
-        if (!freeSpaceGate.hasFreeSpace(spoolDir, 10 * 1024 * 1024L)) {
+        if (!storageSupervisor.canAdmitPreflight(10 * 1024 * 1024L)) {
             // Under severe disk pressure, only accept Merkle CAS receipts
             return record.kind == TelemetryKind.CAS_MERKLE_RECEIPT
         }

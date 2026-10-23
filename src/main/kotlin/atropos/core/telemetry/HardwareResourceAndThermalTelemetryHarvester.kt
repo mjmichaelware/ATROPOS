@@ -29,7 +29,8 @@ class HardwareResourceAndThermalTelemetryHarvester(
         val estimatedJoules = seconds * 15.0
 
         val arch = System.getProperty("os.arch") ?: "unknown"
-        val thermalStatus = if (platformWire.isAvailable()) "nominal" else "unknown"
+        val thermalPacing = platformWire.evaluateThermalPacing()
+        val thermalStatus = if (thermalPacing.throttled) "throttled" else "nominal"
 
         val payload = ResourceGasExpenditureRecord(
             cpuMonotonicMs = durationMs,

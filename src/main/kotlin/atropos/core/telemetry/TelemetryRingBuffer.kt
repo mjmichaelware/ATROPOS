@@ -2,7 +2,7 @@
 package atropos.core.telemetry
 
 import atropos.core.AtroposRepoRootLocator
-import atropos.core.storage.FreeSpaceGate
+import atropos.core.storage.StorageSupervisor
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -23,7 +23,7 @@ class TelemetryRingBuffer(
     private val flushRecordThreshold: Int = 500,
     private val flushByteThreshold: Long = 16 * 1024 * 1024L, // 16 MB
     private val spoolDir: Path = AtroposRepoRootLocator.resolve().resolve(".atropos/telemetry/spool"),
-    private val freeSpaceGate: FreeSpaceGate = FreeSpaceGate()
+    private val storageSupervisor: StorageSupervisor = StorageSupervisor()
 ) {
     private val buffer = ArrayBlockingQueue<FrontierSweTelemetryRecord>(capacity)
     private val accumulatedBytes = AtomicLong(0L)
@@ -71,7 +71,7 @@ class TelemetryRingBuffer(
         if (buffer.isEmpty()) return
 
         // Verify free space before writing to disk
-        if (!freeSpaceGate.hasFreeSpace(spoolDir, 1024 * 1024)) {
+        if (!storageSupervisor.canAdmitPreflight(1024 * 1024)) {
             // Low disk: drop low-priority logs to preserve engine stability
             return
         }

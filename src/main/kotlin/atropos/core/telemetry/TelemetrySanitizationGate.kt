@@ -14,8 +14,7 @@ import java.util.regex.Pattern
  * before spooling or network egress.
  */
 class TelemetrySanitizationGate(
-    private val redactionFilter: RedactionFilter = RedactionFilter(),
-    private val secretEgressGate: SecretEgressGate = SecretEgressGate()
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val emailPattern = Pattern.compile("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+")
     private val ipPattern = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b")
@@ -29,31 +28,30 @@ class TelemetrySanitizationGate(
         if (rawText.isBlank()) return ""
 
         // 1. RedactionFilter standard passes
-        val filterClean = redactionFilter.redact(rawText)
+        var clean = redactionFilter.redact(rawText)
 
         // 2. SecretEgressGate check
-        val egressClean = if (secretEgressGate.containsSecret(filterClean)) {
-            secretEgressGate.redact(filterClean)
-        } else {
-            filterClean
+        if (SecretEgressGate.hasSecretLeak(clean)) {
+            clean = redactionFilter.redact(clean)
         }
 
         // 3. User home prefixes
-        var scrubbed = homePrefixPattern.matcher(egressClean).replaceAll("[REDACTED_HOME]")
+        clean = homePrefixPattern.matcher(clean).replaceAll("[REDACTED_HOME]")
 
         // 4. Git emails & Personal emails
-        scrubbed = emailPattern.matcher(scrubbed).replaceAll("[REDACTED_EMAIL]")
+        clean = emailPattern.matcher(clean).replaceAll("[REDACTED_EMAIL]")
 
         // 5. IP addresses
-        scrubbed = ipPattern.matcher(scrubbed).replaceAll("[REDACTED_IP]")
+        clean = ipPattern.matcher(clean).replaceAll("[REDACTED_IP]")
 
         // 6. Generic high-entropy tokens
-        scrubbed = tokenPattern.matcher(scrubbed).replaceAll("[REDACTED_TOKEN]")
+        clean = tokenPattern.matcher(clean).replaceAll("[REDACTED_TOKEN]")
 
         // 7. Bounded buffer chunking via Utf8BoundedBuilder
+        val sb = StringBuilder()
         val builder = Utf8BoundedBuilder(maxBytes)
-        builder.append(scrubbed)
-        return builder.build()
+        builder.append(sb, clean, false)
+        return sb.toString()
     }
 
     /**
