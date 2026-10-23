@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 
 export interface UnifiedDiffEditorProps {
-  filePath: string;
+  filePath?: string;
+  filename?: string;
   originalContent: string;
   modifiedContent: string;
   onApplyDiff?: () => void;
@@ -29,6 +30,7 @@ interface DiffLine {
 
 export function UnifiedDiffEditor({
   filePath,
+  filename,
   originalContent,
   modifiedContent,
   onApplyDiff,
@@ -85,7 +87,7 @@ export function UnifiedDiffEditor({
       <div className="flex items-center justify-between px-5 py-3 bg-slate-900 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
           <FileCode className="h-4 w-4 text-cyan-400" />
-          <span className="font-bold text-white text-xs">{filePath}</span>
+          <span className="font-bold text-white text-xs">{filePath || filename || 'Unknown'}</span>
           <div className="flex items-center gap-1.5 ml-2 text-[10px]">
             <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
               +{stats.additions}

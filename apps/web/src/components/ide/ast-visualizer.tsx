@@ -89,7 +89,12 @@ const SAMPLE_AST: AstNode = {
   ]
 };
 
-export function AstVisualizer() {
+export interface AstVisualizerProps {
+  code?: string;
+  filename?: string;
+}
+
+export function AstVisualizer({ code, filename }: AstVisualizerProps = {}) {
   const [root] = useState<AstNode>(SAMPLE_AST);
   const [selectedNode, setSelectedNode] = useState<AstNode | null>(SAMPLE_AST);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(

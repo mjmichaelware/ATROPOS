@@ -435,6 +435,7 @@ class SovereignEngine(private val nodeId: String) {
               <UnifiedDiffEditor
                 originalContent={currentTab.originalContent}
                 modifiedContent={currentTab.content}
+                filePath={currentTab.path}
                 filename={currentTab.name}
               />
             )}
