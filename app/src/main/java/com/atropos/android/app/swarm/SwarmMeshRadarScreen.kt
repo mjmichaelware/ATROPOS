@@ -169,7 +169,7 @@ fun SwarmMeshRadarScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.surface)
+            .background(colors.panelSurface)
     ) {
         Column(
             modifier = Modifier
@@ -190,7 +190,7 @@ fun SwarmMeshRadarScreen(
                         onClick = onNavigateBack,
                         modifier = Modifier
                             .size(36.dp)
-                            .background(colors.surfaceRaised, RoundedCornerShape(8.dp))
+                            .background(colors.cardSurface, RoundedCornerShape(8.dp))
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
@@ -209,7 +209,7 @@ fun SwarmMeshRadarScreen(
                         )
                         Text(
                             text = "Hierarchical Agent Network & Telemetry",
-                            style = AtroposTypography.hudSubHeader,
+                            style = AtroposTypography.hudSubhead,
                             color = colors.textMuted,
                             fontSize = 10.sp
                         )
@@ -246,7 +246,7 @@ fun SwarmMeshRadarScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text("TOTAL BURN", style = AtroposTypography.hudLabel, color = colors.textMuted, fontSize = 9.sp)
+                        Text("TOTAL BURN", style = AtroposTypography.badgeLabel, color = colors.textMuted, fontSize = 9.sp)
                         val totalTokens = agents.sumOf { it.tokensBurned }
                         Text("${totalTokens / 1000}k tok", style = AtroposTypography.monoToken, color = colors.accentAmber, fontSize = 14.sp)
                     }
@@ -260,7 +260,7 @@ fun SwarmMeshRadarScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text("AVG CPU", style = AtroposTypography.hudLabel, color = colors.textMuted, fontSize = 9.sp)
+                        Text("AVG CPU", style = AtroposTypography.badgeLabel, color = colors.textMuted, fontSize = 9.sp)
                         val avgCpu = agents.map { it.cpuPercent }.average().toInt()
                         Text("$avgCpu%", style = AtroposTypography.monoToken, color = colors.accentCyan, fontSize = 14.sp)
                     }
@@ -274,7 +274,7 @@ fun SwarmMeshRadarScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text("SWARM HEALTH", style = AtroposTypography.hudLabel, color = colors.textMuted, fontSize = 9.sp)
+                        Text("SWARM HEALTH", style = AtroposTypography.badgeLabel, color = colors.textMuted, fontSize = 9.sp)
                         Text("OPTIMAL", style = AtroposTypography.monoToken, color = colors.accentEmerald, fontSize = 14.sp)
                     }
                 }
@@ -431,7 +431,7 @@ fun SwarmMeshRadarScreen(
                                 ) {
                                     Text(
                                         text = "MCP TOOL PRIVILEGES",
-                                        style = AtroposTypography.hudLabel,
+                                        style = AtroposTypography.badgeLabel,
                                         color = colors.accentCyan,
                                         fontSize = 9.sp
                                     )
@@ -444,7 +444,7 @@ fun SwarmMeshRadarScreen(
                                         agent.permissions.forEach { perm ->
                                             Box(
                                                 modifier = Modifier
-                                                    .background(colors.surfaceRaised, RoundedCornerShape(4.dp))
+                                                    .background(colors.cardSurface, RoundedCornerShape(4.dp))
                                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                                             ) {
                                                 Text(perm, style = AtroposTypography.monoGutter, color = colors.textPrimary, fontSize = 9.sp)
@@ -455,7 +455,7 @@ fun SwarmMeshRadarScreen(
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = "DISPATCH SUB-GOAL",
-                                        style = AtroposTypography.hudLabel,
+                                        style = AtroposTypography.badgeLabel,
                                         color = colors.accentCyan,
                                         fontSize = 9.sp
                                     )
@@ -475,8 +475,8 @@ fun SwarmMeshRadarScreen(
                                             colors = OutlinedTextFieldDefaults.colors(
                                                 focusedBorderColor = colors.accentCyan,
                                                 unfocusedBorderColor = colors.borderDim,
-                                                focusedContainerColor = colors.surface,
-                                                unfocusedContainerColor = colors.surface
+                                                focusedContainerColor = colors.panelSurface,
+                                                unfocusedContainerColor = colors.panelSurface
                                             ),
                                             singleLine = true
                                         )
