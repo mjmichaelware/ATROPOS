@@ -152,7 +152,11 @@ function FileTreeNodeRow({
     return <FileCode className="h-3.5 w-3.5 text-slate-400" />;
   };
 
-  const isDir = Boolean(item.isDirectory ?? (item.type === 'directory') ?? item.children);
+  const isDir = item.isDirectory !== undefined
+    ? item.isDirectory
+    : item.type !== undefined
+      ? item.type === 'directory'
+      : Boolean(item.children);
 
   return (
     <div>
