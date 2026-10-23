@@ -224,7 +224,7 @@ fun SpecGraphMobileViewer(
         if (isCanvasMode) {
             item {
                 SpecGraphDagCanvas(
-                    onTriggerCompilePass = {
+                    onTriggerCompile = {
                         // Triggers DAG compile pass via bridge
                     }
                 )
