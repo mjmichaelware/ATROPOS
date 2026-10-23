@@ -52,6 +52,19 @@ sealed class ApprovalOutcome {
     object EngineUnreachable : ApprovalOutcome()
 }
 
+sealed class WorkspaceTreeOutcome {
+    data class Success(val root: String, val entries: List<String>) : WorkspaceTreeOutcome()
+    data class Refused(val detail: String) : WorkspaceTreeOutcome()
+    object EngineUnreachable : WorkspaceTreeOutcome()
+}
+
+sealed class WorkspaceFileOutcome {
+    data class Read(val path: String, val content: String, val sizeBytes: Long) : WorkspaceFileOutcome()
+    data class Written(val path: String) : WorkspaceFileOutcome()
+    data class Refused(val detail: String) : WorkspaceFileOutcome()
+    object EngineUnreachable : WorkspaceFileOutcome()
+}
+
 /**
  * The app's whole conversation with the engine.
  *
@@ -297,6 +310,71 @@ class AndroidEngineBridge(
                 // it so the next call rediscovers instead of retrying a dead one.
                 discovery.forget()
                 SendOutcome.EngineUnreachable
+            }
+        }
+    }
+
+    /**
+     * Walks the remote workspace tree for the mobile IDE explorer.
+     */
+    fun fetchWorkspaceTree(path: String = ""): WorkspaceTreeOutcome {
+        val port = discovery.resolve() ?: return WorkspaceTreeOutcome.EngineUnreachable
+        val query = if (path.isBlank()) "" else "?path=" + java.net.URLEncoder.encode(path, "UTF-8")
+        return when (val result = http.get(BridgeEndpoint.url(port, "/v1/workspace/tree$query"))) {
+            is BridgeResult.Ok -> {
+                val entries = mutableListOf<String>()
+                if (result.body.contains("\"entries\"")) {
+                    val slice = result.body.substringAfter("\"entries\":[").substringBefore("]")
+                    val matcher = java.util.regex.Pattern.compile("\"([^\"]+)\"").matcher(slice)
+                    while (matcher.find()) {
+                        entries.add(matcher.group(1))
+                    }
+                }
+                WorkspaceTreeOutcome.Success(root = path.ifBlank { "." }, entries = entries)
+            }
+            is BridgeResult.HttpError -> WorkspaceTreeOutcome.Refused("HTTP ${result.code}")
+            is BridgeResult.Unreachable -> {
+                discovery.forget()
+                WorkspaceTreeOutcome.EngineUnreachable
+            }
+        }
+    }
+
+    /**
+     * Reads a workspace file for the mobile code editor.
+     */
+    fun readWorkspaceFile(path: String): WorkspaceFileOutcome {
+        val port = discovery.resolve() ?: return WorkspaceFileOutcome.EngineUnreachable
+        val url = BridgeEndpoint.url(port, "/v1/workspace/file?path=" + java.net.URLEncoder.encode(path, "UTF-8"))
+        return when (val result = http.get(url)) {
+            is BridgeResult.Ok -> {
+                val content = if (result.body.contains("\"content\":")) {
+                    val raw = result.body.substringAfter("\"content\":\"").substringBeforeLast("\"")
+                    raw.replace("\\n", "\n").replace("\\t", "\t").replace("\\\"", "\"").replace("\\\\", "\\")
+                } else result.body
+                WorkspaceFileOutcome.Read(path = path, content = content, sizeBytes = content.length.toLong())
+            }
+            is BridgeResult.HttpError -> WorkspaceFileOutcome.Refused("HTTP ${result.code}")
+            is BridgeResult.Unreachable -> {
+                discovery.forget()
+                WorkspaceFileOutcome.EngineUnreachable
+            }
+        }
+    }
+
+    /**
+     * Writes mutations back to the workspace file through the engine gate.
+     */
+    fun writeWorkspaceFile(path: String, content: String): WorkspaceFileOutcome {
+        val port = discovery.resolve() ?: return WorkspaceFileOutcome.EngineUnreachable
+        val url = BridgeEndpoint.url(port, "/v1/workspace/file")
+        val body = "{\"path\":${JsonString.quote(path)},\"content\":${JsonString.quote(content)}}"
+        return when (val result = http.post(url, body)) {
+            is BridgeResult.Ok -> WorkspaceFileOutcome.Written(path)
+            is BridgeResult.HttpError -> WorkspaceFileOutcome.Refused("HTTP ${result.code}")
+            is BridgeResult.Unreachable -> {
+                discovery.forget()
+                WorkspaceFileOutcome.EngineUnreachable
             }
         }
     }

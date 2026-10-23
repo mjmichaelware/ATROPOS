@@ -86,9 +86,18 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
       : 'Create a new work item or import existing tasks.',
   };
 
-  const handleControlAction = (verb: ControlVerb) => {
-    console.log('Control action:', verb);
-    // TODO: Wire to actual API via useProjectActions hook
+  const handleControlAction = async (verb: ControlVerb) => {
+    try {
+      if (verb === 'pause') {
+        await projectOperations.update(projectId, { status: 'paused' });
+      } else if (verb === 'cancel') {
+        await projectOperations.update(projectId, { status: 'cancelled' });
+      } else if (verb === 'inspect') {
+        router.push(`/projects/${projectId}/files`);
+      }
+    } catch (err) {
+      console.error('Control action failed:', err);
+    }
   };
 
   return (

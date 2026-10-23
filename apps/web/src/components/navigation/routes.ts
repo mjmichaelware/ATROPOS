@@ -31,6 +31,8 @@ export const globalRoutes = {
   /** What the system proposed about itself, and what it has done. */
   governance: "/governance" as Route,
   activity: "/activity" as Route,
+  /** Google AI Studio parity live responsive UI/UX preview */
+  studio: "/studio" as Route,
 };
 
 /**
@@ -91,6 +93,7 @@ export const navigationSpine: SpineItem[] = [
 export const engineStateGroup: SpineItem[] = [
   { id: "governance", label: "Governance", href: globalRoutes.governance },
   { id: "activity", label: "Activity", href: globalRoutes.activity },
+  { id: "studio", label: "Live Studio", href: globalRoutes.studio },
 ];
 
 /** §2.10: hidden until the operator asks for it. */

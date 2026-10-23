@@ -23,11 +23,27 @@ export function AppHeader({
     <header className="sg-header">
       <Link className="sg-brand" href={globalRoutes.home}>
         <span className="sg-brand-mark" aria-hidden="true" />
-        <span>SpecGraph Foundry</span>
+        <span className="font-mono font-bold tracking-wider text-cyan-400">ATROPOS SOVEREIGN</span>
       </Link>
       <nav aria-label="Primary" className="sg-header-nav">
         <NavLinks items={items} />
       </nav>
+      <div className="flex items-center gap-2">
+        <Link
+          href={globalRoutes.studio}
+          className="px-2.5 py-1 text-xs font-mono font-semibold rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+        >
+          Live Studio
+        </Link>
+        <a
+          href="https://specgraph-foundry.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-2.5 py-1 text-xs font-mono font-semibold rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 transition-colors hidden sm:inline-flex items-center gap-1"
+        >
+          SpecGraph Vercel ↗
+        </a>
+      </div>
       <CommandPalette />
       {actions}
       {userEmail ? (

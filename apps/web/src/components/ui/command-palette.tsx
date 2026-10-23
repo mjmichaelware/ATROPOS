@@ -13,6 +13,7 @@ import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
 import { useEngineCommands } from '@/lib/engine/use-engine-commands';
 import { engine } from '@/lib/engine/client';
 import { COMMON_SHORTCUTS, useKeyboardShortcuts } from '@/lib/hooks/use-keyboard-shortcuts';
+import { CommandCategoryPalette } from '@/components/commands/command-category-palette';
 
 interface CommandItem {
   id: string;
@@ -43,11 +44,38 @@ export function CommandPalette() {
     },
   ]);
   const [open, setOpen] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   /** What the last engine command printed, or the refusal it met. */
   const [commandResult, setCommandResult] = useState<string | null>(null);
   const [commandRunning, setCommandRunning] = useState(false);
+
+  // Global keydown listener for '/'
+  useEffect(() => {
+    const handleSlash = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      const isInput =
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        (document.activeElement as HTMLElement)?.isContentEditable;
+      if (e.key === '/' && !isInput && !open && !showCategoryModal) {
+        e.preventDefault();
+        setShowCategoryModal(true);
+      }
+    };
+    window.addEventListener('keydown', handleSlash);
+    return () => window.removeEventListener('keydown', handleSlash);
+  }, [open, showCategoryModal]);
+
+  // When search starts with '/', switch to the Category Palette
+  useEffect(() => {
+    if (search === '/') {
+      setOpen(false);
+      setSearch('');
+      setShowCategoryModal(true);
+    }
+  }, [search]);
 
   // Navigation commands
   //
@@ -226,15 +254,55 @@ export function CommandPalette() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, filteredCommands, selectedIndex]);
 
+  const handlePaletteSelect = useCallback((cmdUsage: string) => {
+    setSearch(cmdUsage);
+    setOpen(true);
+  }, []);
+
+  const handlePaletteExecute = useCallback(async (cmdInvocation: string) => {
+    setOpen(true);
+    setCommandRunning(true);
+    const cleanCmd = cmdInvocation.replace(/^\//, '');
+    const result = await engine.execute(cleanCmd);
+    setCommandRunning(false);
+    if (!result.ok) {
+      setCommandResult(`${result.detail}\n${result.remedy}`);
+    } else {
+      setCommandResult(
+        result.data.ok
+          ? result.data.output || `Executed: /${cleanCmd}`
+          : result.data.failure ?? 'the command failed'
+      );
+    }
+  }, []);
+
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg border border-sg-neutral-300 dark:border-sg-neutral-700 hover:bg-sg-neutral-50 dark:hover:bg-sg-neutral-900 transition-colors text-sm text-sg-neutral-600 dark:text-sg-neutral-400"
-      >
-        <Search className="w-4 h-4" />
-        <span>Search... Cmd+K</span>
-      </button>
+      <>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setOpen(true)}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-sg-neutral-300 dark:border-sg-neutral-700 hover:bg-sg-neutral-50 dark:hover:bg-sg-neutral-900 transition-colors text-xs text-sg-neutral-600 dark:text-sg-neutral-400 font-mono"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>Search... Cmd+K</span>
+          </button>
+          <button
+            onClick={() => setShowCategoryModal(true)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/20 text-cyan-400 hover:bg-cyan-950/40 text-xs font-mono font-medium transition-colors"
+            title="Browse / Command Categories"
+          >
+            <span>/ Commands</span>
+          </button>
+        </div>
+
+        <CommandCategoryPalette
+          isOpen={showCategoryModal}
+          onClose={() => setShowCategoryModal(false)}
+          onSelectCommand={handlePaletteSelect}
+          onExecuteCommand={handlePaletteExecute}
+        />
+      </>
     );
   }
 
@@ -361,6 +429,13 @@ export function CommandPalette() {
           </div>
         </div>
       </div>
+
+      <CommandCategoryPalette
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onSelectCommand={handlePaletteSelect}
+        onExecuteCommand={handlePaletteExecute}
+      />
     </>
   );
 }
