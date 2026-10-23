@@ -16,24 +16,33 @@ import {
 } from 'lucide-react';
 
 export interface MonacoCodeEditorProps {
-  filePath: string;
-  initialContent: string;
-  language?: 'kotlin' | 'typescript' | 'json' | 'python' | 'markdown';
+  filePath?: string;
+  initialContent?: string;
+  value?: string;
+  filename?: string;
+  language?: string;
   readOnly?: boolean;
+  isDirty?: boolean;
   onSave?: (path: string, content: string) => Promise<boolean> | boolean | void;
+  onChange?: (val: string) => void;
   onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function MonacoCodeEditor({
-  filePath,
+  filePath = '',
   initialContent,
+  value,
+  filename,
   language = 'kotlin',
   readOnly = false,
+  isDirty: externalIsDirty,
   onSave,
+  onChange,
   onDirtyChange
 }: MonacoCodeEditorProps) {
-  const [content, setContent] = useState<string>(initialContent);
-  const [originalContent, setOriginalContent] = useState<string>(initialContent);
+  const effectiveInitial = value ?? initialContent ?? '';
+  const [content, setContent] = useState<string>(effectiveInitial);
+  const [originalContent, setOriginalContent] = useState<string>(effectiveInitial);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -51,9 +60,10 @@ export function MonacoCodeEditor({
   }, [isDirty, onDirtyChange]);
 
   useEffect(() => {
-    setContent(initialContent);
-    setOriginalContent(initialContent);
-  }, [initialContent, filePath]);
+    const nextVal = value ?? initialContent ?? '';
+    setContent(nextVal);
+    setOriginalContent(nextVal);
+  }, [initialContent, value, filePath]);
 
   const lines = useMemo(() => content.split('\n'), [content]);
 
@@ -253,7 +263,10 @@ export function MonacoCodeEditor({
         <textarea
           ref={textareaRef}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value);
+            onChange?.(e.target.value);
+          }}
           onScroll={handleScroll}
           onKeyDown={handleKeyDown}
           readOnly={readOnly}
