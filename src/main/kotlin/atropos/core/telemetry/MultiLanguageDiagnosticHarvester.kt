@@ -3,17 +3,44 @@ package atropos.core.telemetry
 
 import atropos.core.verification.DiagnosticSymbolSlicer
 import java.nio.file.Path
+import kotlin.math.max
 
 /**
  * SD7-T1-TEL09: Multi-Language Diagnostic Telemetry Harvester.
  *
  * Extracts character-precise compiler and runtime diagnostics across Kotlin, Python,
- * TypeScript, Rust, and Go. Slices logs to +/- 25 lines of declaration scope using
- * DiagnosticSymbolSlicer to maximize signal density.
+ * TypeScript, Rust, and Go. Slices logs mathematically to +/- 25 lines of declaration scope
+ * using DiagnosticSymbolSlicer to maximize signal density.
  */
 class MultiLanguageDiagnosticHarvester(
     private val ringBuffer: TelemetryRingBuffer? = null
 ) {
+    companion object {
+        const val SCOPE_SLICING_WINDOW_LINES = 25
+    }
+
+    data class DiagnosticCoordinate(
+        val line: Int,
+        val column: Int,
+        val scopeStartLine: Int,
+        val scopeEndLine: Int
+    )
+
+    /**
+     * Functional calculation of declaration scope coordinates bounded to +/- 25 lines.
+     */
+    fun computeScopeCoordinates(failingLine: Int): DiagnosticCoordinate {
+        val line = max(1, failingLine)
+        val start = max(1, line - SCOPE_SLICING_WINDOW_LINES)
+        val end = line + SCOPE_SLICING_WINDOW_LINES
+        return DiagnosticCoordinate(
+            line = line,
+            column = 1,
+            scopeStartLine = start,
+            scopeEndLine = end
+        )
+    }
+
     /**
      * Ingests raw build/test stdout and stderr, producing structured telemetry records.
      */
@@ -29,12 +56,13 @@ class MultiLanguageDiagnosticHarvester(
         val sliced = DiagnosticSymbolSlicer.slice(worktree, combined)
         val targetFile = sliced.targetFile ?: "unknown"
         val failingLine = sliced.failingLine ?: 1
+        val coords = computeScopeCoordinates(failingLine)
 
         val record = CompilerDiagnosticRecord(
             errorCode = "DIAG-FAIL",
             filePath = targetFile,
-            line = failingLine,
-            column = 1,
+            line = coords.line,
+            column = coords.column,
             enclosingSymbol = sliced.targetFile ?: "root",
             message = sliced.assertionError.take(300),
             fixSuggestions = listOf(sliced.compressedPrompt.take(200))
@@ -42,7 +70,7 @@ class MultiLanguageDiagnosticHarvester(
 
         val telemetryRecord = FrontierSweTelemetryRecord.create(
             instanceId = instanceId,
-            h0PromptLineage = "diag-$targetFile-$failingLine",
+            h0PromptLineage = "diag-$targetFile-${coords.line}",
             payload = record,
             rewardSignal = -1.0
         )
