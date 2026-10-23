@@ -9,20 +9,22 @@ import java.security.MessageDigest
  */
 data class TelemetryBatchPayload(
     val batchId: String,
-    val totalRecords: Int,
-    val merkleRoot: String,
     val records: List<FrontierSweTelemetryRecord>,
+    val totalRecords: Int = records.size,
+    val merkleRoot: String = computeBinaryMerkleRoot(records.map { it.payloadHash }),
     val timestamp: Long = System.currentTimeMillis()
 ) {
+    fun toJsonLines(): String = records.joinToString("\n") { it.canonicalJson() }
+
     companion object {
         fun create(batchId: String, records: List<FrontierSweTelemetryRecord>): TelemetryBatchPayload {
             val leafHashes = records.map { it.payloadHash }
             val root = computeBinaryMerkleRoot(leafHashes)
             return TelemetryBatchPayload(
                 batchId = batchId,
+                records = records,
                 totalRecords = records.size,
-                merkleRoot = root,
-                records = records
+                merkleRoot = root
             )
         }
 

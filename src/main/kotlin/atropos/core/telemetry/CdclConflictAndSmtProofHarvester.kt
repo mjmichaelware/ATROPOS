@@ -64,16 +64,17 @@ class CdclConflictAndSmtProofHarvester(
         instanceId: String,
         clauseDependencies: Map<String, Set<String>>,
         rawSmtScript: String,
-        solveTimeMs: Long
+        solveTimeMs: Long,
+        memoryBytes: Long = 0L
     ): FrontierSweTelemetryRecord {
         val result = analyzeConflictGraph(clauseDependencies, rawSmtScript, solveTimeMs)
 
         val payload = CdclConflictClauseRecord(
-            smtLib2Digest = result.smtLib2Digest,
-            minimalUnsatCore = result.minimalUnsatCore,
-            antiUnificationTemplates = result.antiUnificationTemplates,
-            relationalCyclesDetected = result.relationalCycles.size,
-            solveTimeMs = result.solveTimeMs
+            clauseDigest = result.smtLib2Digest,
+            minimalUnsatCoreSize = result.minimalUnsatCore.size,
+            antiUnificationRule = result.antiUnificationTemplates.firstOrNull() ?: "none",
+            solveTimeMs = result.solveTimeMs,
+            memoryBytes = memoryBytes
         )
 
         val record = FrontierSweTelemetryRecord.create(

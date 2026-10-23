@@ -63,11 +63,11 @@ class ToigMutationTestingOracleTelemetry(
         val passed = ratio >= KILL_RATIO_PASS_THRESHOLD
 
         val payload = MutationKillRatioRecord(
-            mutantsInjected = total,
-            mutantsKilled = killed,
-            mutantsSurvived = surviving,
+            totalMutants = total,
+            killedMutants = killed,
             killRatio = ratio,
-            timeoutMs = MUTANT_TIMEOUT_MS
+            vacuousAssertionDefect = !passed,
+            survivingMutantIds = (1..surviving).map { "mutant-$it" }
         )
 
         val record = FrontierSweTelemetryRecord.create(

@@ -57,8 +57,7 @@ class TelemetryBackpressureAndDiskBudgetGovernor(
     fun shouldAcceptRecord(record: FrontierSweTelemetryRecord): Boolean {
         val current = currentSpoolSizeBytes()
         val isHighValueNegative = record.rewardSignal <= -1.0 ||
-                record.payload is AntiGamingDecision ||
-                record.payload is MutationKillRatioRecord && (record.payload as MutationKillRatioRecord).killRatio < 0.85
+                (record.kind == TelemetryKind.MUTATION_KILL_RATIO && record.rewardSignal < 0.0)
 
         // Check StorageSupervisor preflight
         if (storageSupervisor != null && !storageSupervisor.canAdmitPreflight(1024L)) {
