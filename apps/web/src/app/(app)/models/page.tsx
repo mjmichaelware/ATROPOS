@@ -3,6 +3,7 @@
 
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { ModelArenaComparator } from '@/components/models/model-arena-comparator';
+import { NeuralCascadeDebugger } from '@/components/models/neural-cascade-debugger';
 import { Cpu, Server, Activity } from 'lucide-react';
 
 export default function ModelsPage() {
@@ -34,6 +35,9 @@ export default function ModelsPage() {
 
         <SixAnswersPanel answers={modelsAnswers} compact={false} />
       </section>
+
+      {/* Dynamic Fallback Cascade Simulator */}
+      <NeuralCascadeDebugger />
 
       {/* Arena Component */}
       <ModelArenaComparator />

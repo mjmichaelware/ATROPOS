@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 import { ActivityMonitor } from '@/components/activity/activity-monitor';
+import { ActivityStreamFilterMatrix } from '@/components/activity/activity-stream-filter-matrix';
 
 export default function ActivityPage() {
   return (
@@ -13,6 +14,7 @@ export default function ActivityPage() {
           one stream. Stages that have not reported are shown as gaps, not omitted.
         </p>
       </header>
+      <ActivityStreamFilterMatrix />
       <ActivityMonitor />
     </div>
   );

@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import com.atropos.android.app.quota.TokenBurnTelemetryScreen
 import com.atropos.android.app.swarm.SwarmMeshRadarScreen
 import com.atropos.android.app.editor.HexBinaryViewerScreen
+import com.atropos.android.app.network.PacketInspectorScreen
 import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
 import com.atropos.android.app.theme.cyberGlass
@@ -92,6 +93,21 @@ fun SettingsMatrixScreen(
     var showTokenBurn by remember { mutableStateOf(false) }
     var showSwarmRadar by remember { mutableStateOf(false) }
     var showHexViewer by remember { mutableStateOf(false) }
+    var showPacketInspector by remember { mutableStateOf(false) }
+
+    if (showPacketInspector) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(colors.voidAbyss)
+        ) {
+            PacketInspectorScreen(
+                onNavigateBack = { showPacketInspector = false },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        return
+    }
 
     if (showSwarmRadar) {
         Column(
@@ -331,6 +347,25 @@ fun SettingsMatrixScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Hex", style = AtroposTypography.badgeLabel)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            onClick = { showPacketInspector = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.cardSurface,
+                                contentColor = colors.accentCyan
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NetworkCheck,
+                                contentDescription = "Packet Inspector",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Packets", style = AtroposTypography.badgeLabel)
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
