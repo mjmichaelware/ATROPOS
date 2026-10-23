@@ -144,7 +144,7 @@ fun ClaudeCodeWorkstationScreen(
             }
 
             // Real-time Thinking Drawer (if engine is currently reasoning)
-            if (thinking != null && thinking.text.isNotBlank()) {
+            if (thinking != null && thinking.lines.isNotEmpty()) {
                 item {
                     ThinkingDrawerCard(thinking = thinking)
                 }
@@ -278,12 +278,12 @@ private fun SixAnswersRadarStrip(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Divider(color = colors.borderDim, thickness = 0.5.dp)
-                    AnswerRow(label = "Problem", value = answers?.problem ?: "Waiting for autonomous goal")
-                    AnswerRow(label = "Doing", value = answers?.doing ?: "Idle / Listening on Bridge")
-                    AnswerRow(label = "Why", value = answers?.why ?: "Operator supervisory session")
-                    AnswerRow(label = "Progress", value = answers?.progress ?: "Ready for execution")
-                    AnswerRow(label = "Next", value = answers?.next ?: "Awaiting user command or prompt")
-                    AnswerRow(label = "Evidence", value = answers?.evidence ?: "Cryptographic journal clean")
+                    AnswerRow(label = "Objective", value = answers?.objective?.value ?: "Waiting for autonomous goal")
+                    AnswerRow(label = "Doing", value = answers?.doing?.value ?: "Idle / Listening on Bridge")
+                    AnswerRow(label = "Why", value = answers?.why?.value ?: "Operator supervisory session")
+                    AnswerRow(label = "Progress", value = answers?.progress?.value ?: "Ready for execution")
+                    AnswerRow(label = "Next", value = answers?.next?.value ?: "Awaiting user command or prompt")
+                    AnswerRow(label = "Evidence", value = answers?.evidence?.value ?: "Cryptographic journal clean")
                 }
             }
         }
@@ -360,7 +360,7 @@ private fun ApprovalCardsSection(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = app.detail,
+                        text = "${app.operation}: ${app.reason}",
                         style = AtroposTypography.hudBody,
                         color = colors.textPrimary
                     )
@@ -466,7 +466,7 @@ private fun ThinkingDrawerCard(thinking: MobileThinking) {
 
             AnimatedVisibility(visible = isExpanded) {
                 Text(
-                    text = thinking.text,
+                    text = thinking.lines.joinToString("\n"),
                     style = AtroposTypography.monoCode,
                     color = colors.textSecondary,
                     modifier = Modifier.padding(top = 8.dp)
@@ -479,7 +479,7 @@ private fun ThinkingDrawerCard(thinking: MobileThinking) {
 @Composable
 private fun WorkstationMessageBubble(msg: MobileMessage) {
     val colors = LocalCyberHudColors.current
-    val isUser = msg.sender.equals("user", ignoreCase = true)
+    val isUser = msg.isUser
 
     val bg = if (isUser) colors.cardSurface else colors.panelSurface
     val border = if (isUser) colors.borderDim else colors.borderSubtle
@@ -503,7 +503,7 @@ private fun WorkstationMessageBubble(msg: MobileMessage) {
                 )
 
                 Text(
-                    text = msg.sender,
+                    text = msg.id,
                     style = AtroposTypography.monoGutter,
                     color = colors.textMuted
                 )
@@ -512,7 +512,7 @@ private fun WorkstationMessageBubble(msg: MobileMessage) {
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = msg.body,
+                text = msg.text,
                 style = AtroposTypography.hudBody,
                 color = colors.textPrimary,
                 lineHeight = 19.sp
