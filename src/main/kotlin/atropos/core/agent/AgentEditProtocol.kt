@@ -38,13 +38,20 @@ data class AgentEditMaterialization(
 /** Parses the provider-facing, non-diff edit envelope. */
 class AgentEditDecoder {
     fun decode(raw: String): List<AgentEditOperation>? {
-        val normalized = raw.replace("\r\n", "\n").replace('\r', '\n')
+        val normalized = raw.replace("\r\n", "\n").replace('\r', '\n').trim()
+            .let { trimmed ->
+                if (trimmed.startsWith("```")) {
+                    val withoutPrefix = trimmed.replace(Regex("""^```[a-zA-Z0-9_-]*\n"""), "")
+                    if (withoutPrefix.endsWith("```")) withoutPrefix.removeSuffix("```").trim() else withoutPrefix
+                } else trimmed
+            }
         val operations = mutableListOf<AgentEditOperation>()
         val consumed = BooleanArray(normalized.length)
         parseBlocks(normalized, CREATE_OR_REWRITE, operations, consumed)
-        parseReplaceBlocks(normalized, operations, consumed)
+        parseReplaceBlocks(normalized, REPLACE, operations, consumed)
+        parseReplaceBlocks(normalized, REPLACE_DASH, operations, consumed)
+        parseReplaceBlocks(normalized, REPLACE_COLON, operations, consumed)
         if (operations.isEmpty()) return null
-        if (normalized.indices.any { normalized[it].isWhitespace().not() && !consumed[it] }) return null
         return operations
     }
 
@@ -65,8 +72,13 @@ class AgentEditDecoder {
         }
     }
 
-    private fun parseReplaceBlocks(text: String, output: MutableList<AgentEditOperation>, consumed: BooleanArray) {
-        REPLACE.findAll(text).forEach { match ->
+    private fun parseReplaceBlocks(
+        text: String,
+        pattern: Regex,
+        output: MutableList<AgentEditOperation>,
+        consumed: BooleanArray
+    ) {
+        pattern.findAll(text).forEach { match ->
             val path = safePath(match.groupValues[1]) ?: return@forEach
             val search = match.groupValues[2]
             val replacement = match.groupValues[3]
@@ -92,7 +104,13 @@ class AgentEditDecoder {
             "(?s)<atropos-(create|rewrite)\\s+path=\"([^\"]+)\">(.*?)</atropos-\\1>"
         )
         val REPLACE = Regex(
-            "(?s)<atropos-replace\\s+path=\"([^\"]+)\">\\s*<<<<<<< SEARCH\\n(.*?)\\n=======\\n(.*?)\\n>>>>>>> REPLACE\\s*</atropos-replace>"
+            "(?s)<atropos-replace\\s+path=\"([^\"]+)\">\\s*<{7}\\s*SEARCH\\r?\\n(.*?)\\r?\\n={7}\\r?\\n(.*?)\\r?\\n>{7}\\s*REPLACE\\s*</atropos-replace>"
+        )
+        val REPLACE_DASH = Regex(
+            "(?s)<atropos-replace\\s+path=\"([^\"]+)\">\\s*(?:---|===)\\s*SEARCH\\s*(?:---|===)\\r?\\n(.*?)\\r?\\n(?:---|===)\\s*REPLACE\\s*(?:---|===)\\r?\\n(.*?)\\s*</atropos-replace>"
+        )
+        val REPLACE_COLON = Regex(
+            "(?s)<atropos-replace\\s+path=\"([^\"]+)\">\\s*SEARCH:\\r?\\n(.*?)\\r?\\nREPLACE:\\r?\\n(.*?)\\s*</atropos-replace>"
         )
     }
 }
