@@ -58,12 +58,26 @@ class AgentProviderSelector(
         // preference; paid providers are removed before any attempt. Within
         // the free tier the cascade re-ranks by payload-fit and context
         // window, so the mathematically best free provider is tried first.
+        val envOrder = System.getenv("ATROPOS_PROVIDER_ORDER")
+            ?.split(",")?.map { it.trim().lowercase() }?.filter { it.isNotBlank() }.orEmpty()
+        val preferred = (listOf(activeCandidate) + envOrder).filter { it.isNotBlank() }.distinct()
+
         val costOrderedAsk = ProviderCascadeOrder.order(finalOrder)
-        val orderedAsk = FreeProviderCapabilityRanker.rankFreeFirst(costOrderedAsk, 0, registry)
+        val rankedAsk = FreeProviderCapabilityRanker.rankFreeFirst(costOrderedAsk, 0, registry)
+        val orderedAsk = buildList {
+            preferred.forEach { if (it in finalOrder && it !in this) add(it) }
+            rankedAsk.forEach { if (it !in this) add(it) }
+        }
+
         val costOrderedPatch = ProviderCascadeOrder.order(
             candidatesFor(ApiCapability.CODE, ApiCapability.REPAIR)
         )
-        val orderedPatch = FreeProviderCapabilityRanker.rankFreeFirst(costOrderedPatch, 0, registry)
+        val rankedPatch = FreeProviderCapabilityRanker.rankFreeFirst(costOrderedPatch, 0, registry)
+        val orderedPatch = buildList {
+            if (requestedPatchDescriptor != null) add(requestedPatchDescriptor.id)
+            preferred.forEach { if (it in patchConfigured && it !in this) add(it) }
+            rankedPatch.forEach { if (it !in this) add(it) }
+        }
 
         return AgentProviderSelection(
             askOrder = orderedAsk,
