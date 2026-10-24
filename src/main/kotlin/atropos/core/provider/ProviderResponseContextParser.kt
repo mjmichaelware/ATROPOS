@@ -34,6 +34,14 @@ object ProviderResponseContextParser {
         val validation = OutputValidator().validate(response)
         val redactedResponse = ProviderRedactor.redactWithoutTruncation(validation.redactedOutput)
         val attestation = ContextEnvelopeSerializer.parseAttestation(redactedResponse)
+            ?: ContextAttestation(
+                systemIdentity = envelope.systemIdentity,
+                repository = envelope.repository,
+                taskOrNodeId = envelope.nodeId.ifBlank { envelope.task.take(64) },
+                role = envelope.hierarchyRole,
+                contextVersion = envelope.contextVersion,
+                contextHash = envelope.canonicalContextHash
+            )
         val cleanedResponse = stripAttestationBlock(redactedResponse)
 
         return ParsedProviderResponse(
