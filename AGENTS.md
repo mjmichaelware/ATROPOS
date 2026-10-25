@@ -262,3 +262,12 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 - Next agent: read §0–§3, execute highest open atom, append to `docs/PROGRESS_LEDGER.md`, continue.
 
 End of AGENTS.md
+
+
+<!-- ATROPOS DATA CENTER + DOPAMINE REWARD ENGINE MANDATE -->
+## AGENT EXECUTION MANDATE (MANDATORY ENFORCEMENT)
+1. Read AGENTS.md and .atropos/ledger/events.jsonl before any mutation.
+2. NEVER compile, build, or run local terminal builds (gradlew, npm, tsc, kotlinc). Repository too large. All verification is remote GitHub Actions only.
+3. Stage, commit, push to origin/main. Use gh run watch until factory CI, release drawer, Android APK, web builds, and every required surface are green.
+4. On any red: pull latest, diagnose from CI logs, apply minimal corrective atom, push, re-watch. Repeat until all-green.
+5. Record every decision, test output, and provider choice into the ledger + CAS. Respect Soft-Fail Network Law and Axiomatic Isolation at all times.
