@@ -406,11 +406,11 @@ class AgentContextCollector(
         if (hinted.isNotEmpty()) return hinted
 
         val defaults = defaultPackRoots(taskHint)
-        return defaults.ifEmpty { listOf("README.md") }
+        return defaults.ifEmpty { listOf("README.md", "README.rst", "README") }
     }
 
     private fun defaultPackRoots(taskHint: String?): List<String> {
-        if (!isAtroposEngineRoot(repoRoot)) return listOf("README.md")
+        if (!isAtroposEngineRoot(repoRoot)) return listOf("README.md", "README.rst", "README")
         val lower = taskHint.orEmpty().lowercase()
         if ("self-host" in lower || "self host" in lower || "atropos" in lower) {
             return listOf(
