@@ -132,7 +132,21 @@ class Phase20GovernanceService(
         }
 
         // If the deficiency involves invariants, require authorization
-        val invariants = ImmutableInvariants.classify(deficiency)
+        val proposalForClassification = ImprovementProposal(
+            id = "classification-${deficiency.territory.joinToString("|")}",
+            proposedBy = deficiency.proposedBy,
+            summary = deficiency.summary,
+            necessity = deficiency.necessity,
+            baseline = deficiency.baseline,
+            target = deficiency.target,
+            guardrails = deficiency.guardrails,
+            territory = deficiency.territory,
+            risk = deficiency.risk,
+            rollback = deficiency.rollback,
+            metric = deficiency.metric,
+            createdAt = deficiency.observedAt
+        )
+        val invariants = ImmutableInvariants.classify(proposalForClassification)
         val requiresAuth = invariants.requiresHumanAuthorisation
         val authToken = if (requiresAuth) {
             authorization ?: phase20Auth.requireAuthorization("Phase 20 advance for ${deficiency.territory.joinToString("|")}")

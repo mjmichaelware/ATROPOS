@@ -15,8 +15,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.security.SecureRandom
-import javax.crypto.spec.PBEKeySpec
 import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.PBEParameterSpec
 
 /**
@@ -57,11 +57,11 @@ import javax.crypto.spec.PBEParameterSpec
  * 2. Before any Phase 20 operation that mutates protected source, the system
  *    calls [Phase20Authorization.requireAuthorization] with the operation scope.
  * 3. In interactive mode, the owner is prompted for their password via a
- *    non-echoing console read.
+ *   non-echoing console read.
  * 4. In non-interactive mode, the operation fails unless `ATROPOS_PHASE20_AUTH_TOKEN`
- *    contains a valid, unexpired, scope-bound token.
+ *   contains a valid, unexpired, scope-bound token.
  * 5. A successful verification returns a single-use [AuthorizationToken] that
- *    must be passed to the Phase 20 operation.
+ *   must be passed to the Phase 20 operation.
  *
  * The authorization token carries the operation scope and a timestamp. It is
  * validated by the Phase 20 operation before any mutation occurs.
@@ -306,8 +306,10 @@ class Phase20Authorization(
     }
 
     private fun getFailedAttempts(): Int {
-        val result = vault.readSecret("phase20-failed-attempts")
-        return result?.split(':')?.firstOrNull()?.toIntOrNull() ?: 0
+        val secretValue: String? = vault.readSecret("phase20-failed-attempts")
+        if (secretValue == null) return 0
+        val parts = secretValue.split(':')
+        return parts.firstOrNull()?.toIntOrNull() ?: 0
     }
 
     private fun clearFailedAttempts() {
