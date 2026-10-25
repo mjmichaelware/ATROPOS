@@ -11,7 +11,7 @@ object DatasetTranslator {
 
     fun toJsonl(record: Map<String, Any?>): String {
         return record.entries.joinToString(prefix = "{", postfix = "}") { (k, v) ->
-            ""$k":"$v""
+            "\"$k\":\"$v\""
         }
     }
 }
