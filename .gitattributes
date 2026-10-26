@@ -11,3 +11,5 @@
 **/patches/** linguist-vendored
 *.config.js linguist-generated
 *.config.ts linguist-generated
+**/generated.ts linguist-generated
+**/.next/** linguist-vendored

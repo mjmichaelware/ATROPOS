@@ -94,3 +94,5 @@ atropos.jar.backup-*
 npm/vendor/
 auth.json
 .opencode/
+.next/
+apps/web/.next/
