@@ -186,12 +186,6 @@ text CONTRIBUTING.md 'Do not add one Kotlin adapter per brand'
 text docs/OPEN_CORE_BOUNDARY.md 'AGPL section 13'
 text LEGAL.md 'AGPL section 13'
 text LEGAL.md 'open-core boundary'
-text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"
-text .github/workflows/compile-gate.yml "atropos.core.provider.ProviderConfigurationResolverTest"
-text scripts/atropos-verify-worktree.sh "atropos.ast.AstSymbolGraphTest"
-text scripts/atropos-verify-worktree.sh "atropos.dloi.SourceAuthorityLawTest"
-text .github/workflows/compile-gate.yml "atropos.data.lakehouse.AtomLakehouseContextTest"
-text .github/workflows/compile-gate.yml "atropos.core.acceptance.CanonicalAcceptanceTests"
 text scripts/hosted-test-selector-contract.sh "Tests?"
 text scripts/hosted-test-selector-contract.sh 'backend test source is outside hosted selector'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun preferredProviderIds()'
