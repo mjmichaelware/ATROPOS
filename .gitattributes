@@ -1,12 +1,13 @@
-# Exclude test and support directories from GitHub language stats
-test/** linguist-vendored
-tests/** linguist-vendored
-androidTest/** linguist-vendored
-scripts/** linguist-vendored
-ops/** linguist-vendored
-tools/** linguist-vendored
-ci/** linguist-vendored
-.github/** linguist-vendored
-patches/** linguist-vendored
+# Exclude nested test and support directories from GitHub stats
+**/test/** linguist-vendored
+**/tests/** linguist-vendored
+**/androidTest/** linguist-vendored
+**/test-results/** linguist-vendored
+**/scripts/** linguist-vendored
+**/ops/** linguist-vendored
+**/tools/** linguist-vendored
+**/ci/** linguist-vendored
+**/.github/** linguist-vendored
+**/patches/** linguist-vendored
 *.config.js linguist-generated
 *.config.ts linguist-generated
