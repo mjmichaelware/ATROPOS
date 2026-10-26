@@ -77,7 +77,7 @@ class GitHubApiClient(
         IntegrationRegistry.requireRegistered("github")
         val method = request.method.trim().uppercase()
         require(method in METHODS) { "unsupported GitHub API method: $method" }
-        if (method != "GET" && !request.readOnly) requireNotNull(request.authorization) {
+        if (method != "GET") requireNotNull(request.authorization) {
             "GitHub write requires explicit operator confirmation"
         }
         val path = validatePath(request.path)
