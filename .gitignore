@@ -96,3 +96,5 @@ auth.json
 .opencode/
 .next/
 apps/web/.next/
+.vercel
+.env*
