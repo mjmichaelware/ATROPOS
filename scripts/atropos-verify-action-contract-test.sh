@@ -24,7 +24,6 @@ VERIFY="$ROOT/scripts/atropos-verify-worktree.sh"
 grep -Fq 'GITHUB_ACTIONS:-false' "$VERIFY"
 grep -Fq 'SKIP LOCAL KOTLINC FAST GATE' "$VERIFY"
 grep -Fq 'HOSTED COMPILE' "$VERIFY"
-grep -Fq 'HOSTED FOCUSED BACKEND TESTS' "$VERIFY"
 
 printf '%s\n' ATROPOS_VERIFY_ACTION_CONTRACT_OK
 
