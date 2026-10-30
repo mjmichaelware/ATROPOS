@@ -56,24 +56,14 @@ class ViewportLayout(
             composerHeight: Int = 2,
             headerHeight: Int = 1
         ): ViewportMetrics {
-            val outerWidth = width.coerceAtLeast(1)
-            val safeHeight = height.coerceAtLeast(6)
-            val gutter = if (outerWidth >= MINIMUM_WIDTH_FOR_GUTTER) GUTTER_CELLS else 0
-            val safeWidth = (outerWidth - gutter * 2).coerceAtLeast(1)
-            val contentStart = headerHeight.coerceAtLeast(0)
-            val footerRow = safeHeight - 1
-            val safeComposerHeight = composerHeight.coerceIn(1, 4)
-            val composerStart = (footerRow - safeComposerHeight).coerceAtLeast(contentStart)
-            val transcriptStart = contentStart
-            val transcriptHeight = (composerStart - transcriptStart).coerceAtLeast(1)
-
+            val calc = ViewportMetricsCalculator.calculate(width, height, headerHeight, composerHeight)
             return ViewportMetrics(
-                safeWidth = safeWidth,
-                safeHeight = safeHeight,
-                contentStart = contentStart,
-                transcriptStart = transcriptStart,
-                transcriptHeight = transcriptHeight,
-                composerStart = composerStart
+                safeWidth = calc.safeWidth,
+                safeHeight = calc.safeHeight,
+                contentStart = calc.contentStart,
+                transcriptStart = calc.transcriptStart,
+                transcriptHeight = calc.transcriptHeight,
+                composerStart = calc.composerStart
             )
         }
     }

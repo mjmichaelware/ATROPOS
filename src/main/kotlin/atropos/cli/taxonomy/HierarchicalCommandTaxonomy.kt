@@ -32,6 +32,7 @@ data class TaxonomyNode(
 
 class HierarchicalCommandTaxonomy {
     val root: MutableMap<String, TaxonomyNode> = mutableMapOf()
+    val navigator: CommandTrieNavigator = CommandTrieNavigator()
 
     init {
         bootstrapDefaultTaxonomy()

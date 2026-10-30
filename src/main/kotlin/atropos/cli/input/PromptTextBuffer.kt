@@ -111,9 +111,10 @@ class PromptTextBuffer(val maximumLength: Int = DEFAULT_MAXIMUM_LENGTH) {
      * at the end without auto-executing, allowing review or parameter entry.
      */
     fun injectCommand(command: String) {
-        replace(command)
-        moveEnd()
+        PromptBufferInjector(this).injectWithoutExecution(command)
     }
+
+    fun createInjector(): PromptBufferInjector = PromptBufferInjector(this)
 
     fun clear() {
         buffer.clear()

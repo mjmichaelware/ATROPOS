@@ -48,6 +48,8 @@ class TranscriptBuffer(
         append(entry)
     }
 
+    fun asInertiaClamped(): InertiaClampedTranscriptBuffer = InertiaClampedTranscriptBuffer(this)
+
     fun setRenderedWidth(width: Int) {
         if (width > 0) lastRenderedWidth = width
     }

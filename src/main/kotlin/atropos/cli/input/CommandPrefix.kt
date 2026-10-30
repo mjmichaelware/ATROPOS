@@ -55,7 +55,7 @@ object CommandPrefix {
      * Checks if input is an immediate raw slash trigger intended to launch the palette.
      */
     fun isImmediateSlashTrigger(input: String): Boolean =
-        input == "/" || input.trim() == "/"
+        ImmediateSlashTriggerInterceptor.isImmediateSlashTrigger(input)
 
     /**
      * Classification of input for deterministic routing.
@@ -74,15 +74,18 @@ object CommandPrefix {
      * @return The classification result.
      */
     fun classify(input: String): InputClassification {
-        val trimmed = input.trim()
-        if (trimmed.isEmpty()) return InputClassification.Empty
-        if (trimmed == "/" && input.length == 1) {
-            return InputClassification.ImmediatePaletteTrigger('/')
-        }
-        return if (isCommandPrefixed(input)) {
-            InputClassification.Command(input)
-        } else {
-            InputClassification.NaturalLanguage(input)
+        val intercepted = ImmediateSlashTriggerInterceptor.classify(input)
+        return when (intercepted) {
+            is ImmediateSlashTriggerInterceptor.InterceptionResult.LaunchPalette ->
+                InputClassification.ImmediatePaletteTrigger('/')
+            is ImmediateSlashTriggerInterceptor.InterceptionResult.CommandPrefixed ->
+                InputClassification.Command(input)
+            is ImmediateSlashTriggerInterceptor.InterceptionResult.NaturalLanguage ->
+                InputClassification.NaturalLanguage(intercepted.text)
+            is ImmediateSlashTriggerInterceptor.InterceptionResult.PassThrough ->
+                InputClassification.NaturalLanguage(input)
+            is ImmediateSlashTriggerInterceptor.InterceptionResult.Empty ->
+                InputClassification.Empty
         }
     }
 }

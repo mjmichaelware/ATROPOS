@@ -51,6 +51,8 @@ class CollapsedPasteRegistry(
         val display: String
     )
 
+    val pillRegistry: PastePillTokenRegistry = PastePillTokenRegistry(lineThreshold, wordThreshold, maxRetainedChars)
+
     private val stored = LinkedHashMap<String, String>()
     private var retained = 0
     private var nextToken = 1

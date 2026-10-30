@@ -39,23 +39,7 @@ data class PlatformDescriptor(
     val isDesktop: Boolean get() = platform in setOf(RuntimePlatform.JVM_LINUX, RuntimePlatform.JVM_MACOS, RuntimePlatform.JVM_WINDOWS, RuntimePlatform.COMPOSE_DESKTOP)
 
     companion object {
-        fun detect(): PlatformDescriptor {
-            val os = System.getProperty("os.name", "unknown").lowercase()
-            val platform = when {
-                os.contains("linux") -> RuntimePlatform.JVM_LINUX
-                os.contains("mac") || os.contains("darwin") -> RuntimePlatform.JVM_MACOS
-                os.contains("win") -> RuntimePlatform.JVM_WINDOWS
-                else -> RuntimePlatform.UNKNOWN
-            }
-            return PlatformDescriptor(
-                platform = platform,
-                name = platform.name,
-                version = System.getProperty("java.version", "unknown"),
-                cpuCores = Runtime.getRuntime().availableProcessors(),
-                totalMemoryBytes = Runtime.getRuntime().maxMemory(),
-                isLowRamDevice = Runtime.getRuntime().maxMemory() <= 1024L * 1024L * 1024L || Runtime.getRuntime().availableProcessors() <= 2
-            )
-        }
+        fun detect(): PlatformDescriptor = DynamicHardwareProfileDiscovery.discover()
 
         fun defaultCapabilities(): Set<PlatformCapability> = setOf(
             PlatformCapability.FILESYSTEM_ACCESS,

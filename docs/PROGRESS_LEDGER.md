@@ -295,3 +295,23 @@ After every coherent batch:
   - ATOM 10.2: HOE status vocabulary and unified terminology (`HoeStatusVocabulary.kt`)
   - ATOM 10.3: Automated surface contract parity testing (`SurfaceContractParityTest.kt`)
 - Status: IMPLEMENTED & COMMITTED FOR REMOTE CI VERIFICATION
+
+### Decoupled Implementation Expansion:
+- Created 17 brand-new decoupled files (1,127 LOC) ensuring modular architecture:
+  - `ImmediateSlashTriggerInterceptor.kt` (ATOM 6.1)
+  - `TrieModalOverlayRenderer.kt` (ATOM 6.2)
+  - `CommandTrieNavigator.kt` (ATOM 6.3)
+  - `CommandSpecificationCardRenderer.kt` (ATOM 6.4)
+  - `PromptBufferInjector.kt` (ATOM 6.5)
+  - `SynchronizedCommandCatalogRegistry.kt` (ATOM 6.6)
+  - `DynamicHardwareProfileDiscovery.kt` (ATOM 7.1)
+  - `LocalizedStartupGreetingFormatter.kt` (ATOM 7.2)
+  - `PipeOutputModeDetector.kt` (ATOM 7.3)
+  - `BracketedPasteIngestionPipeline.kt` (ATOM 8.1)
+  - `PastePillTokenRegistry.kt` (ATOM 8.2)
+  - `TouchSafeMobileComposer.kt` (ATOM 8.3)
+  - `DecoupledTerminalCanvasController.kt` (ATOM 9.1)
+  - `InertiaClampedTranscriptBuffer.kt` (ATOM 9.2)
+  - `ViewportMetricsCalculator.kt` (ATOM 9.3)
+  - `CanonicalHoeStatusEngine.kt` (ATOM 10.2)
+  - `AutomatedCrossSurfaceParityTest.kt` (ATOM 10.3)

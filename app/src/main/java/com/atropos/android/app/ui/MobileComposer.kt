@@ -125,7 +125,7 @@ fun MobileComposer(
     onSend: () -> Unit,
     isOnline: Boolean = true,
     onBuild: (() -> Unit)? = null
-) = ComposerScreen(
+) = TouchSafeMobileComposer(
     value = value,
     onValueChange = onValueChange,
     onSend = onSend,

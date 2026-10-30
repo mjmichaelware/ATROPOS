@@ -126,41 +126,26 @@ class StartupSequence(
 
     private fun blank(art: List<String>): List<String> = art.map { "" }
 
+    val greetingFormatter: LocalizedStartupGreetingFormatter = LocalizedStartupGreetingFormatter(theme, clock)
+
     /**
      * A greeting, because the first thing a tool says to a person should be
      * addressed to them.
-     *
-     * ## Research: ANSI Truecolor vs 256-Color Gradient Optimizations
-     * Dynamic gradient rendering optimizations across truecolor (24-bit) and 256-color
-     * palettes maintain readability and contrast on diverse e-ink and high-contrast
-     * accessibility displays without visual artifacts or inverted luminance steps.
      */
-    fun greetingLine(): String {
-        val hour = localTime().hour
-        val greeting = when {
-            hour in 0..11 -> "Good morning"
-            hour in 12..16 -> "Good afternoon"
-            else -> "Good evening"
-        }
-        return theme.strong(greeting) + theme.subdued(" — the thread is yours to cut.")
-    }
+    fun greetingLine(): String = greetingFormatter.greetingLine()
 
-    fun factLines(facts: Facts): List<String> = listOf(
-        label("version") + theme.strong(facts.version),
-        label("provider") + theme.strong(facts.provider) +
-            theme.subdued(" · ${facts.providerCount} configured"),
-        label("territory") + theme.path(TerminalText.compactPath(facts.workspace)),
-        label("") + theme.metadata("/ for commands · @ to attach a file")
+    fun factLines(facts: Facts): List<String> = greetingFormatter.factLines(
+        LocalizedStartupGreetingFormatter.InstallationFacts(
+            version = facts.version,
+            provider = facts.provider,
+            providerCount = facts.providerCount,
+            workspace = facts.workspace
+        )
     )
 
-    fun localTime(): LocalTime = clock()
+    fun localTime(): LocalTime = greetingFormatter.localTime()
 
-    fun formatUptime(uptimeMillis: Long): String {
-        val seconds = (uptimeMillis / 1000) % 60
-        val minutes = (uptimeMillis / (1000 * 60)) % 60
-        val hours = (uptimeMillis / (1000 * 60 * 60))
-        return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m ${seconds}s"
-    }
+    fun formatUptime(uptimeMillis: Long): String = greetingFormatter.formatUptime(uptimeMillis)
 
     private fun label(name: String): String =
         theme.subdued(name.padEnd(LABEL_CELLS))

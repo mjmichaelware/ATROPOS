@@ -104,20 +104,17 @@ class FuzzyMatcher(
  * Handles terminal bracketed paste sequences, stripping carriage returns and neutralizing escape codes.
  */
 object BracketedPasteHandler {
-    const val BRACKETED_PASTE_START = "\u001b[200~"
-    const val BRACKETED_PASTE_END = "\u001b[201~"
+    const val BRACKETED_PASTE_START = BracketedPasteIngestionPipeline.BRACKETED_PASTE_START
+    const val BRACKETED_PASTE_END = BracketedPasteIngestionPipeline.BRACKETED_PASTE_END
 
     fun isPasteSequence(input: String): Boolean =
-        input.contains(BRACKETED_PASTE_START) && input.contains(BRACKETED_PASTE_END)
+        BracketedPasteIngestionPipeline.isPasteSequence(input)
 
-    fun sanitizeInput(raw: String): String {
-        return raw.replace("\r\n", "\n")
-            .replace("\r", "\n")
-            .replace(BRACKETED_PASTE_START, "")
-            .replace(BRACKETED_PASTE_END, "")
-    }
+    fun sanitizeInput(raw: String): String =
+        BracketedPasteIngestionPipeline.sanitizeInput(raw)
 
-    fun processPaste(rawPaste: String): String = sanitizeInput(rawPaste)
+    fun processPaste(rawPaste: String): String =
+        BracketedPasteIngestionPipeline.processPaste(rawPaste)
 }
 
 /**

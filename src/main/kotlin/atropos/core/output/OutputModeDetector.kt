@@ -23,7 +23,9 @@ enum class OutputMode {
  * querying terminal capability databases (terminfo) to refine color and cursor control negotiation.
  */
 object OutputModeDetector {
-    fun isTty(): Boolean = System.console() != null
+    val pipeDetector: PipeOutputModeDetector = PipeOutputModeDetector
+
+    fun isTty(): Boolean = PipeOutputModeDetector.isTty()
 
     fun isHeadless(env: Map<String, String> = System.getenv()): Boolean = detect(env).isHeadless
 

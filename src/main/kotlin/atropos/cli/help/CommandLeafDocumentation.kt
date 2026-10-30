@@ -34,6 +34,9 @@ data class CommandLeafDocumentation(
 object CommandLeafRegistry {
     private val leaves = mutableMapOf<String, CommandLeafDocumentation>()
 
+    fun cardRenderer(theme: TerminalTheme): CommandSpecificationCardRenderer =
+        CommandSpecificationCardRenderer(theme)
+
     init {
         bootstrapLeaves()
     }

@@ -34,6 +34,7 @@ package atropos.cli.ui.design
  * and truecolor foreground/background pairs across dark, light, and low-light ambient terminal themes.
  */
 object HoeStatusVocabulary {
+    fun engine(): CanonicalHoeStatusEngine = CanonicalHoeStatusEngine
 
     /**
      * Doc 4's nine terms in the doc's own order, in the hyphenated wire form the

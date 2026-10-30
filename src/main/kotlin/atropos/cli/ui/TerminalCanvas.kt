@@ -71,6 +71,9 @@ class TerminalCanvas(
         FrameDiffRenderer(out)
     private var alternateScreen = false
 
+    val mouseController: DecoupledTerminalCanvasController =
+        DecoupledTerminalCanvasController(out, outputLock) { capabilities.isInteractiveTerminal }
+
     fun refreshGeometry(): Boolean {
         if (!capabilities.isInteractiveTerminal || BoundedRenderingController.isPasteSuspended()) {
             return false

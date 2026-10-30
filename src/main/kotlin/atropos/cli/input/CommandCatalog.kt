@@ -10,6 +10,8 @@ package atropos.cli.input
  * parallel declarations, guaranteeing surface parity and compile-time contract safety.
  */
 object CommandCatalog {
+    fun registry(): SynchronizedCommandCatalogRegistry = SynchronizedCommandCatalogRegistry
+
     val catalog: List<CommandEntry> = listOf(
         CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?", "/commands")),
         CommandEntry("/shortcuts", "every keyboard shortcut", "System", aliases = listOf("/keys-help")),
