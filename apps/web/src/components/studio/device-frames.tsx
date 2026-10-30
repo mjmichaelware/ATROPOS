@@ -154,14 +154,12 @@ export function DeviceFrameContainer({
         height: `${frameHeight}px`,
         transform: `scale(${scale / 100})`,
         transformOrigin: 'center center',
-        transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease-out'
-      }}
-      className="relative flex flex-col overflow-hidden bg-black shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border border-slate-700/60 transition-shadow duration-300"
-      style={{
+        transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease-out',
         borderRadius: `${spec.cornerRadius}px`,
         borderWidth: `${spec.bezelWidth}px`,
         borderColor: '#1e293b'
       }}
+      className="relative flex flex-col overflow-hidden bg-black shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border border-slate-700/60 transition-shadow duration-300"
     >
       {/* Outer Titanium Trim Chamfer */}
       <div
