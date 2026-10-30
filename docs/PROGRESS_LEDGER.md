@@ -264,3 +264,11 @@ After every coherent batch:
   - Strict client-to-engine command flow control without client simulation
   - Multi-surface command parity validation
 - Status: VERIFIED & BOUND
+
+- Remote GitHub Actions Verification:
+  - Commit: `f069e66d`
+  - Release JAR (Workflow 41135406563): `success` (Publish JAR, Web standalone build, Android APK)
+  - Factory CI (Workflow 41135406511): `success`
+  - compile gate (Workflow 41135406468): `success`
+  - Build and Sign Android APK (Workflow 41135406432): `success`
+- Final Verification Status: **ALL SURFACES GREEN**
