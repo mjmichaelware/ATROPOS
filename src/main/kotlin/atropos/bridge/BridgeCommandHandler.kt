@@ -30,16 +30,13 @@ import atropos.core.security.RedactionFilter
  * drift `HOE-C02` forbids: the two surfaces would start describing the same
  * run differently.
  */
-internal class BridgeCommandHandler(
+class BridgeCommandHandler(
     /**
      * Runs a command line and returns what the engine printed.
-     *
-     * Injected because a route table must stay constructible without a
-     * provider, a config and a terminal. `AtroposBridge.server()` binds the
-     * real router.
+     * Enforces strict client-to-engine command flow control; never simulated locally.
      */
-    private val run: (String) -> BridgeCommandOutput,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    val run: (String) -> BridgeCommandOutput,
+    val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
 
     fun execute(request: HttpRequest): HttpResponse {

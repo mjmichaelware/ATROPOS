@@ -53,7 +53,9 @@ data class ProviderActivationRecord(
     val lastCheckedAt: Instant = Instant.now(),
     val lastUsedAt: Instant? = null,
     val routeEligibility: List<String> = emptyList(),
-    val quotaCooldownUntil: Instant? = null
+    val quotaCooldownUntil: Instant? = null,
+    val inferenceVerified: Boolean = false,
+    val bridgeConnected: Boolean = true
 ) {
     fun render(): String = RedactionFilter().redact(buildString {
         appendLine("provider: $providerId")

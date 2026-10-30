@@ -53,8 +53,11 @@ object ContextPathExclusions {
         return NAME_FRAGMENTS.any { name.contains(it, ignoreCase = true) }
     }
 
-    private fun isSourceFile(name: String): Boolean =
+    fun isSourceFile(name: String): Boolean =
         SOURCE_SUFFIXES.any { name.endsWith(it, ignoreCase = true) }
+
+    val excludedDirectoryNames: Set<String> get() = DIRECTORIES.toSet()
+    val excludedExtensions: Set<String> get() = SUFFIXES.toSet()
 
     /** Directory roots excluded wholesale, along with everything beneath them. */
     private val DIRECTORIES = listOf(

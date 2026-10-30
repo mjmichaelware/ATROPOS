@@ -97,12 +97,23 @@ class IngestTerritory(
 
     fun paths(): List<Path> = roots().map(Root::path)
 
+    /**
+     * Enforces path canonicalization and verifies containment strictly within operator-granted roots.
+     */
+    fun isContained(candidate: Path): Boolean {
+        val canonicalCandidate = runCatching { candidate.toRealPath() }.getOrDefault(candidate.toAbsolutePath().normalize())
+        return roots().any { root ->
+            val canonicalRoot = runCatching { root.path.toRealPath() }.getOrDefault(root.path.toAbsolutePath().normalize())
+            canonicalCandidate == canonicalRoot || canonicalCandidate.startsWith(canonicalRoot)
+        }
+    }
+
     /** One line per root, for a refusal message or an evidence bundle. */
     fun describe(): String = roots().joinToString("\n") { root ->
         "  ${root.path} (${root.source.label()})"
     }
 
-    private fun configuredRoots(): List<Path> {
+    fun configuredRoots(): List<Path> {
         val file = launchDirectory.resolve(WORKSPACE_FILE)
         if (!Files.isRegularFile(file)) return emptyList()
         return runCatching { Files.readAllLines(file) }.getOrDefault(emptyList())
@@ -111,12 +122,9 @@ class IngestTerritory(
             .mapNotNull(::pathOrNull)
     }
 
-    private fun pathOrNull(value: String): Path? {
+    fun pathOrNull(value: String): Path? {
         val trimmed = value.trim()
         if (trimmed.isEmpty()) return null
-        // `~` is shell syntax the JVM never expands, and an operator writing it
-        // into a config file means their home directory, not a directory named
-        // `~` in the workspace.
         val expanded =
             if (trimmed == "~" || trimmed.startsWith("~/")) {
                 homeDirectory()?.resolve(trimmed.removePrefix("~").removePrefix("/")) ?: return null

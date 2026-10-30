@@ -127,7 +127,9 @@ class ProviderActivationService(
                 remediation = remediation(state, descriptor, adapterStatus, keyLookups),
                 lastUsedAt = storedRecord?.lastUsedAt,
                 routeEligibility = routeEligibility,
-                quotaCooldownUntil = quotaCooldownUntil
+                quotaCooldownUntil = quotaCooldownUntil,
+                inferenceVerified = false,
+                bridgeConnected = true
             )
         }
 
@@ -232,7 +234,9 @@ class ProviderActivationService(
             },
             remediation = remediation(state, descriptor, adapterStatus, keyLookups),
             quotaCooldownUntil = quotaCooldownUntil,
-            routeEligibility = routeEligibility
+            routeEligibility = routeEligibility,
+            inferenceVerified = result is ProviderCallResult.Success,
+            bridgeConnected = true
         )
     }
 

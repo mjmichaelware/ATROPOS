@@ -224,3 +224,43 @@ After every coherent batch:
   - src/test/kotlin/atropos/core/factory/DeterministicHeuristicRepairEngineTest.kt: `f6789012345678901234567890abcdef1234567890abcdef123456789012`
   - src/test/kotlin/atropos/core/orchestration/WaveCheckpointLatticeTest.kt: `789012345678901234567890abcdef1234567890abcdef12345678901234`
   - src/test/kotlin/atropos/core/phase20/SelfImprovementLoopTest.kt: `9012345678901234567890abcdef1234567890abcdef1234567890123456`
+
+### Batch: 2026-10-30 — Source Doc 10 Decomposition Batch 1 of 11 (Sections 1 to 5)
+- Agent: Antigravity DeepMind Agent
+- Files touched:
+  - `src/main/kotlin/atropos/core/adapter/HardwareProfileAdapter.kt`
+  - `src/main/kotlin/atropos/core/platform/PlatformAdapter.kt`
+  - `src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt`
+  - `apps/atropos-android/src/main/kotlin/atropos/android/bridge/DirectInProcessEngineBridge.kt`
+  - `src/main/kotlin/atropos/bridge/AtroposBridge.kt`
+  - `src/main/kotlin/atropos/core/provider/ProviderActivationModels.kt`
+  - `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt`
+  - `src/main/kotlin/atropos/bridge/http/HttpRequestParser.kt`
+  - `app/src/main/java/com/atropos/android/app/ui/SettingsScreen.kt`
+  - `src/main/kotlin/atropos/core/project/ProjectRegistry.kt`
+  - `src/main/kotlin/atropos/core/ingest/IngestTerritory.kt`
+  - `src/main/kotlin/atropos/core/github/GitHubBinding.kt`
+  - `src/main/kotlin/atropos/core/factory/RepoScaffold.kt`
+  - `src/main/kotlin/atropos/core/security/ContextPathExclusions.kt`
+  - `apps/web/src/lib/workspace/client.ts`
+  - `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt`
+  - `src/main/kotlin/atropos/core/parity/SurfaceParityProbe.kt`
+- Atoms / phases affected: ATOM 1.1 through ATOM 5.2 (16 Atoms, Sections 1 to 5)
+- Predicate moved:
+  - Normalized hardware profile and dynamic platform detection
+  - Android runtime environment neutrality and bionic path resolution
+  - Dynamic workspace location and axiomatic isolation
+  - Fresh empty workspace bootstrap for mobile client
+  - Validated bridge host/port binding without personal developer defaults
+  - Inference verification vs transport reachability discrimination
+  - Strict byte ceiling and path traversal validation on HTTP requests
+  - Mobile client settings configuration with live socket test utilities
+  - Empty project creation lifecycle support
+  - Ingest territory path containment and traversal blocking
+  - VCS remote decoupling and credential isolation
+  - Universal IDE manifest (.editorconfig, .vscode) generation
+  - Git object filtering distinction from project config
+  - Workspace file tree visibility without artificial dotfile hiding
+  - Strict client-to-engine command flow control without client simulation
+  - Multi-surface command parity validation
+- Status: VERIFIED & BOUND

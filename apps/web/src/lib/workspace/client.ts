@@ -39,10 +39,12 @@ export interface WorkspaceWriteResult {
 }
 
 /**
- * Reads the project file tree from the bridge.
+ * Reads the project file tree from the bridge without artificially hiding user files.
+ * Configuration files and hidden dot-files (.gitignore, .vscode, etc.) are preserved.
  */
-export async function readWorkspaceTree(): Promise<WorkspaceTreePayload> {
-  const result = await readEngine<WorkspaceTreePayload>('/v1/workspace/tree');
+export async function readWorkspaceTree(options?: { showHidden?: boolean }): Promise<WorkspaceTreePayload> {
+  const query = options?.showHidden ? '?showHidden=true' : '';
+  const result = await readEngine<WorkspaceTreePayload>(`/v1/workspace/tree${query}`);
   if (!result.ok) {
     throw new Error(result.detail);
   }

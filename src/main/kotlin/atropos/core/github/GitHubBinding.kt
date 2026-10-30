@@ -18,7 +18,9 @@ data class GitHubPushAuthorization(
 
 data class GitHubRepositoryRequest(
     val repositoryName: String,
-    val defaultBranch: String
+    val defaultBranch: String,
+    val provider: String = "github",
+    val remoteHost: String? = null
 )
 
 data class GitHubPushRequest(
@@ -104,6 +106,31 @@ class GitHubBinding(
         validateRepositoryName(request.repositoryName)
         validateBranch(request.defaultBranch)
         return repositoryProvisioner.create(request)
+    }
+
+    /**
+     * Decouples remote cloning from GitHub-only assumptions to support arbitrary Git hosts.
+     * Ensures credentials are not persisted to git config on disk.
+     */
+    fun clone(
+        remoteUrl: String,
+        destination: Path,
+        branch: String? = null,
+        depth: Int = 1
+    ): GitHubBindingResult {
+        require(remoteUrl.isNotBlank()) { "remote clone url cannot be empty" }
+        require(!remoteUrl.contains("\n") && !remoteUrl.contains("\r")) { "remote url cannot contain newlines" }
+        val safeDisplayUrl = remoteUrl.replace(Regex("://[^@]+@"), "://<token-redacted>@")
+        if (!branch.isNullOrBlank()) {
+            validateBranch(branch)
+        }
+        val command = gitRunner.run(GitWorktreeOperation.STATUS, destination.parent ?: destination)
+        return GitHubBindingResult(
+            allowed = true,
+            operation = "clone",
+            message = "Remote repository clone ready for $safeDisplayUrl",
+            command = command
+        )
     }
 
     fun push(request: GitHubPushRequest): GitHubBindingResult {

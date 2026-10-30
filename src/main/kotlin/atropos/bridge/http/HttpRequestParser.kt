@@ -12,15 +12,14 @@ import java.nio.charset.StandardCharsets
  * line is not a request, and guessing what the caller meant is how a parser
  * becomes an attack surface; [parse] returns null and the caller answers 400.
  *
- * The bounds exist because this listener is reachable from a browser page. An
- * unbounded header loop is a memory exhaustion primitive against the operator's
- * own machine, which is the one machine ATROPOS is supposed to protect.
+ * Enforces strict byte ceilings and rejects malicious URL traversal encodings
+ * before unbounded memory allocations can take place.
  */
 class HttpRequestParser(
-    private val maxRequestLineChars: Int = 8 * 1024,
-    private val maxHeaderCount: Int = 64,
-    private val maxHeaderChars: Int = 8 * 1024,
-    private val maxBodyBytes: Int = 1 * 1024 * 1024
+    val maxRequestLineChars: Int = 8 * 1024,
+    val maxHeaderCount: Int = 64,
+    val maxHeaderChars: Int = 8 * 1024,
+    val maxBodyBytes: Int = 1 * 1024 * 1024
 ) {
     fun parse(reader: BufferedReader): HttpRequest? {
         val requestLine = reader.readLine() ?: return null
@@ -31,6 +30,19 @@ class HttpRequestParser(
         val method = parts[0].uppercase()
         val target = parts[1]
 
+        val rawPath = target.substringBefore('?')
+        val decodedPath = decode(rawPath)
+
+        // Refuse malicious path traversal sequences, null bytes, or backslash injections
+        if (decodedPath.contains('\u0000') ||
+            decodedPath.contains('\\') ||
+            decodedPath.split('/').contains("..") ||
+            rawPath.contains("%2e%2e", ignoreCase = true) ||
+            rawPath.contains("%252e", ignoreCase = true)
+        ) {
+            return null
+        }
+
         val headers = readHeaders(reader) ?: return null
 
         val declaredLength = headers["content-length"]
@@ -40,20 +52,26 @@ class HttpRequestParser(
 
         return HttpRequest(
             method = method,
-            path = decode(target.substringBefore('?')),
+            path = decodedPath,
             query = parseQuery(target.substringAfter('?', "")),
             headers = headers,
             body = body
         )
     }
 
-    private fun readHeaders(reader: BufferedReader): Map<String, String>? {
+    fun readHeaders(reader: BufferedReader): Map<String, String>? {
         val headers = LinkedHashMap<String, String>()
+        var totalHeaderChars = 0
+        val maxTotalHeaderChars = maxHeaderChars * maxHeaderCount
+
         while (true) {
             val line = reader.readLine() ?: return null
             if (line.isEmpty()) return headers
             if (line.length > maxHeaderChars) return null
+            totalHeaderChars += line.length
+            if (totalHeaderChars > maxTotalHeaderChars) return null
             if (headers.size >= maxHeaderCount) return null
+
             val name = line.substringBefore(':', "").trim().lowercase()
             if (name.isEmpty()) return null
             if (headers.containsKey(name)) return null
@@ -61,7 +79,8 @@ class HttpRequestParser(
         }
     }
 
-    private fun readBody(reader: BufferedReader, length: Int): String? {
+    fun readBody(reader: BufferedReader, length: Int): String? {
+        if (length < 0 || length > maxBodyBytes) return null
         val buffer = CharArray(length)
         var read = 0
         while (read < length) {

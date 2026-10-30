@@ -33,7 +33,7 @@ object TargetWorkspaceLocator {
 
         if (targetHint != null) {
             val candidate = targetHint.toAbsolutePath().normalize()
-            if (candidate.startsWith(engineRoot)) {
+            if (candidate == engineRoot || candidate.startsWith(engineRoot)) {
                 throw EngineDomainViolationException(
                     "Domain decoupling violation: target workspace cannot be inside engine repository: $candidate"
                 )
@@ -44,9 +44,22 @@ object TargetWorkspaceLocator {
             return candidate
         }
 
-        val tmpDir = Path.of(System.getProperty("java.io.tmpdir", "/tmp")).toAbsolutePath().normalize()
+        // Dynamically detect fresh runtime states and resolve isolated per-project
+        // target directories within user-granted document roots or application-internal cache boundaries.
+        val baseCandidate = listOfNotNull(
+            System.getenv("ATROPOS_WORKSPACE_ROOT")?.let { Path.of(it) },
+            System.getenv("ANDROID_DATA")?.let { Path.of(it, "data", "com.atropos.android", "cache") },
+            System.getenv("EXTERNAL_STORAGE")?.let { Path.of(it, "Documents", "Atropos") },
+            Path.of(System.getProperty("java.io.tmpdir", "/tmp"))
+        ).firstOrNull { dir ->
+            runCatching {
+                Files.createDirectories(dir)
+                Files.isWritable(dir)
+            }.getOrDefault(false)
+        } ?: Path.of(System.getProperty("java.io.tmpdir", "/tmp")).toAbsolutePath().normalize()
+
         val uniqueName = "$WORKSPACE_PREFIX${UUID.randomUUID()}"
-        val created = tmpDir.resolve(uniqueName)
+        val created = baseCandidate.toAbsolutePath().normalize().resolve(uniqueName)
         Files.createDirectories(created)
         return created
     }

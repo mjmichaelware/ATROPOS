@@ -72,6 +72,31 @@ $lineageText""".trimIndent()
         // verify.sh
         map["verify.sh"] = layout.verify
 
+        // Universal IDE and editor manifests
+        map[".editorconfig"] = """
+            root = true
+
+            [*]
+            indent_style = space
+            indent_size = 4
+            end_of_line = lf
+            charset = utf-8
+            trim_trailing_whitespace = true
+            insert_final_newline = true
+
+            [*.{json,yml,yaml,ts,js,html,css}]
+            indent_size = 2
+        """.trimIndent() + "\n"
+
+        map[".vscode/settings.json"] = """
+            {
+              "editor.tabSize": 4,
+              "editor.insertSpaces": true,
+              "files.trimTrailingWhitespace": true,
+              "files.insertFinalNewline": true
+            }
+        """.trimIndent() + "\n"
+
         // Ecosystem manifests
         layout.manifests.forEach { (path, contents) -> map[path] = contents }
 
@@ -173,6 +198,8 @@ data class ProjectLanguageLayout(
     val commentPrefix: String
 ) {
     companion object {
+        fun layoutFor(language: ProjectLanguage): ProjectLanguageLayout = forLanguage(language)
+
         fun forLanguage(language: ProjectLanguage): ProjectLanguageLayout = when (language) {
             ProjectLanguage.KOTLIN -> ProjectLanguageLayout(
                 language = ProjectLanguage.KOTLIN,

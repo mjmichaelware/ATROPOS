@@ -35,6 +35,11 @@ import java.time.Instant
 object LocalEngineBridge {
 
     const val PORT_VARIABLE = "ATROPOS_BRIDGE_PORT"
+    const val HOST_VARIABLE = "ATROPOS_BRIDGE_HOST"
+
+    @Volatile
+    var boundPort: Int? = null
+        internal set
 
     fun fromEnvironment(
         environment: (String) -> String? = System::getenv,
@@ -46,6 +51,12 @@ object LocalEngineBridge {
         if (raw.isEmpty()) return null
         val port = raw.toIntOrNull() ?: return null
         if (port !in 0..65_535) return null
+
+        val host = environment(HOST_VARIABLE)?.trim().takeUnless { it.isNullOrBlank() } ?: "127.0.0.1"
+        if (host != "127.0.0.1" && host != "localhost" && host != "::1" && host != "0.0.0.0") {
+            if (!host.matches(Regex("^[a-zA-Z0-9.-]+$"))) return null
+        }
+
         return server(
             port,
             activeProvider = activeProvider,
@@ -81,6 +92,7 @@ object LocalEngineBridge {
         onboarding: ProviderOnboardingService? = null,
         mcpHostManager: McpHostManager? = null
     ): EngineHttpServer {
+        boundPort = port
         val repoRoot = AtroposRepoRootLocator.resolve()
         val goalRunStore = GoalRunStore(repoRoot)
         val exportResolver = atropos.core.artifact.export.ArtifactLandingResolver(repoRoot, null)

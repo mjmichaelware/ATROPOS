@@ -43,6 +43,25 @@ class ProjectRegistry(
     }
 
     /**
+     * Initializes an empty project folder without requiring a pre-existing Git remote.
+     */
+    fun createEmptyProject(
+        name: String,
+        targetDirectory: Path,
+        kind: String = "empty-project",
+        objective: String = ""
+    ): ProjectRegistrationResult {
+        Files.createDirectories(targetDirectory)
+        val binding = RepositoryBinding(
+            repoRoot = targetDirectory.toAbsolutePath().normalize().toString(),
+            branch = "",
+            baselineCommit = "",
+            dirtyFingerprint = ""
+        )
+        return register(name = name, kind = kind, binding = binding, objective = objective)
+    }
+
+    /**
      * Replaces one record and appends a history entry.
      *
      * §4.0: "No approval action permanently hides previous history." The same

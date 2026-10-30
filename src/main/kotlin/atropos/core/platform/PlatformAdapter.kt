@@ -2,6 +2,7 @@ package atropos.core.platform
 
 import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 
 sealed class ToolResolutionResult {
@@ -18,13 +19,16 @@ interface PlatformAdapter {
     fun resolveTool(binaryName: String): ToolResolutionResult {
         val pathEnv = System.getenv("PATH").orEmpty()
         val pathEntries = pathEnv.split(java.io.File.pathSeparator).filter { it.isNotBlank() }.toMutableList()
-        val extraSearchDirs = listOf(
+        val extraSearchDirs = listOfNotNull(
             System.getenv("PREFIX")?.let { "$it/bin" },
+            "/system/bin",
+            "/system/xbin",
+            "/apex/com.android.runtime/bin",
             "/usr/local/bin",
             "/usr/bin",
             "/bin",
             "/opt/homebrew/bin"
-        ).filterNotNull()
+        )
         for (extra in extraSearchDirs) {
             if (extra !in pathEntries && java.io.File(extra).isDirectory) {
                 pathEntries.add(extra)
@@ -47,13 +51,29 @@ interface PlatformAdapter {
     }
 
     fun getHomeDirectory(): Path {
-        val userHome = System.getProperty("user.home") ?: System.getenv("HOME") ?: "."
-        return Path.of(userHome).toAbsolutePath().normalize()
+        val candidate = listOfNotNull(
+            System.getProperty("user.home"),
+            System.getenv("HOME"),
+            System.getenv("EXTERNAL_STORAGE"),
+            "."
+        ).firstOrNull { it.isNotBlank() } ?: "."
+        return Path.of(candidate).toAbsolutePath().normalize()
     }
 
     fun getSystemTemp(): Path {
-        val tmp = System.getProperty("java.io.tmpdir") ?: System.getenv("TMPDIR") ?: "/tmp"
-        return Path.of(tmp).toAbsolutePath().normalize()
+        val candidate = listOfNotNull(
+            System.getenv("TMPDIR"),
+            System.getProperty("java.io.tmpdir"),
+            System.getenv("PREFIX")?.let { "$it/tmp" },
+            "/data/local/tmp",
+            "/tmp"
+        ).firstOrNull { dir ->
+            runCatching {
+                val f = java.io.File(dir)
+                f.exists() && f.canWrite()
+            }.getOrDefault(false)
+        } ?: System.getProperty("java.io.tmpdir") ?: "/tmp"
+        return Path.of(candidate).toAbsolutePath().normalize()
     }
 }
 
@@ -86,7 +106,10 @@ class ComposeDesktopAbstraction(
     private val wrapped: PlatformAbstraction
 ) : PlatformAbstraction by wrapped {
     override val descriptor: PlatformDescriptor
-        get() = wrapped.descriptor.copy(platform = RuntimePlatform.COMPOSE_DESKTOP, capabilities = wrapped.descriptor.capabilities + PlatformCapability.COMPOSE_RENDERING)
+        get() = wrapped.descriptor.copy(
+            platform = RuntimePlatform.COMPOSE_DESKTOP,
+            capabilities = wrapped.descriptor.capabilities + PlatformCapability.COMPOSE_RENDERING
+        )
 
     override fun spawnProcess(command: List<String>, workingDir: String?): Result<ProcessOutput> {
         val augmented = if (command.firstOrNull()?.contains("compose") == true) {
@@ -101,6 +124,11 @@ class AndroidShellAdapter : PlatformAdapter {
     override val displayName: String = "Android Shell Adapter"
 
     override fun isAvailable(): Boolean {
+        val isAndroidVendor = System.getProperty("java.vendor", "").contains("Android", ignoreCase = true)
+        val hasAndroidRoot = System.getenv("ANDROID_ROOT") != null || System.getenv("ANDROID_DATA") != null
+        val hasTermuxPrefix = System.getenv("PREFIX")?.contains("com.termux") == true
+        if (isAndroidVendor || hasAndroidRoot || hasTermuxPrefix) return true
+
         val result = runCatching {
             BoundedProcessRunner().run(
                 command = listOf("adb", "shell", "echo", "available"),
@@ -132,23 +160,39 @@ class AndroidShellAbstraction(
         )
 
     override val environment: PlatformEnvironment
-        get() = wrapped.environment.copy(
-            pathSeparator = ":",
-            fileSeparator = "/",
-            tempDir = "/data/local/tmp"
-        )
+        get() {
+            val resolvedTemp = listOfNotNull(
+                System.getenv("TMPDIR"),
+                System.getProperty("java.io.tmpdir"),
+                System.getenv("PREFIX")?.let { "$it/tmp" },
+                "/data/local/tmp"
+            ).firstOrNull { runCatching { val f = java.io.File(it); f.exists() && f.canWrite() }.getOrDefault(false) }
+                ?: (System.getenv("HOME") ?: "/data/local/tmp")
+
+            return wrapped.environment.copy(
+                pathSeparator = ":",
+                fileSeparator = "/",
+                tempDir = resolvedTemp
+            )
+        }
 
     override fun spawnProcess(command: List<String>, workingDir: String?): Result<ProcessOutput> = runCatching {
         require(command.isNotEmpty()) { "android shell command must not be empty" }
-        val adbCmd = if (workingDir.isNullOrBlank()) {
-            listOf("adb", "shell") + command
+        val isDirectAndroid = java.io.File("/system/bin/sh").exists() || System.getenv("PREFIX") != null
+        val effectiveCmd = if (isDirectAndroid) {
+            command
         } else {
-            val remote = "cd -- ${shellQuote(workingDir)} && exec " + command.joinToString(" ", transform = ::shellQuote)
-            listOf("adb", "shell", "sh", "-c", remote)
+            if (workingDir.isNullOrBlank()) {
+                listOf("adb", "shell") + command
+            } else {
+                val remote = "cd -- ${shellQuote(workingDir)} && exec " + command.joinToString(" ", transform = ::shellQuote)
+                listOf("adb", "shell", "sh", "-c", remote)
+            }
         }
+        val execDir = workingDir?.let { Path.of(it) } ?: Path.of("/")
         val bounded = boundedProcessRunner.run(
-            command = adbCmd,
-            directory = Path.of("/"),
+            command = effectiveCmd,
+            directory = if (isDirectAndroid && workingDir != null) execDir else Path.of("/"),
             timeoutMillis = 1_800_000,
             maxOutputBytes = 256 * 1024,
             maxOutputLines = 4_000
@@ -162,7 +206,7 @@ class AndroidShellAbstraction(
             exitCode = bounded.exitCode ?: 124,
             stdout = bounded.stdout,
             stderr = stderr,
-            command = adbCmd.joinToString(" ")
+            command = effectiveCmd.joinToString(" ")
         )
     }
 
