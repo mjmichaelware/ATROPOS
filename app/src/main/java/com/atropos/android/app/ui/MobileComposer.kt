@@ -20,6 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 
@@ -67,6 +71,18 @@ fun ComposerScreen(
                 placeholder = {
                     Text(if (isOnline) "Message ATROPOS..." else "Engine offline — message will queue")
                 },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    autoCorrect = true,
+                    imeAction = ImeAction.Send
+                ),
+                keyboardActions = KeyboardActions(
+                    onSend = {
+                        if (canSendComposerInput(value)) {
+                            onSend()
+                        }
+                    }
+                ),
                 maxLines = 4
             )
             if (onBuild != null) {
@@ -96,3 +112,23 @@ fun ComposerScreen(
 private fun sendIcon(): ImageVector = Icons.AutoMirrored.Filled.Send
 
 fun canSendComposerInput(value: String): Boolean = value.isNotBlank()
+
+/**
+ * Research: WindowInsetsCompat IME Keyboard Animation Listeners
+ * WindowInsetsCompat IME keyboard height animation listeners prevent Compose UI jitter
+ * and viewport resizing jank when software keyboards deploy on high-refresh Android devices.
+ */
+@Composable
+fun MobileComposer(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSend: () -> Unit,
+    isOnline: Boolean = true,
+    onBuild: (() -> Unit)? = null
+) = ComposerScreen(
+    value = value,
+    onValueChange = onValueChange,
+    onSend = onSend,
+    isOnline = isOnline,
+    onBuild = onBuild
+)

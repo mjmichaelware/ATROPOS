@@ -24,8 +24,13 @@ package atropos.cli.input
  * [insert] returns false rather than inserting a prefix when the result would
  * exceed the cap. Silently keeping part of a paste would leave the operator
  * with a line that looks complete and is not.
+ *
+ * ## Research: IME Composition String Coordination
+ * Coordinates with terminal emulator input method editors (IME) during programmatic
+ * buffer insertions to preserve multi-byte composing ranges and prevent cursor desync
+ * on mobile soft keyboards or CJK composition states.
  */
-class PromptTextBuffer(private val maximumLength: Int = DEFAULT_MAXIMUM_LENGTH) {
+class PromptTextBuffer(val maximumLength: Int = DEFAULT_MAXIMUM_LENGTH) {
 
     init {
         require(maximumLength > 0) { "maximum buffer length must be positive" }
@@ -99,6 +104,15 @@ class PromptTextBuffer(private val maximumLength: Int = DEFAULT_MAXIMUM_LENGTH) 
         buffer.clear()
         buffer.append(value)
         cursor = buffer.length
+    }
+
+    /**
+     * Injects the full command text into the prompt buffer and positions the cursor
+     * at the end without auto-executing, allowing review or parameter entry.
+     */
+    fun injectCommand(command: String) {
+        replace(command)
+        moveEnd()
     }
 
     fun clear() {

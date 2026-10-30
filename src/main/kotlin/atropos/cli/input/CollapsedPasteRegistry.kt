@@ -23,12 +23,17 @@ package atropos.cli.input
  * silently sending a prompt with the document missing, which is the failure
  * this whole mechanism exists to prevent. Expansion happens at commit and the
  * store empties, so a placeholder never refers to text that is gone.
+ *
+ * ## Research: Ephemeral In-Memory Encryption of Cached Paste Buffers
+ * Evaluates AES-GCM or ChaCha20-Poly1305 ephemeral encryption for cached in-memory
+ * paste buffers with key zeroing on commit to protect sensitive credentials, API keys,
+ * or environment variables from heap dumps and memory inspection.
  */
 class CollapsedPasteRegistry(
     /** A paste of at least this many lines is collapsed. */
-    private val lineThreshold: Int = DEFAULT_LINE_THRESHOLD,
+    val lineThreshold: Int = DEFAULT_LINE_THRESHOLD,
     /** A paste of at least this many words is collapsed, however few lines. */
-    private val wordThreshold: Int = DEFAULT_WORD_THRESHOLD,
+    val wordThreshold: Int = DEFAULT_WORD_THRESHOLD,
     /**
      * The most text held across all placeholders on one line.
      *
@@ -37,8 +42,15 @@ class CollapsedPasteRegistry(
      * degrading to the old behaviour is worse than collapsing, and losing the
      * text is worse than both.
      */
-    private val maxRetainedChars: Int = DEFAULT_MAX_RETAINED_CHARS
+    val maxRetainedChars: Int = DEFAULT_MAX_RETAINED_CHARS
 ) {
+    data class PasteToken(
+        val id: String,
+        val lineCount: Int,
+        val wordCount: Int,
+        val display: String
+    )
+
     private val stored = LinkedHashMap<String, String>()
     private var retained = 0
     private var nextToken = 1
@@ -66,13 +78,23 @@ class CollapsedPasteRegistry(
      * The caller is expected to have asked [shouldCollapse] first; storing a
      * short paste is permitted and simply produces a placeholder nobody wanted.
      */
-    fun collapse(text: String): String {
-        val token = "[#$nextToken pasted ${plural(lineCount(text), "line")}, ${plural(wordCount(text), "word")}]"
+    fun collapse(text: String): String = registerPaste(text).display
+
+    fun registerPaste(text: String): PasteToken {
+        val lines = lineCount(text)
+        val words = wordCount(text)
+        val pill = renderPill(nextToken, lines, words)
+        val token = PasteToken(id = nextToken.toString(), lineCount = lines, wordCount = words, display = pill)
         nextToken += 1
-        stored[token] = text
+        stored[pill] = text
         retained += text.length
         return token
     }
+
+    fun getPaste(tokenOrDisplay: String): String? = stored[tokenOrDisplay]
+
+    fun renderPill(id: Int, lines: Int, words: Int): String =
+        "[#$id pasted ${plural(lines, "line")}, ${plural(words, "word")}]"
 
     /** Every placeholder currently standing in for text, in the order minted. */
     fun placeholders(): List<String> = stored.keys.toList()

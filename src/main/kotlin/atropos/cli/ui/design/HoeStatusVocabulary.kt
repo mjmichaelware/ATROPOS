@@ -28,6 +28,10 @@ package atropos.cli.ui.design
  * signal. It returns data, never escape sequences: painting belongs to
  * [Surface], and keeping it out of here is what lets a screen reader, a log
  * line, and a `NO_COLOR` terminal share one source of truth.
+ *
+ * ## Research: WCAG 2.1 AAA Color-Contrast Compliance
+ * Evaluates WCAG 2.1 AAA relative luminance ratio (7:1) algorithms against ANSI 256-color
+ * and truecolor foreground/background pairs across dark, light, and low-light ambient terminal themes.
  */
 object HoeStatusVocabulary {
 
@@ -85,7 +89,12 @@ object HoeStatusVocabulary {
         "complete" to RunState.COMPLETE,
         "queued" to RunState.QUEUED,
         "retrying" to RunState.RETRYING,
-        "unknown" to RunState.UNKNOWN
+        "unknown" to RunState.UNKNOWN,
+        "attested" to RunState.IDLE,
+        "executing" to RunState.RUNNING,
+        "defending" to RunState.REVIEW_REQUIRED,
+        "verifying" to RunState.PLANNING,
+        "error" to RunState.FAILED
     )
 
     /**

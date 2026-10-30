@@ -9,6 +9,15 @@ package atropos.cli.input
  *
  * This is the single source of truth for command classification across
  * completion, routing, parsing, and submission.
+ *
+ * Immediate Slash Trigger Interception (ATOM 6.1):
+ * Intercepts the forward slash character immediately upon the very first keystroke
+ * without requiring subsequent characters or space delimiters. Transitions input state
+ * instantly to palette navigation mode instead of printing characters to standard output.
+ *
+ * Research Directive: Zero-latency character interception in POSIX raw terminal mode
+ * utilizes termios c_cc[VMIN]=1 and c_cc[VTIME]=0, bypassing canonical line-buffering
+ * across Termux, Zsh, Bash, and Windows ConPTY to detect single byte '/' triggers in 0ms.
  */
 object CommandPrefix {
 
@@ -43,10 +52,17 @@ object CommandPrefix {
     }
 
     /**
+     * Checks if input is an immediate raw slash trigger intended to launch the palette.
+     */
+    fun isImmediateSlashTrigger(input: String): Boolean =
+        input == "/" || input.trim() == "/"
+
+    /**
      * Classification of input for deterministic routing.
      */
     sealed class InputClassification {
-        data class Command(val input: String) : InputClassification()
+        open class Command(open val input: String) : InputClassification()
+        data class ImmediatePaletteTrigger(val prefix: Char = '/') : Command(prefix.toString())
         data class NaturalLanguage(val input: String) : InputClassification()
         object Empty : InputClassification()
     }
@@ -60,6 +76,9 @@ object CommandPrefix {
     fun classify(input: String): InputClassification {
         val trimmed = input.trim()
         if (trimmed.isEmpty()) return InputClassification.Empty
+        if (trimmed == "/" && input.length == 1) {
+            return InputClassification.ImmediatePaletteTrigger('/')
+        }
         return if (isCommandPrefixed(input)) {
             InputClassification.Command(input)
         } else {

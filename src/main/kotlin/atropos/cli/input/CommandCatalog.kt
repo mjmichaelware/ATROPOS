@@ -1,10 +1,20 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+/**
+ * Synchronized catalog of all available command capabilities across Atropos surfaces.
+ *
+ * ## Research: Automated Compile-Time Annotation Processing
+ * Research automated compile-time annotation processing (KSP / kapt) to generate
+ * command catalogs directly from command handler annotations rather than maintaining
+ * parallel declarations, guaranteeing surface parity and compile-time contract safety.
+ */
 object CommandCatalog {
     val catalog: List<CommandEntry> = listOf(
         CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?", "/commands")),
         CommandEntry("/shortcuts", "every keyboard shortcut", "System", aliases = listOf("/keys-help")),
+        CommandEntry("/flash", "activate fast low-latency flash tier provider models", "Models", aliases = listOf("/model flash")),
+        CommandEntry("/flash status", "inspect flash tier provider latency and availability", "Models"),
         CommandEntry("/ps", "ask a second provider without joining the queue", "Models"),
         CommandEntry("/pipeline", "what ATROPOS does, stage by stage", "System"),
         CommandEntry("/scavenge", "find public work people asked for help with", "System"),

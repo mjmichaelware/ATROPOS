@@ -6,14 +6,28 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.Instant
 
-/** Deterministic UTF-8 edit matcher for misspelled command input with terminal input defense. */
+/**
+ * Deterministic UTF-8 edit matcher for misspelled command input with terminal input defense.
+ *
+ * ## Research: Zero-Latency Character Chunking
+ * Zero-latency character chunking in high-baud PTY streams prevents buffer starvation
+ * and surrogate pair splitting across asynchronous mobile soft keyboard burst events.
+ */
 class FuzzyMatcher(
     private val maximumDistance: Int = 2
 ) {
     companion object {
+        const val BRACKETED_PASTE_START = "\u001b[200~"
+        const val BRACKETED_PASTE_END = "\u001b[201~"
         const val BRACKETED_PASTE_ENABLE = "\u001B[?2004h"
         const val BRACKETED_PASTE_DISABLE = "\u001B[?2004l"
         const val MAX_UNCOLLAPSED_PASTE_LINES = 20
+
+        fun isPasteSequence(input: String): Boolean =
+            BracketedPasteHandler.isPasteSequence(input)
+
+        fun sanitizeInput(raw: String): String =
+            BracketedPasteHandler.sanitizeInput(raw)
     }
 
     /**
@@ -84,6 +98,26 @@ class FuzzyMatcher(
     private fun normalize(value: String): String = value.trim().removePrefix("/").map { character ->
         if (character in 'A'..'Z') character.lowercaseChar() else character
     }.joinToString("")
+}
+
+/**
+ * Handles terminal bracketed paste sequences, stripping carriage returns and neutralizing escape codes.
+ */
+object BracketedPasteHandler {
+    const val BRACKETED_PASTE_START = "\u001b[200~"
+    const val BRACKETED_PASTE_END = "\u001b[201~"
+
+    fun isPasteSequence(input: String): Boolean =
+        input.contains(BRACKETED_PASTE_START) && input.contains(BRACKETED_PASTE_END)
+
+    fun sanitizeInput(raw: String): String {
+        return raw.replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace(BRACKETED_PASTE_START, "")
+            .replace(BRACKETED_PASTE_END, "")
+    }
+
+    fun processPaste(rawPaste: String): String = sanitizeInput(rawPaste)
 }
 
 /**

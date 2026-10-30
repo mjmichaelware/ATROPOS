@@ -8,7 +8,7 @@ import atropos.cli.taxonomy.TaxonomyNode
 import atropos.cli.ui.design.Role
 
 /**
- * ATOM-UI-019: Categorized Command Trie Modal (/).
+ * ATOM-UI-019 / ATOM 6.2: Categorized Command Trie Modal (/).
  *
  * Implements 4-tier trie taxonomy navigation with:
  * - Tier 1: Alphabetical domain categories.
@@ -16,7 +16,11 @@ import atropos.cli.ui.design.Role
  * - Tier 3: Action and target items.
  * - Tier 4: Documented leaf with Arrow Right drill-down.
  * - Persistent MOST USED header at the top.
- * - Responsive beautiful box framing with centered title and navigation chrome.
+ * - Responsive terminal-native box framing with centered title and persistent navigation chrome.
+ *
+ * Research Directive: Double-buffered ANSI escape sequence rendering eliminates visual flicker
+ * during modal state transitions on mobile terminals by composing full screen frame diffs in memory
+ * and flushing single atomic write batches with CSI ?2026h (synchronized updates) and cursor hiding.
  */
 class CategorizedTrieModalRenderer(
     private val theme: TerminalTheme,
@@ -49,7 +53,7 @@ class CategorizedTrieModalRenderer(
         val titleText = " ATROPOS CLI — Categorized Command Trie (/) "
         lines.add(renderBoxHeader(titleText, safeWidth))
 
-        // 2. Navigation Chrome Always at the Top
+        // 2. Navigation Chrome Always at the Top (Persistently visible across all drill levels)
         val navChrome = "Keyboard: ↑/↓ Navigate  ←/→ Expand/Switch  enter Select  esc Close"
         lines.add("│ " + theme.paint(Role.TEXT_MUTED, navChrome.padEnd(safeWidth - 4)) + " │")
         lines.add("├" + "─".repeat(safeWidth - 2) + "┤")
@@ -76,7 +80,7 @@ class CategorizedTrieModalRenderer(
         return lines
     }
 
-    private fun renderDomainLevel(lines: MutableList<String>, state: TrieNavState, width: Int) {
+    fun renderDomainLevel(lines: MutableList<String>, state: TrieNavState, width: Int) {
         val domains = taxonomy.root.keys.sorted()
         val innerWidth = width - 4
 
@@ -100,7 +104,7 @@ class CategorizedTrieModalRenderer(
         }
     }
 
-    private fun renderSubcategoryOrActionLevel(lines: MutableList<String>, state: TrieNavState, width: Int) {
+    fun renderSubcategoryOrActionLevel(lines: MutableList<String>, state: TrieNavState, width: Int) {
         val domainNode = taxonomy.root[state.selectedDomain] ?: return
         val innerWidth = width - 4
         val totalActions = domainNode.children.size
@@ -127,7 +131,7 @@ class CategorizedTrieModalRenderer(
         }
     }
 
-    private fun renderLeafDocLevel(lines: MutableList<String>, state: TrieNavState, width: Int) {
+    fun renderLeafDocLevel(lines: MutableList<String>, state: TrieNavState, width: Int) {
         val innerWidth = width - 4
         val cmdName = "/" + listOfNotNull(state.selectedDomain, state.selectedSubcategory, state.selectedAction).joinToString(" ")
         val leaf = CommandLeafRegistry.getOrDefault(cmdName)
@@ -138,7 +142,7 @@ class CategorizedTrieModalRenderer(
         }
     }
 
-    private fun renderBoxHeader(title: String, width: Int): String {
+    fun renderBoxHeader(title: String, width: Int): String {
         val cleanTitle = " $title "
         val remaining = (width - cleanTitle.length - 2).coerceAtLeast(2)
         val left = remaining / 2

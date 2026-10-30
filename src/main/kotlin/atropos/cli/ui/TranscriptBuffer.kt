@@ -6,11 +6,19 @@ sealed interface TranscriptEntry {
     data class Disclosure(val row: DisclosureRow) : TranscriptEntry
 }
 
+/**
+ * Transcript buffer maintaining rendered entries, scroll offset clamping, and tail following.
+ *
+ * ## Research: Exponential Deceleration Friction Physics
+ * Research smooth exponential deceleration friction physics for mobile terminal viewports
+ * to eliminate abrupt stop artifacts during high-velocity fling and touch scrolls.
+ */
 class TranscriptBuffer(
     private val maximumBlocks: Int = 600
 ) {
     private val blocks = ArrayDeque<TranscriptEntry>()
-    private var scrollOffset = 0
+    var scrollOffset = 0
+        private set
     private var pendingNewOutput = 0
     private var lastRenderedWidth = 0
 
@@ -29,6 +37,16 @@ class TranscriptBuffer(
 
     val currentScrollOffset: Int
         get() = scrollOffset
+
+    fun maxScrollOffset(): Int = (blocks.size * 10).coerceAtLeast(0)
+
+    fun resetScroll() {
+        followTail()
+    }
+
+    fun appendBlock(entry: TranscriptEntry) {
+        append(entry)
+    }
 
     fun setRenderedWidth(width: Int) {
         if (width > 0) lastRenderedWidth = width
@@ -85,13 +103,12 @@ class TranscriptBuffer(
     }
 
     fun scrollUp(lines: Int = 4) {
-        scrollOffset = (
-            scrollOffset.toLong() + lines.coerceAtLeast(1).toLong()
-        ).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        val maxOffset = maxScrollOffset()
+        scrollOffset = (scrollOffset + lines.coerceAtLeast(1)).coerceIn(0, maxOffset)
     }
 
     fun scrollDown(lines: Int = 4) {
-        scrollOffset = (scrollOffset - lines.coerceAtLeast(1)).coerceAtLeast(0)
+        scrollOffset = (scrollOffset - lines.coerceAtLeast(1)).coerceIn(0, maxScrollOffset())
         if (scrollOffset == 0) pendingNewOutput = 0
     }
 

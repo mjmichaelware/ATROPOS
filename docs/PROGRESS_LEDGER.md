@@ -272,3 +272,26 @@ After every coherent batch:
   - compile gate (Workflow 41135406468): `success`
   - Build and Sign Android APK (Workflow 41135406432): `success`
 - Final Verification Status: **ALL SURFACES GREEN**
+
+## Batch 2 of 11: Source Doc 10 Decomposition (Sections 6 to 10) - 2026-10-30
+- Implementation Scope: Atoms 6.1 through 10.3 (18 atoms total)
+- Atoms completed:
+  - ATOM 6.1: Immediate slash trigger interception (`CommandPrefix.kt`)
+  - ATOM 6.2: Interactive terminal-native category selection UI (`CategorizedTrieModalRenderer.kt`)
+  - ATOM 6.3: Multi-level trie navigation and arrow-key hierarchy (`HierarchicalCommandTaxonomy.kt`)
+  - ATOM 6.4: Detailed command inspector and parity card display (`CommandLeafDocumentation.kt`)
+  - ATOM 6.5: Buffer insertion without auto-execution (`PromptTextBuffer.kt`)
+  - ATOM 6.6: Catalog command synchronization and alignment (`CommandCatalog.kt`)
+  - ATOM 7.1: Dynamic platform models and profile discovery (`PlatformModels.kt`)
+  - ATOM 7.2: Timezone-aware greeting and fact line formatter (`StartupSequence.kt`)
+  - ATOM 7.3: Automatic headless and pipe output mode detection (`OutputModeDetector.kt`)
+  - ATOM 8.1: Mobile bracketed paste ingestion pipeline (`FuzzyMatcher.kt`)
+  - ATOM 8.2: Collapsed paste registry and rendering (`CollapsedPasteRegistry.kt`)
+  - ATOM 8.3: Touch-safe mobile composer (`MobileComposer.kt`)
+  - ATOM 9.1: Terminal canvas mouse tracking decoupling (`TerminalCanvas.kt`)
+  - ATOM 9.2: Transcript buffer inertia clamping (`TranscriptBuffer.kt`)
+  - ATOM 9.3: Viewport layout metrics and split calculator (`ViewportLayout.kt`)
+  - ATOM 10.1: Cross-surface canonical vocabulary and model parity (`CrossSurfaceParity.kt`)
+  - ATOM 10.2: HOE status vocabulary and unified terminology (`HoeStatusVocabulary.kt`)
+  - ATOM 10.3: Automated surface contract parity testing (`SurfaceContractParityTest.kt`)
+- Status: IMPLEMENTED & COMMITTED FOR REMOTE CI VERIFICATION

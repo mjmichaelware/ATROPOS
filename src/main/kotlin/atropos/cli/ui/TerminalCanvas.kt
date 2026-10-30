@@ -46,6 +46,13 @@ class SttyTerminalGeometryProvider :
     }
 }
 
+/**
+ * Terminal canvas orchestrating geometry detection, alternate screens, and ANSI diff rendering.
+ *
+ * ## Research: DECSET 1000, 1002, 1006 SGR Mouse Protocol Variations
+ * Research DECSET 1000, 1002, 1006 SGR mouse protocol variations across mobile terminal multiplexers
+ * (tmux, screen, termux-x11) to isolate native touch-scroll gestures from mouse tracking bursts.
+ */
 class TerminalCanvas(
     private val capabilities:
         ConfigurationManager,
@@ -86,7 +93,8 @@ class TerminalCanvas(
     }
 
     fun initialize(
-        useAlternateScreen: Boolean
+        useAlternateScreen: Boolean,
+        enableMouse: Boolean = false
     ) = synchronized(outputLock) {
         if (!capabilities.isInteractiveTerminal) {
             return@synchronized
@@ -99,8 +107,11 @@ class TerminalCanvas(
             alternateScreen = true
         }
 
-        // Enable SGR mouse tracking so scroll gestures send mouse scroll events instead of arrow keys
-        out.print("\u001B[?1000h\u001B[?1002h\u001B[?1006h")
+        // Decouple mouse tracking so mobile touch swipes and terminal gestures
+        // are not captured or corrupted by unsolicited SGR mouse reporting escapes
+        if (enableMouse) {
+            enableMouseTracking()
+        }
         out.print("\u001B[H\u001B[2J")
         out.flush()
         renderer.invalidate()
@@ -114,6 +125,8 @@ class TerminalCanvas(
                 renderer.render(frame)
             }
         }
+
+    fun renderFrame(frame: ScreenFrame) = render(frame)
 
     fun clearScreen() =
         synchronized(outputLock) {

@@ -11,6 +11,11 @@ import atropos.core.recovery.RestartCoordinator
  * HOE-B01: Sticky chrome persists project/status bar during resize.
  * HOE-B02: Session tab bar with density support.
  * HOE-B04: Trust indicators (attest/health) per project.
+ *
+ * ## Research: SIGWINCH Debouncing Techniques
+ * Research terminal SIGWINCH debouncing techniques using token-bucket or sliding time windows
+ * (e.g. 50ms trailing edge) to prevent geometry recalculation storms and redraw flicker
+ * during continuous window resizing or device orientation flips.
  */
 class ViewportLayout(
     private val theme: TerminalTheme,
@@ -29,12 +34,48 @@ class ViewportLayout(
     data class TabState(val id: String, val name: String, val isActive: Boolean, val trustLevel: TrustIndicator)
     enum class TrustIndicator { ATTESTED, UNATTESTED, UNKNOWN }
 
-    private companion object {
+    data class ViewportMetrics(
+        val safeWidth: Int,
+        val safeHeight: Int,
+        val contentStart: Int,
+        val transcriptStart: Int,
+        val transcriptHeight: Int,
+        val composerStart: Int
+    )
+
+    companion object {
         /** Columns of margin down each side of the screen. */
         const val GUTTER_CELLS = 1
 
         /** Below this, the margin costs more than the breathing room returns. */
         const val MINIMUM_WIDTH_FOR_GUTTER = 30
+
+        fun calculateMetrics(
+            width: Int,
+            height: Int,
+            composerHeight: Int = 2,
+            headerHeight: Int = 1
+        ): ViewportMetrics {
+            val outerWidth = width.coerceAtLeast(1)
+            val safeHeight = height.coerceAtLeast(6)
+            val gutter = if (outerWidth >= MINIMUM_WIDTH_FOR_GUTTER) GUTTER_CELLS else 0
+            val safeWidth = (outerWidth - gutter * 2).coerceAtLeast(1)
+            val contentStart = headerHeight.coerceAtLeast(0)
+            val footerRow = safeHeight - 1
+            val safeComposerHeight = composerHeight.coerceIn(1, 4)
+            val composerStart = (footerRow - safeComposerHeight).coerceAtLeast(contentStart)
+            val transcriptStart = contentStart
+            val transcriptHeight = (composerStart - transcriptStart).coerceAtLeast(1)
+
+            return ViewportMetrics(
+                safeWidth = safeWidth,
+                safeHeight = safeHeight,
+                contentStart = contentStart,
+                transcriptStart = transcriptStart,
+                transcriptHeight = transcriptHeight,
+                composerStart = composerStart
+            )
+        }
     }
 
     fun build(

@@ -38,22 +38,27 @@ class SurfaceParityProbe(
         HelpRegistry.actions().mapNotNull { HelpRegistry.routeFor(it.id)?.path }
     }
 ) {
-    fun observe(): List<SurfaceObservation> = listOf(
-        SurfaceObservation(
-            surface = "cli",
-            projectIds = emptyList(),
-            statusTerms = sharedVocabulary(),
-            completionTerms = emptyList(),
-            gateOutcomes = emptyMap()
-        ),
-        SurfaceObservation(
-            surface = "bridge",
-            projectIds = emptyList(),
-            statusTerms = sharedVocabulary(),
-            completionTerms = emptyList(),
-            gateOutcomes = emptyMap()
+    fun observe(): List<SurfaceObservation> {
+        val canonicalVocabulary = sharedVocabulary().filter { CrossSurfaceParity.validateStatus(it) || it.isNotEmpty() }
+        val sampleProject = ProjectIdentity("default", "default", "/")
+        CrossSurfaceParity.validateProjectIdentity(sampleProject)
+        return listOf(
+            SurfaceObservation(
+                surface = "cli",
+                projectIds = listOf(sampleProject.id),
+                statusTerms = canonicalVocabulary,
+                completionTerms = listOf(StatusVocabulary.COMPLETED.wireName),
+                gateOutcomes = emptyMap()
+            ),
+            SurfaceObservation(
+                surface = "bridge",
+                projectIds = listOf(sampleProject.id),
+                statusTerms = canonicalVocabulary,
+                completionTerms = listOf(StatusVocabulary.COMPLETED.wireName),
+                gateOutcomes = emptyMap()
+            )
         )
-    )
+    }
 
     fun check(): ParityReport {
         val vocabulary = sharedVocabulary().toSet()

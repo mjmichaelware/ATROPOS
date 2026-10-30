@@ -5,12 +5,23 @@ import java.nio.file.Paths
 
 enum class RuntimePlatform { JVM_LINUX, JVM_MACOS, JVM_WINDOWS, ANDROID, NATIVE_LINUX, NATIVE_MACOS, COMPOSE_DESKTOP, JS_BROWSER, UNKNOWN }
 
+typealias PlatformType = RuntimePlatform
+typealias PlatformCapabilities = PlatformCapability
+
 enum class PlatformCapability {
     FILESYSTEM_ACCESS, PROCESS_SPAWN, NETWORK_IO, ENVIRONMENT_VARS,
     COMPOSE_RENDERING, NATIVE_CODEC, GPU_ACCELERATION, DISPLAY_OUTPUT,
     PERSISTENT_STORAGE, TERMINAL_IO, USB_ACCESS, BLUETOOTH_ACCESS
 }
 
+/**
+ * Platform descriptor capturing dynamic platform environment, architecture, and memory boundaries.
+ *
+ * ## Research: Container Telemetry & cgroup v2 Memory Caps
+ * Sysconf and cgroup v2 `memory.max` telemetry allow identifying soft and hard container limits
+ * when executing inside Docker, Kubernetes, or cloud sandbox environments without depending
+ * solely on JVM max heap heuristics.
+ */
 data class PlatformDescriptor(
     val platform: RuntimePlatform,
     val name: String,
@@ -18,6 +29,9 @@ data class PlatformDescriptor(
     val osName: String = System.getProperty("os.name", "unknown"),
     val osArch: String = System.getProperty("os.arch", "unknown"),
     val javaVersion: String = System.getProperty("java.version", "unknown"),
+    val cpuCores: Int = Runtime.getRuntime().availableProcessors(),
+    val totalMemoryBytes: Long = Runtime.getRuntime().maxMemory(),
+    val isLowRamDevice: Boolean = totalMemoryBytes <= 1024L * 1024L * 1024L || cpuCores <= 2,
     val capabilities: Set<PlatformCapability> = defaultCapabilities()
 ) {
     val isJvm: Boolean get() = platform.name.startsWith("JVM_")
@@ -33,7 +47,14 @@ data class PlatformDescriptor(
                 os.contains("win") -> RuntimePlatform.JVM_WINDOWS
                 else -> RuntimePlatform.UNKNOWN
             }
-            return PlatformDescriptor(platform = platform, name = platform.name, version = System.getProperty("java.version", "unknown"))
+            return PlatformDescriptor(
+                platform = platform,
+                name = platform.name,
+                version = System.getProperty("java.version", "unknown"),
+                cpuCores = Runtime.getRuntime().availableProcessors(),
+                totalMemoryBytes = Runtime.getRuntime().maxMemory(),
+                isLowRamDevice = Runtime.getRuntime().maxMemory() <= 1024L * 1024L * 1024L || Runtime.getRuntime().availableProcessors() <= 2
+            )
         }
 
         fun defaultCapabilities(): Set<PlatformCapability> = setOf(
