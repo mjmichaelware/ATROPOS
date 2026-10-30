@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="SpecGraph Foundry icon">
-  <rect width="128" height="128" rx="28" fill="#07100d"/>
-  <path d="M31 36h66M31 64h66M31 92h66" stroke="#294139" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="38" cy="36" r="12" fill="#64d6a4"/>
-  <circle cx="91" cy="64" r="12" fill="#79b8ff"/>
-  <circle cx="58" cy="92" r="12" fill="#ffd166"/>
-</svg>

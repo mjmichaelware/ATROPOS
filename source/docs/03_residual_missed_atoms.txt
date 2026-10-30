@@ -1,1 +1,0 @@
-/data/data/com.termux/files/home/ATROPOS/doc7_obligation_dag/03_residual_missed_atoms.txt
