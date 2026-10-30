@@ -4,19 +4,21 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 TMP=$(mktemp)
 trap 'rm -f "$TMP"' EXIT
 
-git ls-files | while IFS= read -r f; do
+git ls-files 'src/main' 'app/src/main' 'apps/specgraph-foundry/src' 'apps/web' 'apps/atropos-web' 'packages' | while IFS= read -r f; do
   [ -f "$f" ] || continue
 
   case "$f" in
     src/main/*) ;;
+    app/src/main/*) ;;
     apps/specgraph-foundry/src/*) ;;
     apps/web/*) ;;
     apps/atropos-web/*) ;;
+    packages/*) ;;
     *) continue ;;
   esac
 
   case "$f" in
-    *.kt|*.kts|*.java|*.py|*.ts|*.tsx|*.js|*.jsx) ;;
+    *.kt|*.kts|*.java|*.py|*.ts|*.tsx|*.js|*.jsx|*.css) ;;
     *) continue ;;
   esac
 
@@ -31,11 +33,10 @@ git ls-files | while IFS= read -r f; do
 
   area=other
   case "$f" in
-    src/main/*) area=atropos-engine ;;
     apps/specgraph-foundry/src/specgraph_foundry/http_api/*) area=specgraph-http-api ;;
     apps/specgraph-foundry/src/*) area=specgraph-core ;;
-    apps/web/*) area=web-frontend ;;
-    apps/atropos-web/*) area=atropos-web ;;
+    apps/web/*|apps/atropos-web/*) area=web-frontend ;;
+    src/main/*|app/src/main/*|packages/*) area=atropos-engine ;;
   esac
 
   lang=other
@@ -45,6 +46,7 @@ git ls-files | while IFS= read -r f; do
     *.py) lang=python ;;
     *.ts|*.tsx) lang=typescript ;;
     *.js|*.jsx) lang=javascript ;;
+    *.css) lang=css ;;
   esac
 
   printf '%s\t%s\t%s\t%s\n' "$lines" "$f" "$area" "$lang"
