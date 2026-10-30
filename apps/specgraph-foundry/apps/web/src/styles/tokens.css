@@ -1,0 +1,191 @@
+:root {
+  color-scheme: dark;
+  --sg-canvas: #07100d;
+  --sg-surface: #0d1915;
+  --sg-elevated: #14231e;
+  --sg-overlay: rgba(7, 16, 13, 0.86);
+  --sg-text-primary: #edf7f1;
+  --sg-text-secondary: #b8c9c0;
+  --sg-text-muted: #7f9489;
+  --sg-text-inverse: #07100d;
+  --sg-border: #294139;
+  --sg-focus: #ffd166;
+  --sg-divider: #1d312b;
+  --sg-accent: #64d6a4;
+  --sg-accent-2: #59d7f7;
+  --sg-derivation: #8f7cff;
+  --sg-glow: 0 0 34px rgba(89, 215, 247, 0.16);
+  --sg-success: #79e08d;
+  --sg-warning: #ffd166;
+  --sg-danger: #ff6b6b;
+  --sg-info: #79b8ff;
+  --sg-state-source-required: #ffd166;
+  --sg-state-extraction-required: #ffa552;
+  --sg-state-research-required: #79b8ff;
+  --sg-state-ready: #79e08d;
+  --sg-state-running: #64d6a4;
+  --sg-state-failed: #ff6b6b;
+  --sg-graph-cyan: #59d7f7;
+  --sg-graph-amber: #ffd166;
+  --sg-graph-violet: #8f7cff;
+  --sg-graph-emerald: #64d6a4;
+  --sg-graph-coral: #ff6b6b;
+  --sg-graph-graphite: #4c5f57;
+  --sg-graph-atom: var(--sg-graph-cyan);
+  --sg-graph-edge-authority: var(--sg-graph-violet);
+  --sg-graph-edge-execution: var(--sg-graph-cyan);
+  --sg-graph-panel-opacity: 86%;
+  --sg-space-1: 0.25rem;
+  --sg-space-2: 0.5rem;
+  --sg-space-3: 0.75rem;
+  --sg-space-4: 1rem;
+  --sg-space-5: 1.5rem;
+  --sg-space-6: 2rem;
+  --sg-space-7: 3rem;
+  --sg-radius-sm: 0.375rem;
+  --sg-radius-md: 0.75rem;
+  --sg-radius-lg: 1.25rem;
+  --sg-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.24);
+  --sg-shadow-md: 0 24px 70px rgba(0, 0, 0, 0.32);
+  --sg-blur: 18px;
+  --sg-font-sans: ui-sans-serif, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --sg-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --sg-type-xs: 0.75rem;
+  --sg-type-sm: 0.875rem;
+  --sg-type-md: 1rem;
+  --sg-type-lg: 1.25rem;
+  --sg-type-xl: clamp(2.4rem, 8vw, 5.5rem);
+  --sg-leading-tight: 1.08;
+  --sg-leading-normal: 1.55;
+  --sg-weight-regular: 400;
+  --sg-weight-medium: 550;
+  --sg-weight-bold: 750;
+  --sg-duration-fast: 120ms;
+  --sg-duration-normal: 220ms;
+  --sg-duration-slow: 640ms;
+  --sg-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sg-z-shell: 10;
+  --sg-z-overlay: 50;
+  --sg-z-skip: 100;
+  --sg-touch-target: 44px;
+  --sg-safe-top: env(safe-area-inset-top, 0px);
+  --sg-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --sg-safe-left: env(safe-area-inset-left, 0px);
+  --sg-safe-right: env(safe-area-inset-right, 0px);
+
+  /* Fluid spacing: clamp() between the fixed steps above, so gutters/gaps
+     scale continuously with viewport instead of jumping at breakpoints. */
+  --sg-space-fluid-sm: clamp(0.75rem, 0.6rem + 0.6vw, 1.25rem);
+  --sg-space-fluid-md: clamp(1.25rem, 0.95rem + 1.2vw, 2.25rem);
+  --sg-space-fluid-lg: clamp(2rem, 1.4rem + 2.4vw, 3.5rem);
+  --sg-gutter: clamp(1rem, 0.7rem + 1.5vw, 2.5rem);
+
+  /* Fluid type scale. Body/label sizes stay bounded so system text-zoom and
+     narrow containers never clip; only display sizes travel far. */
+  --sg-type-2xs: clamp(0.6875rem, 0.66rem + 0.1vw, 0.75rem);
+  --sg-type-sm-fluid: clamp(0.8125rem, 0.78rem + 0.15vw, 0.9375rem);
+  --sg-type-md-fluid: clamp(0.95rem, 0.9rem + 0.2vw, 1.0625rem);
+  --sg-type-lg-fluid: clamp(1.125rem, 1.02rem + 0.5vw, 1.5rem);
+  --sg-type-display: clamp(1.75rem, 1.3rem + 2.2vw, 3rem);
+  --sg-measure: 62ch;
+  --sg-measure-narrow: 44ch;
+
+  /* Radii scale subtly by component class rather than by viewport name. */
+  --sg-radius-xs: 0.25rem;
+  --sg-radius-pill: 999px;
+
+  /* Motion grammar: durations, easing, and travel distance are tokenized so
+     no component hand-rolls its own cubic-bezier/duration. */
+  --sg-duration-instant: 1ms;
+  --sg-duration-press: 90ms;
+  --sg-duration-reveal: 260ms;
+  --sg-duration-morph: 320ms;
+  --sg-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sg-ease-spring: cubic-bezier(0.34, 1.32, 0.34, 1);
+  --sg-ease-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --sg-distance-xs: 4px;
+  --sg-distance-sm: 12px;
+  --sg-distance-md: 24px;
+  --sg-scale-press: 0.97;
+  --sg-scale-lift: 1.015;
+  --sg-stagger-step: 30ms;
+  --sg-stagger-max: 5;
+
+  /* Semantic domain accents (OKLCH where supported; hex fallback tokens
+     above remain the source of truth for browsers without oklch()/color-mix()
+     support, matched at @supports gates in themes.css). */
+  --sg-semantic-source: var(--sg-graph-cyan);
+  --sg-semantic-research: var(--sg-graph-amber);
+  --sg-semantic-planning: var(--sg-graph-violet);
+  --sg-semantic-verified: var(--sg-graph-emerald);
+  --sg-semantic-blocked: var(--sg-graph-coral);
+  --sg-semantic-unknown: var(--sg-graph-graphite);
+}
+
+@supports (color: oklch(0% 0 0)) {
+  :root {
+    --sg-semantic-source: oklch(78% 0.13 220);
+    --sg-semantic-research: oklch(82% 0.16 85);
+    --sg-semantic-planning: oklch(72% 0.18 300);
+    --sg-semantic-verified: oklch(80% 0.14 155);
+    --sg-semantic-blocked: oklch(72% 0.19 25);
+    --sg-semantic-unknown: oklch(55% 0.02 180);
+  }
+}
+
+@supports (background: color-mix(in srgb, red, blue)) {
+  :root {
+    --sg-semantic-source-subtle: color-mix(in srgb, var(--sg-semantic-source) 16%, var(--sg-surface));
+    --sg-semantic-source-border: color-mix(in srgb, var(--sg-semantic-source) 46%, var(--sg-border));
+    --sg-semantic-source-glow: color-mix(in srgb, var(--sg-semantic-source) 30%, transparent);
+    --sg-semantic-research-subtle: color-mix(in srgb, var(--sg-semantic-research) 16%, var(--sg-surface));
+    --sg-semantic-research-border: color-mix(in srgb, var(--sg-semantic-research) 46%, var(--sg-border));
+    --sg-semantic-research-glow: color-mix(in srgb, var(--sg-semantic-research) 30%, transparent);
+    --sg-semantic-planning-subtle: color-mix(in srgb, var(--sg-semantic-planning) 16%, var(--sg-surface));
+    --sg-semantic-planning-border: color-mix(in srgb, var(--sg-semantic-planning) 46%, var(--sg-border));
+    --sg-semantic-planning-glow: color-mix(in srgb, var(--sg-semantic-planning) 30%, transparent);
+    --sg-semantic-verified-subtle: color-mix(in srgb, var(--sg-semantic-verified) 16%, var(--sg-surface));
+    --sg-semantic-verified-border: color-mix(in srgb, var(--sg-semantic-verified) 46%, var(--sg-border));
+    --sg-semantic-verified-glow: color-mix(in srgb, var(--sg-semantic-verified) 30%, transparent);
+    --sg-semantic-blocked-subtle: color-mix(in srgb, var(--sg-semantic-blocked) 16%, var(--sg-surface));
+    --sg-semantic-blocked-border: color-mix(in srgb, var(--sg-semantic-blocked) 46%, var(--sg-border));
+    --sg-semantic-blocked-glow: color-mix(in srgb, var(--sg-semantic-blocked) 30%, transparent);
+    --sg-semantic-unknown-subtle: color-mix(in srgb, var(--sg-semantic-unknown) 16%, var(--sg-surface));
+    --sg-semantic-unknown-border: color-mix(in srgb, var(--sg-semantic-unknown) 46%, var(--sg-border));
+
+    --sg-accent-hover: color-mix(in srgb, var(--sg-accent) 88%, white 12%);
+    --sg-accent-pressed: color-mix(in srgb, var(--sg-accent) 82%, black 18%);
+    --sg-surface-hover: color-mix(in srgb, var(--sg-elevated) 92%, white 8%);
+    --sg-surface-pressed: color-mix(in srgb, var(--sg-elevated) 88%, black 12%);
+    --sg-border-hover: color-mix(in srgb, var(--sg-border) 70%, var(--sg-text-secondary) 30%);
+  }
+}
+
+/* Fallback for browsers without color-mix()/oklch() support: flat tokens
+   derived from the same hex palette so every surface still renders. */
+@supports not (background: color-mix(in srgb, red, blue)) {
+  :root {
+    --sg-semantic-source-subtle: var(--sg-surface);
+    --sg-semantic-source-border: var(--sg-semantic-source);
+    --sg-semantic-source-glow: transparent;
+    --sg-semantic-research-subtle: var(--sg-surface);
+    --sg-semantic-research-border: var(--sg-semantic-research);
+    --sg-semantic-research-glow: transparent;
+    --sg-semantic-planning-subtle: var(--sg-surface);
+    --sg-semantic-planning-border: var(--sg-semantic-planning);
+    --sg-semantic-planning-glow: transparent;
+    --sg-semantic-verified-subtle: var(--sg-surface);
+    --sg-semantic-verified-border: var(--sg-semantic-verified);
+    --sg-semantic-verified-glow: transparent;
+    --sg-semantic-blocked-subtle: var(--sg-surface);
+    --sg-semantic-blocked-border: var(--sg-semantic-blocked);
+    --sg-semantic-blocked-glow: transparent;
+    --sg-semantic-unknown-subtle: var(--sg-surface);
+    --sg-semantic-unknown-border: var(--sg-semantic-unknown);
+    --sg-accent-hover: var(--sg-accent);
+    --sg-accent-pressed: var(--sg-accent);
+    --sg-surface-hover: var(--sg-elevated);
+    --sg-surface-pressed: var(--sg-elevated);
+    --sg-border-hover: var(--sg-text-secondary);
+  }
+}
