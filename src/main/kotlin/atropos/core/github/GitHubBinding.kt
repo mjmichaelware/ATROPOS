@@ -124,7 +124,7 @@ class GitHubBinding(
         if (!branch.isNullOrBlank()) {
             validateBranch(branch)
         }
-        val command = gitRunner.run(GitWorktreeOperation.STATUS, destination.parent ?: destination)
+        val command = gitRunner.run(GitWorktreeOperation.STATUS_PORCELAIN, destination.parent ?: destination)
         return GitHubBindingResult(
             allowed = true,
             operation = "clone",
