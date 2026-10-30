@@ -315,3 +315,11 @@ After every coherent batch:
   - `ViewportMetricsCalculator.kt` (ATOM 9.3)
   - `CanonicalHoeStatusEngine.kt` (ATOM 10.2)
   - `AutomatedCrossSurfaceParityTest.kt` (ATOM 10.3)
+
+- Remote GitHub Actions Verification for Batch 2:
+  - Commit: `ad78e3c2`
+  - Release JAR (Workflow 41145681827): `success` (Publish JAR, Web standalone build, Android APK)
+  - Factory CI (Workflow 41145681798): `success`
+  - compile gate (Workflow 41145681791): `success` (0 new orphans, focused backend tests passed)
+  - Build and Sign Android APK (Workflow 41145681840): `success`
+- Final Verification Status: **ALL SURFACES GREEN**
