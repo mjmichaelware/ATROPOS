@@ -576,3 +576,62 @@ After every coherent batch:
 - **compile gate**: Run 41209752307 (`success`) — Governed compile verification
 - **Build and Sign Android APK**: Run 41209752232 (`success`) — Android ARM64 APK compilation and signature
 - **Status**: **100% Certified Green Across All Surfaces**
+
+## 2026-10-31 — Source Doc 10 Decomposition: Batches 10, 11 & 12 (50 Decoupled Modules)
+- Agent: Antigravity Deepmind Agent
+- Files created (50 dedicated single-responsibility files):
+  - **Batch 10 (Codespaces & Version Control, CC1-CC10, VC1-VC10)**:
+    - `src/main/kotlin/atropos/core/agent/CloudWorkspaceInactivityMonitor.kt` (ATOM CC1)
+    - `src/main/kotlin/atropos/core/platform/RemoteComputeHardwareFlavorSelector.kt` (ATOM CC2)
+    - `src/main/kotlin/atropos/core/storage/CloudWorkspaceStorageRetentionSupervisor.kt` (ATOM CC3)
+    - `src/main/kotlin/atropos/core/security/CloudContainerSecretsInjector.kt` (ATOM CC4)
+    - `src/main/kotlin/atropos/bridge/ContainerPortForwardingEngine.kt` (ATOM CC5)
+    - `src/main/kotlin/atropos/core/worktree/AutomatedDotfilesCloner.kt` (ATOM CC6)
+    - `src/main/kotlin/atropos/core/policy/WorkspaceLifecycleHooksRunner.kt` (ATOM CC7)
+    - `src/main/kotlin/atropos/core/factory/DevcontainerSpecParser.kt` (ATOM CC8)
+    - `apps/web/src/components/studio/IntegratedBrowserPreviewTab.tsx` (ATOM CC9)
+    - `src/main/kotlin/atropos/core/github/GitHubPullRequestCreationRouter.kt` (ATOM CC10)
+    - `src/main/kotlin/atropos/core/worktree/PeriodicGitAutofetchService.kt` (ATOM VC1)
+    - `apps/web/src/components/ide/GitSyncConfirmationDialog.tsx` (ATOM VC2)
+    - `src/main/kotlin/atropos/cli/shell/SmartGitAutoStager.kt` (ATOM VC3)
+    - `src/main/kotlin/atropos/core/artifact/PostCommitWorkflowDispatcher.kt` (ATOM VC4)
+    - `apps/web/src/components/ide/ThreeWayMergeConflictEditor.tsx` (ATOM VC5)
+    - `src/main/kotlin/atropos/cli/GitRebaseWarningPolicy.kt` (ATOM VC6)
+    - `src/main/kotlin/atropos/core/RecursiveParentRepoLocator.kt` (ATOM VC7)
+    - `src/main/kotlin/atropos/core/worktree/TrackingFetchPrePullGate.kt` (ATOM VC8)
+    - `src/main/kotlin/atropos/core/security/MainBranchPushProtectionGuard.kt` (ATOM VC9)
+    - `src/main/kotlin/atropos/cli/ui/GitStatusBarProgressMonitor.kt` (ATOM VC10)
+  - **Batch 11 (High-Value Extensions & Integrations, EX1-EX15)**:
+    - `src/main/kotlin/atropos/core/github/GitHubWorkspaceCollaborationPanel.kt` (ATOM EX1)
+    - `src/main/kotlin/atropos/core/github/GitLensInlineBlameExplorer.kt` (ATOM EX2)
+    - `src/main/kotlin/atropos/core/factory/PrettierMultiLanguageFormatter.kt` (ATOM EX3)
+    - `src/main/kotlin/atropos/core/telemetry/EslintStaticAnalysisHarvester.kt` (ATOM EX4)
+    - `src/main/kotlin/atropos/core/toolchain/drivers/PylanceTypeCheckingEngine.kt` (ATOM EX5)
+    - `src/main/kotlin/atropos/core/factory/DockerContainerVolumeExplorer.kt` (ATOM EX6)
+    - `src/main/kotlin/atropos/core/toolchain/RemoteSshExecutionTunnel.kt` (ATOM EX7)
+    - `src/main/kotlin/atropos/core/platform/WslSubsystemBridgeAdapter.kt` (ATOM EX8)
+    - `src/main/kotlin/atropos/core/toolchain/drivers/RemoteContainerIsolationMount.kt` (ATOM EX9)
+    - `apps/web/src/lib/bridge/LiveShareCollaborativeBus.ts` (ATOM EX10)
+    - `src/main/kotlin/atropos/core/PlainTextRestClientExecutor.kt` (ATOM EX11)
+    - `src/main/kotlin/atropos/core/endpoint/VisualApiRouteTester.kt` (ATOM EX12)
+    - `apps/web/src/lib/auth/SupabaseDirectQueryIntegration.ts` (ATOM EX13)
+    - `src/main/kotlin/atropos/core/contract/PrismaSchemaCodeGenerator.kt` (ATOM EX14)
+    - `apps/web/src/components/studio/TailwindClassIntelliSenseProvider.ts` (ATOM EX15)
+  - **Batch 12 (MCP & AI Capabilities, AI1-AI15)**:
+    - `src/main/kotlin/atropos/core/integration/CopilotWorkspaceMcpBridge.kt` (ATOM AI1)
+    - `src/main/kotlin/atropos/core/provider/ClaudeCodeAutonomousToolchain.kt` (ATOM AI2)
+    - `src/main/kotlin/atropos/core/agent/CursorComposerMultiFileSynthesizer.kt` (ATOM AI3)
+    - `src/main/kotlin/atropos/core/integration/ContinueDevLocalModelConnector.kt` (ATOM AI4)
+    - `src/main/kotlin/atropos/core/supremacy/CodyRepositoryGraphNavigator.kt` (ATOM AI5)
+    - `apps/web/src/components/ide/TabninePermissiveLicenseProvider.ts` (ATOM AI6)
+    - `src/main/kotlin/atropos/core/provider/CodeiumCompletionCascadeRouter.kt` (ATOM AI7)
+    - `src/main/kotlin/atropos/core/supremacy/SupermavenContextPredictiveEngine.kt` (ATOM AI8)
+    - `src/main/kotlin/atropos/core/provider/adapter/PhindSearchOptimizedReasoner.kt` (ATOM AI9)
+    - `src/main/kotlin/atropos/core/LocalOllamaHardwareIntegration.kt` (ATOM AI10)
+    - `src/main/kotlin/atropos/core/memory/SqliteVecWorkspaceRagRetriever.kt` (ATOM AI11)
+    - `src/main/kotlin/atropos/core/synthesis/AstContextMcpServer.kt` (ATOM AI12)
+    - `src/main/kotlin/atropos/core/telemetry/RepositoryProcessTelemetryLoggerMcp.kt` (ATOM AI13)
+    - `src/main/kotlin/atropos/core/repair/TerminalErrorFeedbackLoopCorrector.kt` (ATOM AI14)
+    - `src/main/kotlin/atropos/core/multimodal/AutonomousWebServerSandbox.kt` (ATOM AI15)
+- Predicate moved: **Batches 10, 11 & 12 (50 atoms) fully completed.**
+- New overall estimate: 100% of Source Doc 10 fully implemented across all 12 batches.
