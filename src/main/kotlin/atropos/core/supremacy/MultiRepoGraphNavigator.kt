@@ -5,9 +5,9 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * CodyRepositoryGraphNavigator
+ * MultiRepoGraphNavigator
  *
- * Implements ATOM AI5: CODY MULTI-REPOSITORY CODE GRAPH NAVIGATOR
+ * Implements ATOM AI5: MULTI-REPOSITORY CODE GRAPH NAVIGATOR
  * Traverses multi-repository code bases, tracks cross-repository dependency graphs,
  * indexes symbol relationships, and constructs causal context paths for deep AI reasoning.
  */
@@ -45,14 +45,13 @@ data class MultiRepoGraphContext(
     val generatedAt: Instant = Instant.now()
 )
 
-class CodyRepositoryGraphNavigator(
+class MultiRepoGraphNavigator(
     private val repoRoots: Map<String, Path> = emptyMap()
 ) {
     private val symbolIndex = ConcurrentHashMap<String, CodeSymbolNode>()
     private val edges = ConcurrentHashMap.newKeySet<CrossRepoEdge>()
 
     fun registerRepository(name: String, path: Path) {
-        // Scans and indexes symbols in memory
         val symbols = scanRepositorySymbols(name, path)
         symbols.forEach { sym ->
             symbolIndex[sym.id] = sym
@@ -146,7 +145,7 @@ class CodyRepositoryGraphNavigator(
     }
 
     companion object {
-        private val defaultInstance = CodyRepositoryGraphNavigator()
-        fun defaultNavigator(): CodyRepositoryGraphNavigator = defaultInstance
+        private val defaultInstance = MultiRepoGraphNavigator()
+        fun defaultNavigator(): MultiRepoGraphNavigator = defaultInstance
     }
 }

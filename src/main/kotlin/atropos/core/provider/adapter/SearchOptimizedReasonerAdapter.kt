@@ -3,11 +3,11 @@ package atropos.core.provider.adapter
 import java.time.Instant
 
 /**
- * PhindSearchOptimizedReasoner
+ * SearchOptimizedReasonerAdapter
  *
- * Implements ATOM AI9: PHIND SEARCH-OPTIMIZED DEVELOPER REASONER ADAPTER
+ * Implements ATOM AI9: SEARCH-OPTIMIZED DEVELOPER REASONER ADAPTER
  * Intercepts technical reasoning prompts, executes live web queries against official API docs,
- * GitHub issue discussions, and developer knowledge bases, and synthesizes an augmented reasoning context.
+ * issue discussions, and developer knowledge bases, and synthesizes an augmented reasoning context.
  */
 data class WebSearchResultItem(
     val title: String,
@@ -24,7 +24,7 @@ data class AugmentedReasoningContext(
     val timestamp: Instant = Instant.now()
 )
 
-class PhindSearchOptimizedReasoner(
+class SearchOptimizedReasonerAdapter(
     private val searchEngine: (String) -> List<WebSearchResultItem> = { query ->
         listOf(
             WebSearchResultItem(
@@ -72,7 +72,7 @@ class PhindSearchOptimizedReasoner(
     }
 
     companion object {
-        private val defaultInstance = PhindSearchOptimizedReasoner()
-        fun defaultReasoner(): PhindSearchOptimizedReasoner = defaultInstance
+        private val defaultInstance = SearchOptimizedReasonerAdapter()
+        fun defaultReasoner(): SearchOptimizedReasonerAdapter = defaultInstance
     }
 }

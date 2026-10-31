@@ -5,25 +5,25 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * ATOM AI2: CLAUDE CODE AUTONOMOUS AGENT MCP TOOLCHAIN
- * Path: src/main/kotlin/atropos/core/provider/ClaudeCodeAutonomousToolchain.kt
+ * ATOM AI2: SOVEREIGN AUTONOMOUS AGENT MCP TOOLCHAIN ENGINE
+ * Path: src/main/kotlin/atropos/core/provider/AutonomousAgentToolchainEngine.kt
  *
- * Formats Claude tool-use payloads and executes sandboxed tool calls
+ * Formats sovereign tool-use payloads and executes sandboxed tool calls
  * (file read, directory listing, command execution, unified patch proposals).
  */
-data class ClaudeToolCall(
+data class SovereignToolCall(
     val id: String,
     val name: String,
     val input: JSONObject
 )
 
-data class ClaudeToolResult(
+data class SovereignToolResult(
     val toolCallId: String,
     val output: String,
     val isError: Boolean = false
 )
 
-class ClaudeCodeAutonomousToolchain {
+class AutonomousAgentToolchainEngine {
     fun formatToolsPayload(): JSONArray {
         val tools = JSONArray()
 
@@ -56,15 +56,15 @@ class ClaudeCodeAutonomousToolchain {
         return tools
     }
 
-    fun parseToolCallsFromResponse(responseJson: JSONObject): List<ClaudeToolCall> {
-        val calls = mutableListOf<ClaudeToolCall>()
+    fun parseToolCallsFromResponse(responseJson: JSONObject): List<SovereignToolCall> {
+        val calls = mutableListOf<SovereignToolCall>()
         val contentArray = responseJson.optJSONArray("content") ?: return emptyList()
 
         for (i in 0 until contentArray.length()) {
             val item = contentArray.optJSONObject(i) ?: continue
             if (item.optString("type") == "tool_use") {
                 calls.add(
-                    ClaudeToolCall(
+                    SovereignToolCall(
                         id = item.optString("id"),
                         name = item.optString("name"),
                         input = item.optJSONObject("input") ?: JSONObject()
@@ -85,6 +85,6 @@ class ClaudeCodeAutonomousToolchain {
     }
 
     companion object {
-        val defaultToolchain = ClaudeCodeAutonomousToolchain()
+        val defaultToolchain = AutonomousAgentToolchainEngine()
     }
 }

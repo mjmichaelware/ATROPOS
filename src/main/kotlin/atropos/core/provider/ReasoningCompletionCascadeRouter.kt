@@ -4,9 +4,9 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * CodeiumCompletionCascadeRouter
+ * ReasoningCompletionCascadeRouter
  *
- * Implements ATOM AI7: CODEIUM REASONING COMPLETION CASCADE ROUTER
+ * Implements ATOM AI7: REASONING COMPLETION CASCADE ROUTER
  * Routes completion queries through tiered inference cascades:
  * Tier 1: Local edge / fast streaming model (<25ms)
  * Tier 2: Mid-tier standard completion model (<150ms)
@@ -35,7 +35,7 @@ data class CompletionCascadeResult(
     val fallbacksAttempted: Int
 )
 
-class CodeiumCompletionCascadeRouter(
+class ReasoningCompletionCascadeRouter(
     private val fastEdgeProvider: (CompletionCascadeRequest) -> String? = { null },
     private val standardProvider: (CompletionCascadeRequest) -> String? = { null },
     private val reasoningProvider: (CompletionCascadeRequest) -> String? = { null }
@@ -97,7 +97,7 @@ class CodeiumCompletionCascadeRouter(
     }
 
     companion object {
-        private val defaultInstance = CodeiumCompletionCascadeRouter()
-        fun defaultRouter(): CodeiumCompletionCascadeRouter = defaultInstance
+        private val defaultInstance = ReasoningCompletionCascadeRouter()
+        fun defaultRouter(): ReasoningCompletionCascadeRouter = defaultInstance
     }
 }

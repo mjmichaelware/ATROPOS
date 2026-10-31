@@ -4,9 +4,9 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * SupermavenContextPredictiveEngine
+ * UltraLowLatencyPredictiveEngine
  *
- * Implements ATOM AI8: SUPERMAVEN ULTRA-LOW LATENCY PREDICTIVE CONTEXT ENGINE
+ * Implements ATOM AI8: ULTRA-LOW LATENCY PREDICTIVE CONTEXT ENGINE
  * Operates an ultra-fast token anticipation buffer using character keystroke histories,
  * prefix trie caches, and speculative continuation sequences to achieve sub-10ms response times.
  */
@@ -17,7 +17,7 @@ data class PredictiveTokenSequence(
     val generationTimeNs: Long
 )
 
-class SupermavenContextPredictiveEngine(
+class UltraLowLatencyPredictiveEngine(
     private val maxCacheSize: Int = 50_000
 ) {
     private val prefixCache = ConcurrentHashMap<String, MutableList<String>>()
@@ -65,7 +65,7 @@ class SupermavenContextPredictiveEngine(
     }
 
     companion object {
-        private val defaultInstance = SupermavenContextPredictiveEngine()
-        fun defaultEngine(): SupermavenContextPredictiveEngine = defaultInstance
+        private val defaultInstance = UltraLowLatencyPredictiveEngine()
+        fun defaultEngine(): UltraLowLatencyPredictiveEngine = defaultInstance
     }
 }

@@ -1,7 +1,7 @@
 /**
- * TabninePermissiveLicenseProvider.ts
+ * EnterprisePermissiveLicenseProvider.ts
  *
- * Implements ATOM AI6: TABNINE PERMISSIVE LICENSE-FILTERED MODEL PROVIDER
+ * Implements ATOM AI6: ENTERPRISE PERMISSIVE LICENSE-FILTERED MODEL PROVIDER
  * Enforces enterprise compliance filtering on completions, verifying permissive
  * licensing (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC) before rendering
  * code completion suggestions.
@@ -24,7 +24,7 @@ export interface CodeCompletionProposal {
   permissiveOnlyEnforced: boolean;
 }
 
-export class TabninePermissiveLicenseProvider {
+export class EnterprisePermissiveLicenseProvider {
   private static readonly PERMISSIVE_LICENSES = new Set([
     'MIT',
     'Apache-2.0',
@@ -50,7 +50,7 @@ export class TabninePermissiveLicenseProvider {
    */
   public verifyLicense(licenseId: string, repoUrl?: string): LicenseVerificationResult {
     const normalized = licenseId.trim();
-    if (TabninePermissiveLicenseProvider.PERMISSIVE_LICENSES.has(normalized)) {
+    if (EnterprisePermissiveLicenseProvider.PERMISSIVE_LICENSES.has(normalized)) {
       return {
         isPermissive: true,
         detectedLicense: normalized,
@@ -60,7 +60,7 @@ export class TabninePermissiveLicenseProvider {
       };
     }
 
-    if (TabninePermissiveLicenseProvider.COPYLEFT_OR_RESTRICTIVE.has(normalized)) {
+    if (EnterprisePermissiveLicenseProvider.COPYLEFT_OR_RESTRICTIVE.has(normalized)) {
       return {
         isPermissive: false,
         detectedLicense: normalized,
@@ -94,7 +94,7 @@ export class TabninePermissiveLicenseProvider {
     });
   }
 
-  public static defaultProvider(): TabninePermissiveLicenseProvider {
-    return new TabninePermissiveLicenseProvider();
+  public static defaultProvider(): EnterprisePermissiveLicenseProvider {
+    return new EnterprisePermissiveLicenseProvider();
   }
 }

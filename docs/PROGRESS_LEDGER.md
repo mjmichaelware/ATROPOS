@@ -643,3 +643,45 @@ After every coherent batch:
 - **compile gate**: Run 41214672085 (`success`) — Governed compile verification & focused backend test suite
 - **Build and Sign Android APK**: Run 41214672077 (`success`) — Android ARM64 APK compilation and signature
 - **Status**: **100% Certified Green Across All Surfaces**
+
+## 2026-10-31 — Sovereign Nomenclature Purge & Phase 20/21 Neuro-Developmental Telemetry Substrate
+- Agent: Antigravity Deepmind Agent
+- Competitor references purged:
+  - Renamed 9 modules to sovereign ATROPOS naming:
+    - `AutonomousAgentToolchainEngine.kt` (formerly ClaudeCode...)
+    - `SovereignWorkspaceMcpBridge.kt` (formerly CopilotWorkspace...)
+    - `MultiFileComposerSynthesizer.kt` (formerly CursorComposer...)
+    - `LocalModelDevConnector.kt` (formerly ContinueDev...)
+    - `MultiRepoGraphNavigator.kt` (formerly CodyRepository...)
+    - `EnterprisePermissiveLicenseProvider.ts` (formerly Tabnine...)
+    - `ReasoningCompletionCascadeRouter.kt` (formerly Codeium...)
+    - `UltraLowLatencyPredictiveEngine.kt` (formerly Supermaven...)
+    - `SearchOptimizedReasonerAdapter.kt` (formerly Phind...)
+- Phase 20 & 21 Neurodevelopmental Engine & Mathematical Telemetry Substrate added (19 decoupled files):
+  - **Predictive (Active Inference & EVSI)**:
+    - `PreActionSimulationVector.kt` (DC-TEL-151)
+    - `EpistemicSurpriseResidual.kt` (DC-TEL-152)
+    - `VirtualSensoryPredictor.kt` (Friston active inference & EVSI gating)
+  - **Causality & Pearl Do-Calculus**:
+    - `CounterfactualRegressionAttribution.kt` (DC-TEL-153)
+    - `PearlDoCalculusCausalEngine.kt` (backdoor criterion evaluation over AST lattice)
+  - **Dopamine Signals & Deterministic Reward Calculus**:
+    - `PediatricHabituationVector.kt` (DC-DOP-022)
+    - `IntrinsicCuriosityGradient.kt` (DC-DOP-023)
+    - `BoundedDeterministicRewardCalculator.kt` (tanh-clamped sensitization, habituation, curiosity KL, length penalty)
+  - **Synaptic Connectivity Substrate (Phase 21)**:
+    - `SynapticEdgeAtom.kt` (DC-TEL-201)
+    - `DevelopmentalPhaseState.kt` (DC-TEL-202)
+    - `ContextualBindingGraph.kt` (DC-TEL-203)
+    - `HippocampalIndexNode.kt` (DC-TEL-204)
+  - **PRM & MDP Transition Subsystem**:
+    - `ProcessSupervisionStepAtom.kt`
+    - `ReinforcementLearningTransitionAtom.kt`
+    - `PointwisePairwiseProcessLoss.kt`
+  - **100 GB Hugging Face & Supabase Storage Infrastructure**:
+    - `ContentAddressableStorageMerkleValidator.kt` (CAS Merkle Root & benchmark contamination barrier)
+    - `HuggingFaceDatasetCardGenerator.kt` (Canonical YAML frontmatter README.md)
+    - `NeurodevelopmentalTelemetryStreamer.kt` (Dual-sink Hugging Face primary + Supabase backup at https://waudepuafstactavvfek.supabase.co)
+    - `scripts/schema/atropos_arrow_schema.py` (PyArrow schema with Zstandard compression)
+    - `scripts/test_neuro_telemetry_roundtrip.py` (Automated roundtrip verification test)
+- Status: Fully decoupled and verified under Soft-Fail Network Law.
