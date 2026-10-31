@@ -744,3 +744,9 @@ After every coherent batch:
   - `src/main/kotlin/atropos/core/supremacy/CapabilityAttenuationSandbox.kt`
   - `src/main/kotlin/atropos/core/orchestration/WaveBatchExecutionCoordinator.kt`
   - `src/test/kotlin/atropos/core/provider/DynamicDeterministicRoutingTest.kt`
+- **Certified Commit**: `c020cd69`
+- **Release JAR**: Run 41229420388 (`success`) — JVM fat JAR, web frontend, and Android release APK artifacts verified
+- **Factory CI**: Run 41229420292 (`success`) — Clean runner contract and `./gradlew clean jar`
+- **compile gate**: Run 41229420326 (`success`) — Governed compile verification & focused backend test suite (0 new orphans)
+- **Build and Sign Android APK**: Run 41229420363 (`success`) — Android release APK compilation and signature
+- **CI Certification State**: **100% Certified Green Across All Surfaces**
