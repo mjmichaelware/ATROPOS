@@ -29,6 +29,8 @@ class DynamicDatasetSyncService(
         Thread(r, "atropos-dataset-sync").apply { isDaemon = true }
     }
 
+    val neurodevelopmentalWiring: NeurodevelopmentalSubstrateWiring by lazy { NeurodevelopmentalSubstrateWiring() }
+
     data class SyncResult(
         val success: Boolean,
         val recordsSynced: Int,
