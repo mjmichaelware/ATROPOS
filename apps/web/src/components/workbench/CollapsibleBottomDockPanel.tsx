@@ -166,9 +166,9 @@ export function CollapsibleBottomDockPanel({
               ) : (
                 events.map((e, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-[11px]">
-                    <span className="text-emerald-500">{new Date(e.timestamp).toLocaleTimeString()}</span>
+                    <span className="text-emerald-500">{new Date(e.at).toLocaleTimeString()}</span>
                     <span className="text-amber-400">[{e.stage}]</span>
-                    <span>{e.message}</span>
+                    <span>{e.detail}</span>
                   </div>
                 ))
               )}
