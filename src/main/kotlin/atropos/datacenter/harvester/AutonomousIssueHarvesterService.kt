@@ -103,7 +103,7 @@ class AutonomousIssueHarvesterService(
             val payloadJson = JSONObject(payloadMap).toString()
             val payloadHash = sha256(payloadJson)
             val recordId = "tel-harv-${System.currentTimeMillis()}-${sanitizedIssue.issueId}"
-            val instanceId = "instance_${sanitizedIssue.repository.replace('/', '__')}-issue-${sanitizedIssue.issueId}"
+            val instanceId = "instance_${sanitizedIssue.repository.replace("/", "__")}-issue-${sanitizedIssue.issueId}"
 
             val fullRecord = mapOf<String, Any?>(
                 "recordId" to recordId,
@@ -144,7 +144,7 @@ class AutonomousIssueHarvesterService(
             targetRepos = targetRepos,
             totalItemsHarvested = harvestedIssues.size,
             triagedItemsCount = itemSummaries.count { it.triageSuccess },
-            quotaRemaining = quota?.callsRemaining ?: 5000,
+            quotaRemaining = quota?.remaining ?: 5000,
             isThrottled = quota?.isThrottled ?: false,
             huggingFaceSynced = syncReport.primaryHfSuccess || shipperSuccess,
             supabaseSynced = syncReport.backupSupabaseSuccess,
