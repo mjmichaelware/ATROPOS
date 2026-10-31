@@ -17,7 +17,7 @@ import java.nio.file.Path
 object DecoupledAstSymbolReferenceGraph {
 
     fun impactedSymbolEvidence(symbols: List<AstSymbol>): List<String> {
-        return symbols.map { "${it.kind.name}:${it.name}@${it.path}" }
+        return symbols.map { "${it.kind.name}:${it.name}@${it.file}" }
     }
 
     fun findDefinitions(symbolName: String, allSymbols: List<AstSymbol>): List<AstSymbol> {
