@@ -14,16 +14,23 @@ describe("environment validation", () => {
     expect(readServerEnv({ ...valid, SPECGRAPH_WEB_BASE_URL: "http://127.0.0.1:3000" }).public).toBeDefined();
   });
 
-  it("rejects credentials, fragments, and same API/Supabase origins", () => {
-    expect(() => readPublicEnv({ ...valid, NEXT_PUBLIC_SPECGRAPH_API_URL: "http://user@127.0.0.1:8787" })).toThrow(
+  it("rejects credentials, fragments, and same API/Supabase origins in strict/Vercel mode", () => {
+    expect(() => readPublicEnv({ ...valid, NEXT_PUBLIC_SPECGRAPH_API_URL: "http://user@127.0.0.1:8787" }, { strict: true })).toThrow(
       "Public web configuration is invalid",
     );
-    expect(() => readPublicEnv({ ...valid, NEXT_PUBLIC_SPECGRAPH_API_URL: "http://127.0.0.1:8787#x" })).toThrow(
+    expect(() => readPublicEnv({ ...valid, NEXT_PUBLIC_SPECGRAPH_API_URL: "http://127.0.0.1:8787#x" }, { strict: true })).toThrow(
       "Public web configuration is invalid",
     );
-    expect(() => readPublicEnv({ ...valid, NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:8787" })).toThrow(
+    expect(() => readPublicEnv({ ...valid, NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:8787" }, { strict: true })).toThrow(
       "Public web configuration is invalid",
     );
+  });
+
+  it("gracefully falls back with warnings in local standalone mode without cloud keys", () => {
+    const fallback = readPublicEnv({});
+    expect(fallback.NEXT_PUBLIC_SPECGRAPH_API_URL).toBe("http://127.0.0.1:8787");
+    expect(fallback.NEXT_PUBLIC_SUPABASE_URL).toBe("http://127.0.0.1:8000/mock");
+    expect(fallback.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBeDefined();
   });
 
   it("prevents secret-shaped public environment names", () => {
