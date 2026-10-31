@@ -125,6 +125,15 @@ class BoundedGitWorktreeCommandRunner(
         return processRunner(command, directory.toAbsolutePath().normalize(), if (feedsPatchOnStdin) input else null)
     }
 
+    fun ensureGitRepository(directory: Path): GitWorktreeCommandResult {
+        val gitDir = directory.resolve(".git")
+        return if (!java.nio.file.Files.exists(gitDir)) {
+            run(GitWorktreeOperation.INIT, directory)
+        } else {
+            GitWorktreeCommandResult(exitCode = 0, output = "Git repository already initialized")
+        }
+    }
+
     private fun requiredPath(value: String?): String =
         value?.takeIf { it.isNotBlank() } ?: throw IllegalArgumentException("worktree path is required")
 

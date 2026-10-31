@@ -37,12 +37,16 @@ class CommandFailureBoundary(
     fun guard(label: String, action: () -> RouterOutcome): RouterOutcome =
         try {
             action()
-        } catch (failure: Exception) {
+        } catch (fatal: VirtualMachineError) {
+            throw fatal
+        } catch (failure: Throwable) {
             // Also to stderr, through the last-resort sink. The transcript is
             // the operator's record and can be scrolled away or cleared; a
             // command that failed should still be findable in a piped log,
             // and SystemExceptionHandler is what bounds and redacts it there.
-            systemHandler.handle(failure)
+            if (failure is Exception) {
+                systemHandler.handle(failure)
+            }
             uiEngine.renderErrorDetail(
                 ErrorRenderer.ErrorInfo(
                     title = "$label failed",
@@ -65,13 +69,15 @@ class CommandFailureBoundary(
      * suggestion: it occupies the line where a real recovery would go and
      * teaches the operator to stop reading the field.
      */
-    private fun suggestionFor(failure: Exception): String? = when (failure) {
+    private fun suggestionFor(failure: Throwable): String? = when (failure) {
         is java.nio.file.NoSuchFileException, is java.io.FileNotFoundException ->
             "the path does not exist — check it with /ls, or /cd to the directory that holds it"
         is java.nio.file.AccessDeniedException ->
             "permission denied on that path; on Termux, storage outside \$HOME needs termux-setup-storage"
         is java.net.ConnectException, is java.net.UnknownHostException ->
             "the provider was unreachable — /providers shows which one is active and whether it is configured"
+        is IllegalStateException ->
+            "pipeline or provider state mismatch — run /factory resume or check the failure artifact"
         else -> null
     }
 
@@ -80,7 +86,7 @@ class CommandFailureBoundary(
      * filesystem path or a provider payload, and this is a UI surface, so it
      * falls under the same no-raw-secret rule as any other rendered output.
      */
-    private fun describe(label: String, failure: Exception): String {
+    private fun describe(label: String, failure: Throwable): String {
         val kind = failure.javaClass.simpleName
         val detail = redactionFilter.compact(failure.message.orEmpty()).trim()
         return if (detail.isEmpty()) {

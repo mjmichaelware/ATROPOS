@@ -27,6 +27,16 @@ object DiagnosticSymbolSlicer {
         Pattern.CASE_INSENSITIVE
     )
 
+    private val jsTsTracePattern = Pattern.compile(
+        """(?:at\s+.*?\s*\(|\bat\s+)(?:file:\/\/)?([^:()]+?):(\d+)(?::(\d+))?\)??""",
+        Pattern.CASE_INSENSITIVE
+    )
+
+    private val kotlinTracePattern = Pattern.compile(
+        """e:\s+(?:file:\/\/\/)?([^:]+?):(\d+):(\d+)""",
+        Pattern.CASE_INSENSITIVE
+    )
+
     private val fallbackPyPattern = Pattern.compile(
         """(?:[Ff]ile\s+)?["'\\]*([A-Za-z0-9_\-./\\]+\.py)["'\\]*(?:,\s*line\s*(\d+))?""",
         Pattern.CASE_INSENSITIVE
@@ -42,8 +52,9 @@ object DiagnosticSymbolSlicer {
         errorLog: String,
         failedNodeLabel: String? = null
     ): SlicedDiagnostic {
+        val detectedLanguage = detectProjectLanguage(targetDir, errorLog)
         val parsed = parseDiagnosticTrace(errorLog)
-        val targetPath = resolveTargetFilePath(targetDir, parsed.filePath)
+        val targetPath = resolveTargetFilePath(targetDir, parsed.filePath, detectedLanguage)
         val failingLine = parsed.lineNumber
 
         val (relativeFile, codeSlice) = if (targetPath != null && Files.isRegularFile(targetPath)) {
@@ -60,12 +71,22 @@ object DiagnosticSymbolSlicer {
             }
             rel to finalSlice
         } else {
-            val file = parsed.filePath?.let { Path.of(it).fileName.toString() } ?: "unknown_file.py"
+            val fallbackDefaultFile = when (detectedLanguage) {
+                atropos.core.factory.ProjectLanguage.TYPESCRIPT -> {
+                    if (Files.exists(targetDir.resolve("package.json"))) "package.json" else "src/index.ts"
+                }
+                atropos.core.factory.ProjectLanguage.KOTLIN -> "src/main/kotlin/Main.kt"
+                atropos.core.factory.ProjectLanguage.JAVA -> "src/main/java/Main.java"
+                atropos.core.factory.ProjectLanguage.PYTHON -> "main.py"
+                else -> "package.json"
+            }
+            val file = parsed.filePath?.let { Path.of(it).fileName.toString() } ?: fallbackDefaultFile
+            val commentChar = if (detectedLanguage == atropos.core.factory.ProjectLanguage.PYTHON) "#" else "//"
             val fallbackSource = buildString {
-                appendLine("# Target source file: $file")
-                appendLine("# Diagnostic failure: ${parsed.assertionError}")
+                appendLine("$commentChar Target source file: $file")
+                appendLine("$commentChar Diagnostic failure: ${parsed.assertionError}")
                 if (failingLine != null) {
-                    appendLine("# Failing line: $failingLine")
+                    appendLine("$commentChar Failing line: $failingLine")
                 }
             }
             file to fallbackSource
@@ -88,6 +109,22 @@ object DiagnosticSymbolSlicer {
         )
     }
 
+    private fun detectProjectLanguage(targetDir: Path, errorLog: String): atropos.core.factory.ProjectLanguage {
+        if (Files.exists(targetDir.resolve("package.json")) || Files.exists(targetDir.resolve("tsconfig.json")) ||
+            errorLog.contains("node") || errorLog.contains("npm") || errorLog.contains(".ts") || errorLog.contains(".js") || errorLog.contains(".json")) {
+            return atropos.core.factory.ProjectLanguage.TYPESCRIPT
+        }
+        if (Files.exists(targetDir.resolve("build.gradle.kts")) || Files.exists(targetDir.resolve("pom.xml")) ||
+            errorLog.contains("kotlinc") || errorLog.contains(".kt")) {
+            return atropos.core.factory.ProjectLanguage.KOTLIN
+        }
+        if (Files.exists(targetDir.resolve("pyproject.toml")) || Files.exists(targetDir.resolve("requirements.txt")) ||
+            errorLog.contains("pytest") || errorLog.contains("python") || errorLog.contains(".py")) {
+            return atropos.core.factory.ProjectLanguage.PYTHON
+        }
+        return atropos.core.factory.ProjectLanguage.TYPESCRIPT
+    }
+
     private data class ParsedTrace(
         val filePath: String?,
         val lineNumber: Int?,
@@ -102,6 +139,7 @@ object DiagnosticSymbolSlicer {
             normalized.contains("/lib64/python") ||
             normalized.contains("site-packages") ||
             normalized.contains("/dist-packages") ||
+            normalized.contains("node_modules") ||
             normalized.contains("<frozen") ||
             normalized.contains("<string>") ||
             normalized.endsWith("/unittest/case.py") ||
@@ -136,6 +174,30 @@ object DiagnosticSymbolSlicer {
             }
         }
 
+        // Support TypeScript / JavaScript / Node traces: "at Object.<anonymous> (file.ts:10:5)"
+        if (lastFile == null) {
+            val jsMatcher = jsTsTracePattern.matcher(errorLog)
+            while (jsMatcher.find()) {
+                val candidate = jsMatcher.group(1)?.trim()?.trim('\"', '\'', '\\')
+                if (!candidate.isNullOrBlank() && !isSystemLibrary(candidate)) {
+                    lastFile = candidate
+                    lastLine = jsMatcher.group(2)?.toIntOrNull()
+                }
+            }
+        }
+
+        // Support Kotlin compiler error lines: "e: file:///path/File.kt:15:20"
+        if (lastFile == null) {
+            val ktMatcher = kotlinTracePattern.matcher(errorLog)
+            while (ktMatcher.find()) {
+                val candidate = ktMatcher.group(1)?.trim()
+                if (!candidate.isNullOrBlank() && !isSystemLibrary(candidate)) {
+                    lastFile = candidate
+                    lastLine = ktMatcher.group(2)?.toIntOrNull()
+                }
+            }
+        }
+
         if (lastFile == null && fallbackFile != null) {
             lastFile = fallbackFile
             lastLine = fallbackLine
@@ -157,7 +219,7 @@ object DiagnosticSymbolSlicer {
             assertionMsg = assertMatcher.group(0).lines().first().trim()
         } else {
             val failLine = errorLog.lines().firstOrNull {
-                it.contains("FAIL:") || it.contains("ERROR:") || it.contains("AssertionError")
+                it.contains("FAIL:") || it.contains("ERROR:") || it.contains("AssertionError") || it.contains("Error:")
             }
             if (failLine != null) {
                 assertionMsg = failLine.trim()
@@ -167,7 +229,11 @@ object DiagnosticSymbolSlicer {
         return ParsedTrace(lastFile, lastLine, lastFunc, assertionMsg)
     }
 
-    private fun resolveTargetFilePath(targetDir: Path, candidate: String?): Path? {
+    private fun resolveTargetFilePath(
+        targetDir: Path,
+        candidate: String?,
+        detectedLanguage: atropos.core.factory.ProjectLanguage = atropos.core.factory.ProjectLanguage.TYPESCRIPT
+    ): Path? {
         val searchDirs = LinkedHashSet<Path>()
         searchDirs.add(targetDir)
 
@@ -207,15 +273,25 @@ object DiagnosticSymbolSlicer {
             }
         }
 
-        // Under NO circumstances should unknown_file.py be dispatched without file contents.
+        // Walk searchDirs looking for target files corresponding to detectedLanguage
+        val targetExtensions = when (detectedLanguage) {
+            atropos.core.factory.ProjectLanguage.TYPESCRIPT -> listOf("ts", "tsx", "js", "json")
+            atropos.core.factory.ProjectLanguage.KOTLIN -> listOf("kt", "kts")
+            atropos.core.factory.ProjectLanguage.JAVA -> listOf("java")
+            atropos.core.factory.ProjectLanguage.PYTHON -> listOf("py")
+            else -> listOf("ts", "json", "py", "kt")
+        }
+
         for (dir in searchDirs) {
-            val anyPy = dir.toFile().walkTopDown().maxDepth(6)
-                .filter { it.isFile && it.extension == "py" && !it.name.startsWith("test_") }
-                .firstOrNull()?.toPath()
-                ?: dir.toFile().walkTopDown().maxDepth(6)
-                    .filter { it.isFile && it.extension == "py" }
+            for (ext in targetExtensions) {
+                val found = dir.toFile().walkTopDown().maxDepth(6)
+                    .filter { it.isFile && it.extension == ext && !it.name.startsWith("test_") && !it.name.endsWith(".meta") }
                     .firstOrNull()?.toPath()
-            if (anyPy != null) return anyPy
+                    ?: dir.toFile().walkTopDown().maxDepth(6)
+                        .filter { it.isFile && it.extension == ext && !it.name.endsWith(".meta") }
+                        .firstOrNull()?.toPath()
+                if (found != null) return found
+            }
         }
 
         return null

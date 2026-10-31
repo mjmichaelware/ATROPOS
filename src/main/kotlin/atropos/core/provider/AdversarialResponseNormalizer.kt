@@ -162,7 +162,22 @@ class AdversarialResponseNormalizer(
         )
     }
 
-    fun applyValidatedPatches(rawResponse: String, targetDir: Path): PatchApplicationResult {
+    fun applyValidatedPatches(
+        rawResponse: String,
+        targetDir: Path,
+        language: atropos.core.factory.ProjectLanguage? = null,
+        provider: String = "unknown"
+    ): PatchApplicationResult {
+        if (language != null) {
+            try {
+                atropos.core.synthesis.PreParserInterceptor.validate(rawResponse, language, provider)
+            } catch (mismatch: atropos.core.synthesis.PayloadLanguageMismatchException) {
+                return PatchApplicationResult.Failure(
+                    reason = "Pre-parser interceptor rejected hallucinated language payload: ${mismatch.message}",
+                    violations = listOf(mismatch.message)
+                )
+            }
+        }
         val extraction = extractAndNormalize(rawResponse)
         if (extraction.files.isEmpty()) {
             return PatchApplicationResult.Failure("No file blocks or code patches could be extracted from provider response")

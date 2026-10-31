@@ -39,6 +39,7 @@ class ProviderCascadeRouter(
     private val localOnly: () -> Boolean = { AtroposConfig.load().runtime.localOnly },
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     private val secretReader: ((String) -> String?)? = null,
+    private val adapterRegistry: atropos.core.provider.adapter.ProviderAdapterRegistry = atropos.core.provider.adapter.StaticProviderAdapterRegistry(registry),
     private val astDistanceCalculator: atropos.core.verification.AstEditDistanceCalculator = atropos.core.verification.AstEditDistanceCalculator()
 ) {
     fun arbitrateTriModelOutputs(outA: String, outB: String, outC: String): atropos.core.verification.TriModelDisputationResult =
@@ -340,12 +341,17 @@ class ProviderCascadeRouter(
             return FreeProviderCapabilityRanker.rankFreeFirst(effective, payloadTokens, registry)
         }
 
+        val registeredProviders = registry.getAll()
+            .filter { it.hasCapability(ApiCapability.CHAT) || it.hasCapability(ApiCapability.CODE) || it.hasCapability(ApiCapability.REPAIR) }
+            .map { it.id.lowercase() }
+
         val configured = System.getenv("ATROPOS_PROVIDER_ORDER")
             ?.split(",")?.map { it.trim().lowercase() }?.filter { it.isNotBlank() }
-            ?: preferredProviderIds?.invoke().orEmpty().ifEmpty { PRIMARY_CHAT_PROVIDERS }
+            ?: preferredProviderIds?.invoke().orEmpty().ifEmpty { registeredProviders }
 
         val activeKeyProviders = FallbackChainRegistry.getAllActiveKeys().keys.map { it.lowercase() }
-        val initialCandidates = (listOf(requestedProvider.lowercase(), "cerebras", "sambanova", "deepseek") + configured + activeKeyProviders)
+        val adapterProviders = adapterRegistry.getAll().map { it.providerId.lowercase() }
+        val initialCandidates = (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders + adapterProviders + registeredProviders)
 
         val candidates = initialCandidates
             .filter { it.isNotBlank() && it !in NON_CHAT_ENDPOINTS && it !in NON_LLM_TOKENS && NON_LLM_TOKENS.none { tok -> it.contains(tok) } }

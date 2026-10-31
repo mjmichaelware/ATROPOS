@@ -719,3 +719,28 @@ After every coherent batch:
 - **compile gate**: Run 41223939190 (`success`) — Governed compile verification & focused backend tests (0 orphans)
 - **Build and Sign Android APK**: Run 41223939205 (`success`) — Android release APK compilation and signature
 - **CI Certification State**: **100% Certified Green Across All Surfaces**
+
+
+## 2026-10-31 — Critical Architecture Correction: Deterministic Routing & Repair Loop Resilience
+- Agent: Antigravity Deepmind Agent
+- Scope: Engine Resiliency & AI Hallucination Hardening
+- Items Addressed:
+  1. Dynamic Deterministic Routing: Ripped out hardcoded provider cascade array in `ProviderCascadeRouter.kt`. Dynamically queries `ProviderAdapterRegistry` & `ProviderDescriptorRegistry`. Filters small models (< payloadTokens) immediately for large payloads in `FreeProviderCapabilityRanker.kt`, and sorts deterministically by Context Window capacity, CODE/REPAIR capabilities, and Dopamine Reliability score.
+  2. Pre-Parser Hallucination Interceptor: Implemented `PreParserInterceptor` in `AstSurgicalPatcher.kt` and `AdversarialResponseNormalizer.kt`. Intercepts responses containing file extensions violating the active `ProjectLanguageLayout` (e.g. `.py` returned in TypeScript/Node), assigns immediate dopamine penalty (`AST_SYNTAX_OR_PATCH_FAILURE`), and rejects payload before AST parsing. Updated `DiagnosticSymbolSlicer.kt` to detect multi-language project layouts and eradicate hardcoded `unknown_file.py` fallbacks.
+  3. Graceful Strike Failover: Hardened `AutonomousAstHealingLoop.kt` and `CommandFailureBoundary.kt`. Repair loop intercepts parsing/patching errors, increments strikes, and seamlessly cascades to the next dynamically ranked model without throwing uncaught `IllegalStateException` to `FactoryCommandHandler`.
+  4. Sandbox Worktree Initialization: Updated `CapabilityAttenuationSandbox.kt`, `BoundedGitWorktreeCommandRunner.kt`, and `WaveBatchExecutionCoordinator.kt`. Added explicit `git init` on isolated worktree provisioning to eradicate `fatal: not a git repository` errors, and guaranteed baseline `package.json` scaffolding for TypeScript/Node before `node-verify` runs `npm test`.
+- Files touched:
+  - `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt`
+  - `src/main/kotlin/atropos/core/provider/FreeProviderCapabilityRanker.kt`
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt`
+  - `src/main/kotlin/atropos/core/synthesis/AstSurgicalPatcher.kt`
+  - `src/main/kotlin/atropos/core/provider/AdversarialResponseNormalizer.kt`
+  - `src/main/kotlin/atropos/core/verification/DiagnosticSymbolSlicer.kt`
+  - `src/main/kotlin/atropos/core/repair/AutonomousAstHealingLoop.kt`
+  - `src/main/kotlin/atropos/cli/CommandFailureBoundary.kt`
+  - `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt`
+  - `src/main/kotlin/atropos/core/factory/FactoryRepairRouter.kt`
+  - `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt`
+  - `src/main/kotlin/atropos/core/supremacy/CapabilityAttenuationSandbox.kt`
+  - `src/main/kotlin/atropos/core/orchestration/WaveBatchExecutionCoordinator.kt`
+  - `src/test/kotlin/atropos/core/provider/DynamicDeterministicRoutingTest.kt`

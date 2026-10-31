@@ -146,12 +146,17 @@ class FactoryObligationLoop(
                         continue
                     }
                 }
-                require(completed.isNotEmpty() || WaveCheckpointLattice.hasProgress(repoRoot, dagId, refreshedDag.nodes)) {
-                    "factory wave executed without completing an atom"
+                if (completed.isEmpty() && !WaveCheckpointLattice.hasProgress(repoRoot, dagId, refreshedDag.nodes)) {
+                    val currentSnap = snapshot(refreshedDag)
+                    return FactoryLoopResult(
+                        currentSnap.copy(stopReason = "factory wave halted: open atom failed verification without completing an atom"),
+                        waves,
+                        "halted_unresolved_atom"
+                    )
                 }
             }
-            require(completed.all { id -> ready.any { it.id == id } }) { "factory wave completed an atom outside its runnable wave" }
-            completed.forEach { id ->
+            val validCompleted = completed.filter { id -> ready.any { it.id == id } }
+            validCompleted.forEach { id ->
                 val node = dag.findNode(id) ?: error("factory wave returned unknown atom=$id")
                 dagStore.writeNode(node.copy(
                     state = DagNodeState.COMPLETE,

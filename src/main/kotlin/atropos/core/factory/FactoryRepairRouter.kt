@@ -136,12 +136,38 @@ class FactoryRepairRouter(
         val repairBudget = ProviderTokenBudgeter.calculateRepairBudget(targetFileLines)
         Thinking.detail("repair", "Calculated repair token budget for ${sliced.targetFile}: $repairBudget tokens")
 
+        val detectedProjectLanguage = when {
+            Files.exists(targetDir.resolve("package.json")) || Files.exists(targetDir.resolve("tsconfig.json")) -> ProjectLanguage.TYPESCRIPT
+            Files.exists(targetDir.resolve("build.gradle.kts")) || Files.exists(targetDir.resolve("pom.xml")) -> ProjectLanguage.KOTLIN
+            Files.exists(targetDir.resolve("pyproject.toml")) -> ProjectLanguage.PYTHON
+            else -> ProjectLanguage.TYPESCRIPT
+        }
+
         val cascadeResult = try {
             Thinking.step("repair", "Querying provider cascade ($activeProvider) with distilled diagnostic (${prompt.length} chars)")
             cascadeRouter.completeWithCascade(
                 requestedProvider = activeProvider,
                 prompt = prompt,
-                context = sliced.assertionError
+                context = sliced.assertionError,
+                acceptResponse = { candidateText ->
+                    if (candidateText.isBlank()) false else {
+                        try {
+                            atropos.core.synthesis.PreParserInterceptor.validate(
+                                rawResponse = candidateText,
+                                language = detectedProjectLanguage,
+                                provider = activeProvider,
+                                dopamineTracker = dopamineTracker
+                            )
+                            true
+                        } catch (mismatch: atropos.core.synthesis.PayloadLanguageMismatchException) {
+                            Thinking.step("repair", "PreParserInterceptor rejected candidate from $activeProvider: ${mismatch.message}")
+                            false
+                        } catch (other: Exception) {
+                            Thinking.detail("repair", "Validation error during repair candidate evaluation: ${other.message}")
+                            false
+                        }
+                    }
+                }
             )
         } catch (e: Exception) {
             Thinking.detail("repair", "Provider repair call failed: ${e.message}")
@@ -164,7 +190,12 @@ class FactoryRepairRouter(
             )
         }
 
-        val patchOutcome = normalizer.applyValidatedPatches(cascadeResult.response, targetDir)
+        val patchOutcome = normalizer.applyValidatedPatches(
+            rawResponse = cascadeResult.response,
+            targetDir = targetDir,
+            language = detectedProjectLanguage,
+            provider = cascadeResult.providerName
+        )
         val success = patchOutcome is PatchApplicationResult.Success
         val patched = if (patchOutcome is PatchApplicationResult.Success) patchOutcome.patchedFiles else emptyList()
 

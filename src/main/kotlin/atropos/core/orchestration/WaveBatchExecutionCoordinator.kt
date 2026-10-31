@@ -81,7 +81,8 @@ class WaveBatchExecutionCoordinator(
         for (node in readyNodes) {
             val record = if (isAppFactory) {
                 val stagingDir = sandboxBase.resolve(".atropos/staging/${node.id}")
-                Files.createDirectories(stagingDir)
+                val detectedLang = ProjectLanguage.layoutFor(ProjectLanguage.detect(request.projectSpec.prompt))
+                attenuationSandbox.provisionIsolatedWorktree(stagingDir, detectedLang)
 
                 val nodeToken = attenuationSandbox.attenuateToken(
                     parent = rootCapabilityToken,
@@ -215,6 +216,7 @@ class WaveBatchExecutionCoordinator(
                     val lang = ProjectLanguage.layoutFor(
                         ProjectLanguage.detect(request.projectSpec.prompt)
                     )
+                    attenuationSandbox.provisionIsolatedWorktree(worktree.worktreePath, lang)
                     Thinking.step("exec", "Running sandboxed verification [${lang.name}]")
                     val shellExec = DagNodeShellExecutor(
                         repoRoot = repoRoot,

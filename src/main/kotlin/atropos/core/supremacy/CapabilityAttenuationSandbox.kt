@@ -80,4 +80,58 @@ class CapabilityAttenuationSandbox(private val masterSecret: ByteArray) {
         targetPath.parent?.let { java.nio.file.Files.createDirectories(it) }
         return java.nio.file.Files.writeString(targetPath, normalized)
     }
+
+    /**
+     * Provisions an isolated worktree sandbox:
+     * 1. Executes git init explicitly to eliminate "fatal: not a git repository" errors.
+     * 2. Guarantees base package.json (and tsconfig.json) is scaffolded if TypeScript/Node
+     *    before node-verify executes npm test.
+     */
+    fun provisionIsolatedWorktree(
+        stagingDir: java.nio.file.Path,
+        language: atropos.core.factory.ProjectLanguage = atropos.core.factory.ProjectLanguage.TYPESCRIPT,
+        gitRunner: atropos.core.worktree.BoundedGitWorktreeCommandRunner = atropos.core.worktree.BoundedGitWorktreeCommandRunner()
+    ): java.nio.file.Path {
+        java.nio.file.Files.createDirectories(stagingDir)
+
+        // 1. Explicitly execute git init when building an isolated worktree
+        val gitDir = stagingDir.resolve(".git")
+        if (!java.nio.file.Files.exists(gitDir)) {
+            val initRes = gitRunner.run(atropos.core.worktree.GitWorktreeOperation.INIT, stagingDir)
+            atropos.core.thinking.Thinking.detail("sandbox", "Explicit git init in sandbox [exit=${initRes.exitCode}]")
+        }
+
+        // 2. Guarantee base package.json is scaffolded before node-verify executes npm test
+        if (language == atropos.core.factory.ProjectLanguage.TYPESCRIPT) {
+            val pkgJson = stagingDir.resolve("package.json")
+            if (!java.nio.file.Files.exists(pkgJson)) {
+                val basePkg = """
+                {
+                  "name": "atropos-sandbox",
+                  "version": "0.1.0",
+                  "type": "module",
+                  "scripts": {
+                    "test": "node --test"
+                  }
+                }
+                """.trimIndent() + "\n"
+                java.nio.file.Files.writeString(pkgJson, basePkg)
+                atropos.core.thinking.Thinking.detail("sandbox", "Scaffolded baseline package.json into sandbox worktree")
+            }
+            val tsConfig = stagingDir.resolve("tsconfig.json")
+            if (!java.nio.file.Files.exists(tsConfig)) {
+                val baseTsConfig = """
+                {
+                  "compilerOptions": {
+                    "target": "ES2022",
+                    "module": "ES2022",
+                    "strict": true
+                  }
+                }
+                """.trimIndent() + "\n"
+                java.nio.file.Files.writeString(tsConfig, baseTsConfig)
+            }
+        }
+        return stagingDir
+    }
 }
