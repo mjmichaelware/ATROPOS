@@ -20,6 +20,7 @@ object CommandCatalog {
         CommandEntry("/ps", "ask a second provider without joining the queue", "Models"),
         CommandEntry("/pipeline", "what ATROPOS does, stage by stage", "System"),
         CommandEntry("/scavenge", "find public work people asked for help with", "System"),
+        CommandEntry("/github harvest", "harvest and triage issues and pull requests, streaming telemetry to Hugging Face", "Developer Tools"),
         CommandEntry("/github issues", "list repository issues through the gated GitHub API", "Developer Tools"),
         CommandEntry("/github issue", "read one repository issue through the gated GitHub API", "Developer Tools"),
         CommandEntry("/github prs", "list repository pull requests through the gated GitHub API", "Developer Tools"),

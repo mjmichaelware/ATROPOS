@@ -75,17 +75,34 @@ class NeurodevelopmentalTelemetryStreamer(
                 put("value", org.json.JSONObject().apply { put("summary", summary) })
             }
 
-            val base64Content = java.util.Base64.getEncoder().encodeToString(batch.payloadJson.toByteArray(Charsets.UTF_8))
-            val fileObj = org.json.JSONObject().apply {
+            val base64BatchContent = java.util.Base64.getEncoder().encodeToString(batch.payloadJson.toByteArray(Charsets.UTF_8))
+            val batchFileObj = org.json.JSONObject().apply {
                 put("key", "file")
                 put("value", org.json.JSONObject().apply {
-                    put("content", base64Content)
+                    put("content", base64BatchContent)
                     put("path", "telemetry/batches/${batch.batchId}.jsonl")
                     put("encoding", "base64")
                 })
             }
 
-            val ndjsonBody = "${headerObj}\n${fileObj}\n"
+            // Also append batch payload to canonical telemetry.jsonl
+            val currentTelemetry = fetchCurrentFile(hfToken, "telemetry/telemetry.jsonl")
+            val updatedTelemetry = if (currentTelemetry.isNotBlank()) {
+                currentTelemetry.trimEnd() + "\n" + batch.payloadJson.trim() + "\n"
+            } else {
+                batch.payloadJson.trim() + "\n"
+            }
+            val base64MainContent = java.util.Base64.getEncoder().encodeToString(updatedTelemetry.toByteArray(Charsets.UTF_8))
+            val mainFileObj = org.json.JSONObject().apply {
+                put("key", "file")
+                put("value", org.json.JSONObject().apply {
+                    put("content", base64MainContent)
+                    put("path", "telemetry/telemetry.jsonl")
+                    put("encoding", "base64")
+                })
+            }
+
+            val ndjsonBody = "${headerObj}\n${batchFileObj}\n${mainFileObj}\n"
 
             val req = HttpRequest.newBuilder(uri)
                 .header("Authorization", "Bearer $hfToken")
@@ -97,6 +114,20 @@ class NeurodevelopmentalTelemetryStreamer(
             res.statusCode() in 200..299
         } catch (_: Exception) {
             false
+        }
+    }
+
+    private fun fetchCurrentFile(token: String, path: String): String {
+        return try {
+            val uri = URI("https://huggingface.co/datasets/$hfDatasetRepo/raw/main/$path")
+            val req = HttpRequest.newBuilder(uri)
+                .header("Authorization", "Bearer $token")
+                .GET()
+                .build()
+            val res = httpClient.send(req, HttpResponse.BodyHandlers.ofString())
+            if (res.statusCode() in 200..299) res.body() else ""
+        } catch (_: Exception) {
+            ""
         }
     }
 

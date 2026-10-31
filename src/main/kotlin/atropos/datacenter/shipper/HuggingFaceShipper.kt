@@ -53,7 +53,24 @@ class HuggingFaceShipper(
                 })
             }
 
-            val ndjsonBody = "${headerObj}\n${fileObj}\n"
+            // Also append batch payload to canonical telemetry.jsonl
+            val currentTelemetry = fetchCurrentFile(resolvedKey, "telemetry/telemetry.jsonl")
+            val updatedTelemetry = if (currentTelemetry.isNotBlank()) {
+                currentTelemetry.trimEnd() + "\n" + payloadBuilder.toString().trim() + "\n"
+            } else {
+                payloadBuilder.toString().trim() + "\n"
+            }
+            val base64MainContent = Base64.getEncoder().encodeToString(updatedTelemetry.toByteArray(Charsets.UTF_8))
+            val mainFileObj = JSONObject().apply {
+                put("key", "file")
+                put("value", JSONObject().apply {
+                    put("content", base64MainContent)
+                    put("path", "telemetry/telemetry.jsonl")
+                    put("encoding", "base64")
+                })
+            }
+
+            val ndjsonBody = "${headerObj}\n${fileObj}\n${mainFileObj}\n"
 
             var attempt = 0
             var delayMs = 1000L
@@ -80,6 +97,20 @@ class HuggingFaceShipper(
         } catch (e: Exception) {
             // Soft-fail: log to local spool; never stall the engine
             false
+        }
+    }
+
+    private fun fetchCurrentFile(token: String, path: String): String {
+        return try {
+            val uri = URI.create("https://huggingface.co/datasets/$repoId/raw/main/$path")
+            val req = HttpRequest.newBuilder(uri)
+                .header("Authorization", "Bearer $token")
+                .GET()
+                .build()
+            val res = client.send(req, HttpResponse.BodyHandlers.ofString())
+            if (res.statusCode() in 200..299) res.body() else ""
+        } catch (_: Exception) {
+            ""
         }
     }
 }

@@ -7,13 +7,16 @@ import atropos.core.github.GitHubApiResponse
 import atropos.core.github.GitHubBinding
 import atropos.core.github.GitHubWriteAuthorization
 import atropos.core.security.RedactionFilter
+import atropos.datacenter.harvester.AutonomousIssueHarvesterService
+import atropos.datacenter.harvester.HarvesterRunSummary
 
 /** Read-only GitHub inspection through the single gated GitHub binding. */
 class GitHubCommandHandler(
     private val config: AtroposConfig,
     private val uiEngine: AnsiTerminalEngine,
     private val binding: GitHubBinding = GitHubBinding(),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val harvesterService: AutonomousIssueHarvesterService = AutonomousIssueHarvesterService.defaultService
 ) {
     fun execute(tokens: List<String>) {
         if (config.runtime.localOnly) {
@@ -21,9 +24,15 @@ class GitHubCommandHandler(
             return
         }
         val operation = tokens.getOrNull(1)?.lowercase()
+        if (operation == "harvest") {
+            val targetRepo = tokens.getOrNull(2) ?: "mjmichaelware/ATROPOS"
+            val summary = harvesterService.executeHarvesterRun(listOf(targetRepo))
+            renderHarvest(summary)
+            return
+        }
         val repository = tokens.getOrNull(2)?.split('/')
         if (repository == null || repository.size != 2 || repository.any(String::isBlank)) {
-            uiEngine.renderError("usage: /github issues|issue|prs|pr-files|checks|branch-protection|blame <owner/repository> <arg>")
+            uiEngine.renderError("usage: /github harvest [owner/repo] | issues|issue|prs|pr-files|checks|branch-protection|blame <owner/repository> <arg>")
             return
         }
         val owner = repository[0]
@@ -86,6 +95,23 @@ class GitHubCommandHandler(
             "github status=${response.status} evidence=${response.evidenceHash}\n" +
                 redactionFilter.compact(response.body, MAX_BODY)
         )
+    }
+
+    private fun renderHarvest(summary: HarvesterRunSummary) {
+        val sb = StringBuilder()
+        sb.appendLine("GitHub Harvester & Triage Run [${summary.batchId}]")
+        sb.appendLine("Targets: ${summary.targetRepos.joinToString()}")
+        sb.appendLine("Total Harvested: ${summary.totalItemsHarvested} | Triaged: ${summary.triagedItemsCount}")
+        sb.appendLine("API Quota Remaining: ${summary.quotaRemaining} | Throttled: ${summary.isThrottled}")
+        sb.appendLine("HuggingFace Sync: ${if (summary.huggingFaceSynced) "✓ STREAMED" else "SOFT-FAIL"}")
+        sb.appendLine("Supabase Sync: ${if (summary.supabaseSynced) "✓ STREAMED" else "SOFT-FAIL"}")
+        if (summary.items.isNotEmpty()) {
+            sb.appendLine("Items:")
+            for (item in summary.items.take(5)) {
+                sb.appendLine(" - #${item.id} [${if (item.triageSuccess) "PASS" else "FAIL"}]: ${redactionFilter.compact(item.title, 60)}")
+            }
+        }
+        uiEngine.renderNotice(sb.toString().trimEnd())
     }
 
     private companion object {
