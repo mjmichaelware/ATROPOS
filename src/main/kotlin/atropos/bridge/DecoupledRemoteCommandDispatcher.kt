@@ -3,6 +3,7 @@ package atropos.bridge
 
 import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
+import atropos.bridge.http.JsonWriter
 import atropos.core.policy.PortCommandPolicy
 import atropos.core.security.RedactionFilter
 
@@ -38,45 +39,41 @@ class DecoupledRemoteCommandDispatcher(
 
     fun dispatchClientCommand(request: HttpRequest, rawCommand: String, issuedBy: String): HttpResponse {
         val sanitized = rawCommand.trim()
-        if (!PortCommandPolicy.isPermitted(sanitized)) {
-            val rule = PortCommandPolicy.prohibitionReason(sanitized)
-            return HttpResponse.refusal(
+        return when (val verdict = PortCommandPolicy.evaluate(sanitized)) {
+            is PortCommandPolicy.Verdict.Refused -> HttpResponse.refusal(
                 403,
                 "command-forbidden-by-policy",
-                "Command rejected by PortCommandPolicy: $sanitized",
-                "Policy rule: $rule"
+                verdict.reason,
+                verdict.remedy
             )
+
+            is PortCommandPolicy.Verdict.Allowed -> {
+                val output = runCatching { commandRunner(verdict.normalized) }.getOrElse { failure ->
+                    return HttpResponse.json(
+                        JsonWriter.obj(
+                            "ok" to JsonWriter.bool(false),
+                            "command" to JsonWriter.str(verdict.normalized),
+                            "output" to JsonWriter.str(""),
+                            "failure" to JsonWriter.str(
+                                "${failure.javaClass.simpleName}: ${redactionFilter.compact(failure.message.orEmpty())}"
+                            ),
+                            "isSimulated" to JsonWriter.bool(false)
+                        )
+                    )
+                }
+
+                HttpResponse.json(
+                    JsonWriter.obj(
+                        "ok" to JsonWriter.bool(true),
+                        "command" to JsonWriter.str(verdict.normalized),
+                        "output" to JsonWriter.str(redactionFilter.redact(output.text)),
+                        "exited" to JsonWriter.bool(output.exited),
+                        "issuedBy" to JsonWriter.str(issuedBy),
+                        "isSimulated" to JsonWriter.bool(false),
+                        "transportMode" to JsonWriter.str("CORE_ENGINE_DIRECT")
+                    )
+                )
+            }
         }
-
-        val result = commandRunner(sanitized)
-        val filteredOutput = redactionFilter.filter(result.stdout)
-        val filteredError = redactionFilter.filter(result.stderr)
-
-        return HttpResponse.ok(
-            BridgeCommandExecutionReceipt(
-                command = sanitized,
-                issuedBy = issuedBy,
-                exitCode = result.exitCode,
-                stdout = filteredOutput,
-                stderr = filteredError,
-                isSimulated = false,
-                transportMode = "CORE_ENGINE_DIRECT"
-            ).toJson()
-        )
-    }
-}
-
-data class BridgeCommandExecutionReceipt(
-    val command: String,
-    val issuedBy: String,
-    val exitCode: Int,
-    val stdout: String,
-    val stderr: String,
-    val isSimulated: Boolean,
-    val transportMode: String
-) {
-    fun toJson(): String {
-        val escape = { s: String -> s.replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") }
-        return """{"command":"${escape(command)}","issuedBy":"${escape(issuedBy)}","exitCode":$exitCode,"stdout":"${escape(stdout)}","stderr":"${escape(stderr)}","isSimulated":$isSimulated,"transportMode":"$transportMode"}"""
     }
 }
