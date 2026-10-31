@@ -12,7 +12,7 @@ import java.util.regex.Pattern
  * while ensuring critical repository configurations (.gitignore, .github) remain explicitly accessible.
  *
  * ## Research: Glob-to-Regex Compilation Caching
- * Researches compiling Ant-style globs (`**\/*.class`, `build/**`) into thread-safe cached `java.util.regex.Pattern`
+ * Researches compiling Ant-style globs (`classes` or `build` trees) into thread-safe cached `java.util.regex.Pattern`
  * instances to evaluate deep directory hierarchies against exclusion lists in microsecond timeframes.
  */
 object ExplorerPathExclusionFilter {

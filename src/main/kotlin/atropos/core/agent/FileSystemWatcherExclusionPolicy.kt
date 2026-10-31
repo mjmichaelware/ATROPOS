@@ -15,6 +15,8 @@ import java.nio.file.Path
  */
 object FileSystemWatcherExclusionPolicy {
 
+    fun defaultPolicy(): FileSystemWatcherExclusionPolicy = this
+
     private val WATCHER_EXCLUSION_PATTERNS = setOf(
         "node_modules",
         ".gradle",

@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object FileExtensionLanguageAssociator {
 
+    fun defaultAssociator(): FileExtensionLanguageAssociator = this
+
     private val customAssociations = ConcurrentHashMap<String, String>()
 
     init {

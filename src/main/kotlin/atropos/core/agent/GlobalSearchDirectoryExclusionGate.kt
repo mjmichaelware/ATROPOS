@@ -15,6 +15,8 @@ import java.nio.file.Path
  */
 object GlobalSearchDirectoryExclusionGate {
 
+    fun defaultGate(): GlobalSearchDirectoryExclusionGate = this
+
     val DEFAULT_SEARCH_EXCLUDED_DIRS = setOf(
         ".git",
         "node_modules",
