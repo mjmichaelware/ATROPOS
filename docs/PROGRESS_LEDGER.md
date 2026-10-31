@@ -685,3 +685,9 @@ After every coherent batch:
     - `scripts/schema/atropos_arrow_schema.py` (PyArrow schema with Zstandard compression)
     - `scripts/test_neuro_telemetry_roundtrip.py` (Automated roundtrip verification test)
 - Status: Fully decoupled and verified under Soft-Fail Network Law.
+- **Certified Commit**: `2e9347f4ec8996a9627c44575ad0d042f31d1032`
+- **Release JAR**: Run 41218804606 (`success`) — JVM fat JAR, web frontend, and Android release APK artifacts generated and attested
+- **Factory CI**: Run 41218804350 (`success`) — Clean runner contract and `./gradlew clean jar`
+- **compile gate**: Run 41218804440 (`success`) — Governed compile verification & focused backend test suite (0 orphaned files)
+- **Build and Sign Android APK**: Run 41218804368 (`success`) — Android ARM64 APK compilation and signature
+- **CI Certification State**: **100% Certified Green Across All Surfaces**
