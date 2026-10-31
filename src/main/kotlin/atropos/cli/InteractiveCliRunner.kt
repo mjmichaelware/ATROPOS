@@ -166,7 +166,7 @@ object InteractiveCliRunner {
 
                         // ATOM 6.1: Keystroke Interception on '/' without echo to standard output
                         if (!modalStateMachine.isModalActive()) {
-                            if (key is KeyEvent.Printable && key.text == "/" && prompt.isEmpty()) {
+                            if (key is KeyEvent.Printable && key.text == "/" && prompt.text.isEmpty()) {
                                 modalStateMachine.openCategorizedTrie()
                                 if (floatingLineCount > 0) {
                                     ui.clearFloatingOverlay(floatingLineCount)

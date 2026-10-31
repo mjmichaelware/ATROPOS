@@ -86,7 +86,7 @@ object AnsiFloatingOverlay {
  */
 class CategorizedTrieModalRenderer(
     private val theme: TerminalTheme,
-    private val taxonomy: HierarchicalCommandTaxonomy = HierarchicalCommandTaxonomy(),
+    val taxonomy: HierarchicalCommandTaxonomy = HierarchicalCommandTaxonomy(),
     private val rankingStore: CommandFrequencyRankingStore = CommandFrequencyRankingStore(),
     val overlayRenderer: TrieModalOverlayRenderer = TrieModalOverlayRenderer(theme, taxonomy)
 ) {
