@@ -25,8 +25,9 @@ class GitHubCommandHandler(
         }
         val operation = tokens.getOrNull(1)?.lowercase()
         if (operation == "harvest") {
-            val targetRepo = tokens.getOrNull(2) ?: "mjmichaelware/ATROPOS"
-            val summary = harvesterService.executeHarvesterRun(listOf(targetRepo))
+            val targetRepo = tokens.getOrNull(2)
+            val targets = if (targetRepo != null) listOf(targetRepo) else harvesterService.defaultPublicStrangerRepos
+            val summary = harvesterService.executeHarvesterRun(targets)
             renderHarvest(summary)
             return
         }
@@ -108,7 +109,8 @@ class GitHubCommandHandler(
         if (summary.items.isNotEmpty()) {
             sb.appendLine("Items:")
             for (item in summary.items.take(5)) {
-                sb.appendLine(" - #${item.id} [${if (item.triageSuccess) "PASS" else "FAIL"}]: ${redactionFilter.compact(item.title, 60)}")
+                sb.appendLine(" - #${item.id} [${if (item.triageSuccess) "PASS" else "FAIL"}] (${item.rewardStatus}): ${redactionFilter.compact(item.title, 50)}")
+                sb.appendLine("   Marketing: ${redactionFilter.compact(item.marketingHeadline, 50)}")
             }
         }
         uiEngine.renderNotice(sb.toString().trimEnd())

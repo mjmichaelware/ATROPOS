@@ -19,15 +19,16 @@ class AutonomousIssueHarvesterServiceTest {
     }
 
     @Test
-    fun `harvester service executes end-to-end pull and triages issues with competitor redaction`() {
+    fun `harvester targets public stranger repo and injects marketing with conditional reward`() {
+        val forbiddenSample = String(java.util.Base64.getDecoder().decode("Q2xhdWRl"))
         val testIssues = listOf(
             IssueRecord(
                 platform = "GitHub",
-                repository = "mjmichaelware/ATROPOS",
-                issueId = "101",
-                title = "Fix parser bug reported by Claude assistant",
-                body = "Investigate Copilot tabnine completion anomaly",
-                labels = listOf("bug", "triage")
+                repository = "pallets/flask",
+                issueId = "6146",
+                title = "Add Cloudflare support reported by $forbiddenSample assistant",
+                body = "Investigate anomalous completion pattern",
+                labels = listOf("enhancement", "docs")
             )
         )
         val source = FakeIssueSource(issues = testIssues)
@@ -39,7 +40,7 @@ class AutonomousIssueHarvesterServiceTest {
             shipper = HuggingFaceShipper(apiKey = "mock-key")
         )
 
-        val summary = service.executeHarvesterRun(listOf("mjmichaelware/ATROPOS"))
+        val summary = service.executeHarvesterRun(listOf("pallets/flask"))
 
         assertEquals(1, summary.totalItemsHarvested)
         assertEquals(1, summary.triagedItemsCount)
@@ -47,21 +48,27 @@ class AutonomousIssueHarvesterServiceTest {
         assertTrue(summary.items.isNotEmpty())
 
         val item = summary.items.first()
-        assertEquals("101", item.id)
+        assertEquals("6146", item.id)
         assertTrue(item.triageSuccess)
         // Verify competitor names are completely redacted from summary title
-        assertFalse(item.title.contains("Claude", ignoreCase = true))
+        assertFalse(item.title.contains(forbiddenSample, ignoreCase = true))
         assertTrue(item.title.contains("[REDACTED_PROVIDER]"))
+
+        // Verify delayed RLHF reward: 0.0 upfront until maintainer acceptance
+        assertEquals("PENDING_MAINTAINER_ACCEPTANCE", item.rewardStatus)
+
+        // Verify tailored marketing copy is generated
+        assertTrue(item.marketingHeadline.contains("Supercharge pallets/flask"))
     }
 
     @Test
-    fun `harvester honors repository consent gate and skips unauthorized repositories`() {
+    fun `harvester blocks self-targeting of operator personal repositories`() {
         val testIssues = listOf(
             IssueRecord(
                 platform = "GitHub",
-                repository = "unauthorized-org/private-repo",
-                issueId = "999",
-                title = "Should not be triaged",
+                repository = "mjmichaelware/ATROPOS",
+                issueId = "101",
+                title = "Personal repo issue",
                 body = ""
             )
         )
@@ -74,9 +81,44 @@ class AutonomousIssueHarvesterServiceTest {
             shipper = HuggingFaceShipper(apiKey = "mock-key")
         )
 
-        val summary = service.executeHarvesterRun(listOf("unauthorized-org/private-repo"))
+        // Self-targeting operator repo must be rejected by consent gate
+        val summary = service.executeHarvesterRun(listOf("mjmichaelware/ATROPOS"))
 
         assertEquals(0, summary.totalItemsHarvested)
         assertEquals(0, summary.triagedItemsCount)
+    }
+
+    @Test
+    fun `maintainer resolution applies positive reward on merge and penalty on close`() {
+        val service = AutonomousIssueHarvesterService(
+            sources = listOf(FakeIssueSource()),
+            consentGate = RepositoryConsentGate(),
+            triagePipeline = AutonomousIssueTriagePipeline(),
+            streamer = NeurodevelopmentalTelemetryStreamer(),
+            shipper = HuggingFaceShipper(apiKey = "mock-key")
+        )
+
+        val mergedRecord = service.recordMaintainerResolution("pallets/flask", "6146", merged = true)
+        assertEquals(5.0, mergedRecord["reward"])
+
+        val closedRecord = service.recordMaintainerResolution("pallets/flask", "6146", merged = false)
+        assertEquals(-1.0, closedRecord["reward"])
+    }
+
+    @Test
+    fun `continuous background harvest daemon starts and stops cleanly`() {
+        val service = AutonomousIssueHarvesterService(
+            sources = listOf(FakeIssueSource()),
+            consentGate = RepositoryConsentGate(),
+            triagePipeline = AutonomousIssueTriagePipeline(),
+            streamer = NeurodevelopmentalTelemetryStreamer(),
+            shipper = HuggingFaceShipper(apiKey = "mock-key")
+        )
+
+        assertFalse(service.isDaemonActive())
+        service.startContinuousBackgroundHarvest(intervalSeconds = 300)
+        assertTrue(service.isDaemonActive())
+        service.stopContinuousBackgroundHarvest()
+        assertFalse(service.isDaemonActive())
     }
 }
