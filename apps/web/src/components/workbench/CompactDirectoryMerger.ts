@@ -6,13 +6,15 @@
  * (e.g. "src/main/kotlin") within the explorer tree. Expands back when editing or toggled.
  */
 
-export interface DirectoryNode {
+export interface CompactDirectoryNode {
   name: string;
   path: string;
   isDirectory: boolean;
-  children?: DirectoryNode[];
+  children?: CompactDirectoryNode[];
   isExpanded?: boolean;
 }
+
+export type DirectoryNode = CompactDirectoryNode;
 
 export interface CompactFolderNode {
   displayName: string;
