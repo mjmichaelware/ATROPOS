@@ -33,10 +33,16 @@ class ContractLatticeSynthesizer(
     private val config: AtroposConfig = AtroposConfig.load()
 ) {
     fun synthesize(request: WaveExecutionRequest): DagDefinition {
-        val nodes = if (KryptonStoreDagBuilder.isKryptonPrompt(request.projectSpec.prompt)) {
-            KryptonStoreDagBuilder.buildNodes(request)
-        } else {
-            buildNodesFromSpec(request)
+        val nodes = when {
+            SpecGraphMultiWavePlanner.isMultiWavePrompt(request.projectSpec.prompt) -> {
+                SpecGraphMultiWavePlanner.buildNodes(request)
+            }
+            KryptonStoreDagBuilder.isKryptonPrompt(request.projectSpec.prompt) -> {
+                KryptonStoreDagBuilder.buildNodes(request)
+            }
+            else -> {
+                buildNodesFromSpec(request)
+            }
         }
         return DagDefinition(
             id = "dag-${request.requestId}",
@@ -135,6 +141,9 @@ class ContractLatticeSynthesizer(
 
     private fun synthesizeFile(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
         val payload = node.actionPayload ?: return SynthesisResult(false, "no action payload for file synthesis")
+        if (SpecGraphMultiWavePlanner.isMultiWavePrompt(request.projectSpec.prompt)) {
+            return SpecGraphMultiWavePlanner.synthesize(payload, worktreeRoot, request)
+        }
         if (KryptonStoreDagBuilder.isKryptonPrompt(request.projectSpec.prompt)) {
             return KryptonCodeSynthesizer.synthesize(payload, worktreeRoot, request)
         }

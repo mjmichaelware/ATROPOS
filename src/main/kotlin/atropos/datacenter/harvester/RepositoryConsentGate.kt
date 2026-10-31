@@ -6,7 +6,11 @@ package atropos.datacenter.harvester
  * Restricts all polling and PR actions to authorized targets or repos with explicit opt-in tags.
  */
 class RepositoryConsentGate(
-    private val explicitAllowlist: List<String> = listOf("MichaelAPWare/ATROPOS", "MichaelAPWare/atropos-engine")
+    private val explicitAllowlist: List<String> = listOf(
+        "mjmichaelware/ATROPOS",
+        "MichaelAPWare/ATROPOS",
+        "MichaelAPWare/atropos-engine"
+    )
 ) {
     private val optInTags = setOf("atropos-opt-in", "ai-contributions-welcome")
 
