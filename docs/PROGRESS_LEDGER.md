@@ -635,3 +635,11 @@ After every coherent batch:
     - `src/main/kotlin/atropos/core/multimodal/AutonomousWebServerSandbox.kt` (ATOM AI15)
 - Predicate moved: **Batches 10, 11 & 12 (50 atoms) fully completed.**
 - New overall estimate: 100% of Source Doc 10 fully implemented across all 12 batches.
+
+### Verification & CI Status (Batches 10, 11 & 12 Certified Green):
+- **Certified Commit**: `25488fbf`
+- **Release JAR**: Run 41214672041 (`success`) — JVM fat JAR, web frontend, and Android release APK artifacts generated and attested
+- **Factory CI**: Run 41214672101 (`success`) — Clean runner contract and `./gradlew clean jar`
+- **compile gate**: Run 41214672085 (`success`) — Governed compile verification & focused backend test suite
+- **Build and Sign Android APK**: Run 41214672077 (`success`) — Android ARM64 APK compilation and signature
+- **Status**: **100% Certified Green Across All Surfaces**
