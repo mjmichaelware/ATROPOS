@@ -1,6 +1,21 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
+/**
+ * ATOM 19.2: Production Endpoint Resolution and Environment Bounding.
+ *
+ * Resolves SpecGraph Foundry endpoints strictly against declared production configurations.
+ * Rejects stale development server URLs or unverified localhost ports, ensuring cloud
+ * synchronization requests reach authentic Foundry infrastructure.
+ *
+ * ## Research: Mutual TLS (mTLS) Certificate Exchange Protocols
+ * Researches mutual TLS (mTLS) certificate exchange protocols to authenticate direct engine-to-cloud
+ * synchronization channels against unauthorized tampering.
+ */
 
 import { readEngine, type EngineResult } from '@/lib/engine/client';
+import { ProductionEndpointResolutionEngine, type ResolvedSpecGraphEndpoint } from './ProductionEndpointResolutionEngine';
+
+export { ProductionEndpointResolutionEngine };
+export type { ResolvedSpecGraphEndpoint };
 
 export type SpecGraphResult<T> = EngineResult<T>;
 

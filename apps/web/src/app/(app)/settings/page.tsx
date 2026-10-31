@@ -19,8 +19,16 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useSessionState } from '@/lib/contexts/session-state-context';
+import { probeProviderHealth } from '@/components/settings/MultiProviderSettingsMatrixEngine';
 
-interface ProviderConfig {
+/**
+ * ATOM 18.1: Comprehensive Multi-Provider Settings Matrix.
+ *
+ * ## Research: Parallel Asynchronous Health Checking Architectures
+ * Researches parallel asynchronous health checking architectures that query multiple
+ * provider status endpoints without blocking UI interactivity.
+ */
+export interface ProviderConfig {
   id: string;
   name: string;
   envKey: string;

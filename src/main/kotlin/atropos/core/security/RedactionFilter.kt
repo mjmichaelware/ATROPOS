@@ -41,6 +41,9 @@ class RedactionFilter(
 ) {
     companion object {
         val defaultRegistry = KnownSecretRegistry()
+
+        fun maskSecret(value: String): String = FirstFourLastFourRedactionGate.maskFirstFourLastFour(value)
+        fun stableFingerprint(value: String): String = FirstFourLastFourRedactionGate.stableFingerprint(value)
     }
     fun redact(value: String): String = report(value).redacted
 

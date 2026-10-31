@@ -225,14 +225,9 @@ object DiagnosticSymbolSlicer {
         val lines = runCatching { Files.readAllLines(path) }.getOrNull() ?: return ""
         if (lines.isEmpty()) return ""
 
-        val center = if (failingLine != null && failingLine in 1..lines.size) {
-            failingLine - 1
-        } else {
-            0
-        }
-
-        val start = (center - SLICE_WINDOW).coerceAtLeast(0)
-        val end = (center + SLICE_WINDOW).coerceAtMost(lines.size - 1)
+        val (boundStart, boundEnd) = AutonomousDiagnosticSlicingEngine.calculateWindowBounds(failingLine, lines.size)
+        val start = (boundStart - 1).coerceAtLeast(0)
+        val end = (boundEnd - 1).coerceAtMost(lines.size - 1)
 
         val sb = StringBuilder()
         for (i in start..end) {

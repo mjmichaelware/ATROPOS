@@ -280,7 +280,9 @@ class OwnerAuthorizationService(
             deleteSecret(TOKEN_SECRET_NAME)
             deleteSecret(NONCE_SECRET_NAME)
 
-            return AuthorizationToken(token = token, scope = scope, issuedAt = Instant.ofEpochMilli(timestamp))
+            val authToken = AuthorizationToken(token = token, scope = scope, issuedAt = Instant.ofEpochMilli(timestamp))
+            DecoupledOwnerIdentityAuthorizer.bindAuthority(authToken, OwnerIdentityRole.SOVEREIGN_OWNER)
+            return authToken
         } catch (_: Exception) {
             null
         }

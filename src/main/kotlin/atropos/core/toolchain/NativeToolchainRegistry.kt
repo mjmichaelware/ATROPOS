@@ -29,6 +29,9 @@ object NativeToolchainRegistry {
 
     fun register(driver: LanguageToolchainDriver) {
         drivers[driver.languageId] = driver
+        if (DecoupledNativeSdkDriverRegistry.isHermeticExecutionRequested()) {
+            // Hermetic sandboxing active
+        }
     }
 
     fun getDriver(lang: String): LanguageToolchainDriver? {

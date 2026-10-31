@@ -367,4 +367,44 @@ After every coherent batch:
   - **Release JAR** ([Run 41157863365](https://github.com/mjmichaelware/ATROPOS/actions/runs/41157863365)): `success` (Publish JAR, Web standalone build, Android release APK)
 - Final Verification Status: **ALL SURFACES GREEN**
 
+---
+
+## Batch 4 of 11: Atropos Source Doc 10 Decomposition (Sections 16 to 20)
+
+### Status: Complete & Ready for Remote CI
+- **Atoms Covered (15 total)**:
+  - **ATOM 16.1**: Demonstration Workspace Scaffolding and Visual Onboarding (`apps/web/src/components/welcome/welcome-panel.tsx`)
+  - **ATOM 16.2**: Strict Segregation of Mock and Production Workspaces (`apps/web/src/components/projects/project-empty-state.tsx`)
+  - **ATOM 16.3**: Mobile Fresh-Install Orientation and Guidance Hints (`app/src/main/java/com/atropos/android/app/ui/ConversationScreen.kt`)
+  - **ATOM 17.1**: Unified Supabase Authentication and Session Persistence (`apps/web/src/lib/auth/server.ts`)
+  - **ATOM 17.2**: Cross-Platform Credential Sync and Edge Token Rotation (`apps/web/src/lib/auth/session.ts`)
+  - **ATOM 17.3**: Role-Based Authorization and Owner Identity Separation (`src/main/kotlin/atropos/core/security/OwnerAuthorizationService.kt`)
+  - **ATOM 18.1**: Comprehensive Multi-Provider Settings Matrix (`apps/web/src/app/(app)/settings/page.tsx`)
+  - **ATOM 18.2**: First-Four Last-Four Key Masking and Redaction Gate (`src/main/kotlin/atropos/core/security/RedactionFilter.kt`)
+  - **ATOM 18.3**: Isolated Vault Storage and Key Sanitization (`src/main/kotlin/atropos/core/security/TokenIsolationVault.kt`)
+  - **ATOM 19.1**: Dedicated SpecGraph Foundry Production Portal Linkage (`apps/web/src/components/dev-tools/specgraph-entry.tsx`)
+  - **ATOM 19.2**: Production Endpoint Resolution and Environment Bounding (`apps/web/src/lib/specgraph/client.ts`)
+  - **ATOM 20.1**: Autonomous Bug Discovery and Diagnostic Slicing Engine (`src/main/kotlin/atropos/core/verification/DiagnosticSymbolSlicer.kt`)
+  - **ATOM 20.2**: Native Multi-Language Toolchain and SDK Driver Registry (`src/main/kotlin/atropos/core/toolchain/NativeToolchainRegistry.kt`)
+  - **ATOM 20.3**: Deep AST Symbol Navigation and Reference Graph (`src/main/kotlin/atropos/ast/AstSymbolGraph.kt`)
+  - **ATOM 20.4**: Extensible MCP Tool Server Lifecycle Governance (`src/main/kotlin/atropos/core/integration/GenericMcpHostManager.kt`)
+
+### Decoupled Subsystem Modules Created (15 brand new files):
+  - `DemonstrationWorkspaceScaffolder.tsx` (ATOM 16.1)
+  - `MockWorkspaceSegregationBarrier.ts` (ATOM 16.2)
+  - `MobileFreshInstallOrientationHint.kt` (ATOM 16.3)
+  - `UnifiedSupabaseSessionManager.ts` (ATOM 17.1)
+  - `EdgeTokenRotationCoordinator.ts` (ATOM 17.2)
+  - `DecoupledOwnerIdentityAuthorizer.kt` (ATOM 17.3)
+  - `MultiProviderSettingsMatrixEngine.tsx` (ATOM 18.1)
+  - `FirstFourLastFourRedactionGate.kt` (ATOM 18.2)
+  - `DecoupledAesTokenIsolationVault.kt` (ATOM 18.3)
+  - `DedicatedSpecGraphPortalLauncher.tsx` (ATOM 19.1)
+  - `ProductionEndpointResolutionEngine.ts` (ATOM 19.2)
+  - `AutonomousDiagnosticSlicingEngine.kt` (ATOM 20.1)
+  - `DecoupledNativeSdkDriverRegistry.kt` (ATOM 20.2)
+  - `DecoupledAstSymbolReferenceGraph.kt` (ATOM 20.3)
+  - `ExtensibleMcpLifecycleGovernor.kt` (ATOM 20.4)
+
+
 

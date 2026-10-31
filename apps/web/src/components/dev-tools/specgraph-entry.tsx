@@ -10,6 +10,9 @@ import {
   projectSourcesRoute,
 } from '@/components/navigation/routes';
 import { WebMergeArchitecture } from '@/lib/architecture/web-merge';
+import { DedicatedSpecGraphPortalLauncher } from './DedicatedSpecGraphPortalLauncher';
+
+export { DedicatedSpecGraphPortalLauncher };
 
 /**
  * The SpecGraph subsystem entry point.

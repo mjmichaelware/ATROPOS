@@ -35,6 +35,9 @@ class AstSymbolGraph(
     fun getByFile(filePath: String): List<AstSymbolNode> = nodes.values.filter { it.filePath == filePath }
     fun getChildren(nodeId: String): List<AstSymbolNode> = childrenMap[nodeId] ?: emptyList()
 
+    fun buildGraph(): List<AstSymbol> = build()
+    fun findDefinitions(symbolName: String): List<AstSymbol> = DecoupledAstSymbolReferenceGraph.findDefinitions(symbolName, build())
+    fun impactedSymbolEvidence(symbols: List<AstSymbol>): List<String> = DecoupledAstSymbolReferenceGraph.impactedSymbolEvidence(symbols)
 
     fun build(): List<AstSymbol> {
         val sourceRoots = listOf(

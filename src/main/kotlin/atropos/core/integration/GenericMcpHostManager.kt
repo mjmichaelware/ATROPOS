@@ -134,6 +134,8 @@ class GenericMcpHostManager(private val configRoot: Path) {
     }
 
     fun callTool(serverId: String, toolName: String, argumentsJson: String, timeoutSeconds: Long = 15): String {
+        val clampedTimeout = ExtensibleMcpLifecycleGovernor.clampTimeout(timeoutSeconds)
+        ExtensibleMcpLifecycleGovernor.recordInvocation(serverId, toolName)
         val session = sessions[serverId] ?: return "ERROR: Server $serverId not running"
         atropos.core.thinking.Thinking.step("mcp", "Invoking MCP tool $toolName on server $serverId")
         atropos.core.thinking.Thinking.detail("mcp", "Dispatched JSON-RPC 2.0 call to $serverId:$toolName (${argumentsJson.length} bytes payload)")
@@ -147,7 +149,7 @@ class GenericMcpHostManager(private val configRoot: Path) {
                 put("arguments", JSONObject(argumentsJson))
             })
         }
-        val resp = sendAndAwait(session, req, timeoutSeconds) ?: return "ERROR: Tool invocation timed out"
+        val resp = sendAndAwait(session, req, clampedTimeout) ?: return "ERROR: Tool invocation timed out"
         if (resp.has("error")) {
             return "ERROR: " + resp.getJSONObject("error").optString("message", "Unknown error")
         }
@@ -158,7 +160,7 @@ class GenericMcpHostManager(private val configRoot: Path) {
             item.optString("text", item.toString())
         }.joinToString("\n")
         atropos.core.thinking.Thinking.detail("mcp", "Received response from $serverId:$toolName (${output.length} characters)")
-        return output
+        return ExtensibleMcpLifecycleGovernor.enforcePayloadLimit(output)
     }
 
     private fun sendAndAwait(session: ActiveProcessSession, req: JSONObject, timeoutSeconds: Long): JSONObject? {

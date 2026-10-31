@@ -103,6 +103,7 @@ class TokenIsolationVault(
         require(value.isNotBlank()) { "secret value must not be blank" }
         rootPath()
         val target = pathResolver.secretPath(name)
+        DecoupledAesTokenIsolationVault.assertNoSymlinkTraversal(target)
         if (Files.exists(target, LinkOption.NOFOLLOW_LINKS) && !Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) {
             throw IllegalArgumentException("target path exists and is not a regular file")
         }

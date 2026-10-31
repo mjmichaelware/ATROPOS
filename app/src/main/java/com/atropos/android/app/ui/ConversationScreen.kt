@@ -180,24 +180,16 @@ fun ConversationScreen(
 }
 
 /**
+ * ATOM 16.3: Mobile Fresh-Install Orientation and Guidance Hints.
+ *
  * The first thing a new operator sees. It says how to make the engine
- * reachable rather than only that it is not, because "offline" on its own
- * gives no next action.
+ * reachable rather than only that it is not, providing explanatory onboarding guidance.
+ *
+ * ## Research: Predictive Onboarding Suggestions Based on Device Capabilities
+ * Researches predictive onboarding suggestions based on detected device capabilities
+ * (such as local storage permissions or network reachability).
  */
 @Composable
-private fun EmptyConversationHint(isOnline: Boolean, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = conversationStatus(isOnline),
-            style = MaterialTheme.typography.titleMedium
-        )
-        if (!isOnline) {
-            Text(
-                text = "Start it in Termux with the bridge port set:\n" +
-                    "ATROPOS_BRIDGE_PORT=8787 java -jar ATROPOS.jar",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 12.dp)
-            )
-        }
-    }
+fun EmptyConversationHint(isOnline: Boolean, modifier: Modifier = Modifier) {
+    MobileFreshInstallOrientationHint(isOnline = isOnline, modifier = modifier)
 }
