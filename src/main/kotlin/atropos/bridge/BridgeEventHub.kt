@@ -14,6 +14,7 @@ object BridgeEventHub {
     private val sequence = java.util.concurrent.atomic.AtomicLong(0)
     private const val MAX_EVENTS = 500
     private val lock = Any()
+    val decoupledStreamHub = DecoupledStreamTelemetryHub(MAX_EVENTS)
 
     private val lastQueueStates = java.util.concurrent.ConcurrentHashMap<String, String>()
     private val lastApprovalIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
@@ -23,6 +24,7 @@ object BridgeEventHub {
     fun emit(type: String, detail: String) = synchronized(lock) {
         val cursor = sequence.incrementAndGet()
         events.add(Event(cursor, type, Instant.now(), detail))
+        decoupledStreamHub.emitEvent(type, detail)
         while (events.size > MAX_EVENTS) {
             events.removeAt(0)
         }

@@ -31,7 +31,8 @@ data class EpisodicMemoryRecord(
 class NeuralMemoryDopamineSync(
     val repoRoot: Path,
     val airGapGuard: OpenCoreAirGapController = OpenCoreAirGapController,
-    val sanitizer: SecretNonInterferenceGuard = SecretNonInterferenceGuard()
+    val sanitizer: SecretNonInterferenceGuard = SecretNonInterferenceGuard(),
+    val supervisor: DecoupledNeuralDopamineSupervisor = DecoupledNeuralDopamineSupervisor(repoRoot)
 ) {
     private val memoryDir = repoRoot.resolve(".atropos/memory/dopamine")
     private val ledgerFile = memoryDir.resolve("trajectories.jsonl")

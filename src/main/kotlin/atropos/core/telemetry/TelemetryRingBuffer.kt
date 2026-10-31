@@ -27,6 +27,7 @@ class TelemetryRingBuffer(
 ) {
     private val buffer = ArrayBlockingQueue<FrontierSweTelemetryRecord>(capacity)
     private val accumulatedBytes = AtomicLong(0L)
+    val continuousSpooler: DecoupledContinuousTelemetrySpooler = DecoupledContinuousTelemetrySpooler(spoolDir)
     private val executor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "atropos-telemetry-spooler").apply { isDaemon = true }
     }
@@ -40,6 +41,8 @@ class TelemetryRingBuffer(
      * Returns true if accepted into memory buffer; drops to ephemeral spool if saturated.
      */
     fun offer(record: FrontierSweTelemetryRecord): Boolean {
+        if (continuousSpooler.isPaused()) return false
+        continuousSpooler.recordIngest()
         val size = record.payloadJson.length.toLong()
         val offered = buffer.offer(record)
 

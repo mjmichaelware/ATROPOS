@@ -25,6 +25,7 @@ data class Canary(val label: String)
 object SecretEgressGate {
     private val blacklistedPatterns = mutableMapOf<String, String>()
     private val leakageAccumulator = LeakageAccumulator()
+    val decoupledSecretFilter: DecoupledZeroRetentionSecretFilter = DecoupledZeroRetentionSecretFilter()
 
     fun registerCanary(secret: String, patternName: String) {
         val trimmed = secret.trim()

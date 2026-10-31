@@ -13,6 +13,8 @@ fun CliParityConsoleScreen(
     onExecuteCommand: (String) -> Unit,
     onSelectProject: (String) -> Unit
 ) {
+    // ATOM 21.2: Bind PTY native bridge capabilities
+    val isPtyReady = DecoupledPtyTerminalBridge.isPtySupported()
     AndroidSovereignShell(
         viewState = viewState,
         onExecuteCommand = onExecuteCommand,

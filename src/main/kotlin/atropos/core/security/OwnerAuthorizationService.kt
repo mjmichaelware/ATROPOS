@@ -57,7 +57,8 @@ import javax.crypto.spec.PBEParameterSpec
 class OwnerAuthorizationService(
     private val configRoot: Path = AtroposConfig.configRoot(),
     private val clock: () -> Instant = { Instant.now() },
-    private val console: Console? = System.console()
+    private val console: Console? = System.console(),
+    val decoupledCryptographicOwnerGate: DecoupledCryptographicOwnerGate = DecoupledCryptographicOwnerGate(clock)
 ) {
     companion object {
         private const val PBKDF2_ITERATIONS = 100_000

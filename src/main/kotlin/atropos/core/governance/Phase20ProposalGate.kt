@@ -21,7 +21,8 @@ data class ProposalEvaluation(
 
 class Phase20ProposalGate(
     val repoRoot: Path,
-    val policyEnforcer: McpEvidenceAndAuthorityPolicy = McpEvidenceAndAuthorityPolicy(repoRoot)
+    val policyEnforcer: McpEvidenceAndAuthorityPolicy = McpEvidenceAndAuthorityPolicy(repoRoot),
+    val challengeGate: DecoupledHumanInTheLoopChallengeGate = DecoupledHumanInTheLoopChallengeGate()
 ) {
     private val approvals = ConcurrentHashMap<String, String>()
 

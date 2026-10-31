@@ -19,7 +19,8 @@ import kotlin.random.Random
 class TelemetryBackpressureAndDiskBudgetGovernor(
     private val spoolDir: File,
     private val isMobilePlatform: Boolean = false,
-    private val storageSupervisor: StorageSupervisor? = null
+    private val storageSupervisor: StorageSupervisor? = null,
+    val auditGovernor: DecoupledDiskBudgetAuditGovernor = DecoupledDiskBudgetAuditGovernor(spoolDir)
 ) {
     companion object {
         const val MOBILE_BUDGET_BYTES: Long = 100L * 1024L * 1024L  // 100 MB

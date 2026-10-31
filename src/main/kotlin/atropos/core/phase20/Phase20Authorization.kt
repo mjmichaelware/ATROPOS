@@ -72,7 +72,8 @@ class Phase20Authorization(
     private val clock: () -> java.time.Instant = { java.time.Instant.now() },
     private val console: java.io.Console? = System.console(),
     private val outputMode: OutputMode = OutputModeDetector.detect(),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    val decoupledTokenIssuer: DecoupledPbkdf2TokenIssuer = DecoupledPbkdf2TokenIssuer()
 ) {
     private val PBKDF2_ITERATIONS = 100_000
     private val PBKDF2_KEY_LENGTH = 256

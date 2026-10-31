@@ -6,6 +6,8 @@ package atropos.core.phase20
  */
 class Phase20Laws {
 
+    val selfBuildGovernanceGate: DecoupledSelfBuildGovernanceGate = DecoupledSelfBuildGovernanceGate()
+
     /**
      * Rule 20.10: Phase 11 is the only component permitted to mutate ATROPOS source.
      */
@@ -28,6 +30,7 @@ class Phase20Laws {
      * Rule 20.12: No self-approval. Evaluator must differ from Proposer.
      */
     fun validateSeparationOfDuties(proposerId: String, evaluatorId: String) {
+        selfBuildGovernanceGate.evaluateSelfBuildSeparation(proposerId, evaluatorId)
         if (proposerId == evaluatorId) {
             throw SecurityException("Rule 20.12 Violation: Self-approval detected. Proposer and Evaluator share ID: $proposerId")
         }

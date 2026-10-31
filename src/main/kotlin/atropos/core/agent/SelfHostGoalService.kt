@@ -43,6 +43,7 @@ class SelfHostGoalService(
     private val promotionBoundary = SelfHostGoalPromotionBoundary(store, stateSnapshotRecorder, promotionService)
     private val evidenceBundleExporter = SelfHostEvidenceBundleExporter(repoRoot = repoRoot, store = store, dagService = dagService, restartCoordinator = restartCoordinator)
     private val stateUpdater = SelfHostGoalStateUpdater(store, dagService, stateSnapshotRecorder)
+    val decoupledPipeline: DecoupledSelfHostGoalPipeline = DecoupledSelfHostGoalPipeline(repoRoot, clock)
 
     fun startGoal(goalName: String, phase: String): SelfHostResult = goalStartService.start(goalName, phase)
 

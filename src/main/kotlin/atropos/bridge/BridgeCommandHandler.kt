@@ -36,7 +36,8 @@ class BridgeCommandHandler(
      * Enforces strict client-to-engine command flow control; never simulated locally.
      */
     val run: (String) -> BridgeCommandOutput,
-    val redactionFilter: RedactionFilter = RedactionFilter()
+    val redactionFilter: RedactionFilter = RedactionFilter(),
+    val decoupledDispatcher: DecoupledRemoteCommandDispatcher = DecoupledRemoteCommandDispatcher(run, redactionFilter)
 ) {
 
     fun execute(request: HttpRequest): HttpResponse {

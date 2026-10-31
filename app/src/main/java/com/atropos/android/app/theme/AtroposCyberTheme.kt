@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 @Immutable
 data class CyberHudColors(
     val voidAbyss: Color = Color(0xFF07090E),
+    val oledOptimizedBlack: Color = DecoupledCyberHudThemeEngine.defaultSpec.pureOledBlack,
     val panelSurface: Color = Color(0xFF0F131D),
     val cardSurface: Color = Color(0xFF161C2B),
     val overlayGlass: Color = Color(0xCC0F1424),

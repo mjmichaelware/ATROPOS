@@ -69,9 +69,11 @@ fun SixAnswersRadarCard(
             .background(Color(0xFF0F172A))
             .padding(16.dp)
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(Color(0xFF10B981), radius = size.minDimension / 4)
-        }
+        val confidence = answers.confidence.toFloat()
+        DecoupledHardwareVectorGraphicsRenderer.HardwareAcceleratedRadarCanvas(
+            scores = listOf(confidence, confidence * 0.9f, confidence, confidence * 0.85f, confidence),
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 

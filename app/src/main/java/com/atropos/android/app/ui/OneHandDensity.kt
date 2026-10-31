@@ -3,13 +3,14 @@ package com.atropos.android.app.ui
 
 /** Android reach and touch grammar shared by the mobile surface. */
 class OneHandDensity(
-    val touchTargetDp: Int = 44
+    val touchTargetDp: Int = 44,
+    val touchDensityGate: DecoupledErgonomicTouchDensityGate = DecoupledErgonomicTouchDensityGate
 ) {
     enum class ReachZone { TOP, MIDDLE, BOTTOM }
     data class OfflineResume(val projectId: String, val sessionId: String?, val available: Boolean)
 
     init {
-        require(touchTargetDp >= 44) { "touch targets must remain at least 44dp" }
+        touchDensityGate.assertCompliantTouchTarget(touchTargetDp)
     }
 
     fun reachZone(index: Int, itemCount: Int): ReachZone {
