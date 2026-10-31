@@ -16,19 +16,19 @@ import {
 } from 'lucide-react';
 
 import { EditorGroupTabController, type EditorTabModel, type SplitDirection } from './EditorGroupTabController';
-export { EditorFormatOnSaveAutomation, defaultFormatOnSaveAutomation } from './EditorFormatOnSaveAutomation';
-export { EditorWordWrapController, defaultWordWrapController } from './EditorWordWrapController';
+export { EditorFormatOnSaveAutomation } from './EditorFormatOnSaveAutomation';
+export { EditorWordWrapController } from './EditorWordWrapController';
 export { EditorOverviewMinimapOverlay } from './EditorOverviewMinimapOverlay';
-export { BracketPairColorizationEngine, defaultBracketColorizer } from './BracketPairColorizationEngine';
+export { BracketPairColorizationEngine } from './BracketPairColorizationEngine';
 export { StickyScrollSignaturePinning } from './StickyScrollSignaturePinning';
-export { MultiCursorModifierController, defaultMultiCursorController } from './MultiCursorModifierController';
-export { SnippetSuggestionPrioritizer, defaultSnippetPrioritizer } from './SnippetSuggestionPrioritizer';
-export { AutoClosingBracketsEngine, defaultAutoClosingBracketsEngine } from './AutoClosingBracketsEngine';
-export { LinkedTagPairEditor, defaultLinkedTagPairEditor } from './LinkedTagPairEditor';
-export { WhitespaceGlyphRenderer, defaultWhitespaceRenderer } from './WhitespaceGlyphRenderer';
-export { TabSizeSpecificationController, defaultTabSizeController } from './TabSizeSpecificationController';
-export { TabToSpacesConversionEngine, defaultTabConverter } from './TabToSpacesConversionEngine';
-export { SmoothCaretAnimationController, defaultCaretAnimationController } from './SmoothCaretAnimationController';
+export { MultiCursorModifierController } from './MultiCursorModifierController';
+export { SnippetSuggestionPrioritizer } from './SnippetSuggestionPrioritizer';
+export { AutoClosingBracketsEngine } from './AutoClosingBracketsEngine';
+export { LinkedTagPairEditor } from './LinkedTagPairEditor';
+export { WhitespaceGlyphRenderer } from './WhitespaceGlyphRenderer';
+export { TabSizeSpecificationController } from './TabSizeSpecificationController';
+export { TabToSpacesConversionEngine } from './TabToSpacesConversionEngine';
+export { SmoothCaretAnimationController } from './SmoothCaretAnimationController';
 
 export { EditorGroupTabController };
 export type { EditorTabModel, SplitDirection };

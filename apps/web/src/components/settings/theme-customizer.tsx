@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { loadThemeCustomization, saveThemeCustomization, applyThemeCustomization, getAvailablePalettes } from '@atropos/design-tokens';
 export { GlobalThemeSelectorEngine } from './GlobalThemeSelectorEngine';
-export type { ThemeOption } from './GlobalThemeSelectorEngine';
+export type { ThemeDescriptor } from './GlobalThemeSelectorEngine';
 
 interface ThemeCustomizerProps {
   onClose?: () => void;

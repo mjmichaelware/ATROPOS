@@ -14,8 +14,8 @@
  * rules are testable without a renderer.
  */
 
-export { FileAutoSavePolicyEngine, defaultAutoSavePolicyEngine } from './FileAutoSavePolicyEngine';
-export type { AutoSaveMode, AutoSaveOptions } from './FileAutoSavePolicyEngine';
+export { FileAutoSavePolicyEngine } from './FileAutoSavePolicyEngine';
+export type { AutoSaveTrigger, AutoSavePolicyConfig } from './FileAutoSavePolicyEngine';
 
 export interface EditorTab {
   /** Workspace-relative path; also the identity. Opening twice focuses, not duplicates. */
