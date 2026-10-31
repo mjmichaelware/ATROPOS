@@ -328,7 +328,8 @@ After every coherent batch:
 
 ## Batch 3 of 11: Atropos Source Doc 10 Decomposition (Sections 11 to 15)
 
-### Status: Complete & Ready for Remote CI
+### Status: Complete & Certified Green
+- **Commit**: `c5f64379`
 - **Atoms Covered (16 total)**:
   - **ATOM 11.1**: SpecGraph Foundry Nested Project Root Configuration (`apps/specgraph-foundry/apps/web/next.config.ts`)
   - **ATOM 11.2**: Vercel Production Environment and Public Variable Isolation (`apps/specgraph-foundry/apps/web/src/lib/config/client-env.ts`)
@@ -347,7 +348,7 @@ After every coherent batch:
   - **ATOM 15.2**: Public Route Proxy and Authentication Wall (`apps/web/src/lib/auth/proxy.ts`)
   - **ATOM 15.3**: Authenticated Application Shell Transition (`apps/web/src/app/(app)/layout.tsx`)
 
-### Decoupled Subsystem Modules Created:
+### Decoupled Subsystem Modules Created (+1,043 LOC):
   - `workbench-layout-controller.ts` (ATOM 13.1)
   - `workspace-virtualized-tree.ts` (ATOM 13.2)
   - `split-buffer-manager.ts` (ATOM 13.3)
@@ -357,4 +358,13 @@ After every coherent batch:
   - `landing-funnel-pipeline.ts` (ATOM 15.1)
   - `edge-route-guard.ts` (ATOM 15.2)
   - `app-shell-hydrator.ts` (ATOM 15.3)
+
+### Remote GitHub Actions Verification:
+  - Commit: `c5f64379`
+  - **Factory CI** ([Run 41157863402](https://github.com/mjmichaelware/ATROPOS/actions/runs/41157863402)): `success`
+  - **Build and Sign Android APK** ([Run 41157863391](https://github.com/mjmichaelware/ATROPOS/actions/runs/41157863391)): `success`
+  - **compile gate** ([Run 41157863366](https://github.com/mjmichaelware/ATROPOS/actions/runs/41157863366)): `success`
+  - **Release JAR** ([Run 41157863365](https://github.com/mjmichaelware/ATROPOS/actions/runs/41157863365)): `success` (Publish JAR, Web standalone build, Android release APK)
+- Final Verification Status: **ALL SURFACES GREEN**
+
 
