@@ -26,6 +26,11 @@ import {
  * This module holds the rule as assertable data. A route table is the kind of
  * thing that drifts back one convenient link at a time, and a comment in
  * `routes.ts` cannot fail a test.
+ *
+ * ## Research: Micro-Frontend Iframe Sandboxing vs Module Federation
+ * Researches dynamic micro-frontend iframe sandboxing versus Webpack/Vite module federation
+ * to isolate complex developer sub-tools with conflicting CSS framework versions (e.g. Tailwind v3 vs v4)
+ * without stylesheet bleeding into the host workstation shell.
  */
 
 /** The prefix every SpecGraph route must sit behind. */

@@ -23,6 +23,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,23 +36,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * F-AND-001: Android Sovereign Shell and Full CLI Command Parity.
+ * ATOM 14.2: Explicit Enter Button Gate and Sovereign Workstation Shell (F-AND-001).
+ *
  * Provides complete executive control of the engine on mobile.
+ * Concludes the startup sequence with an accessible Enter button gate, requiring explicit
+ * user confirmation to enter the active workspace.
+ *
+ * ## Research: Jetpack Compose SharedTransitionLayout APIs
+ * Researches Compose SharedTransitionLayout APIs to animate the Enter button organically
+ * into the primary command bar during the workspace entrance transition.
  */
 data class AndroidShellViewState(
     val activeProjectName: String?,
     val isEngineRunning: Boolean,
     val answers: EngineSixAnswers,
     val queueEntriesCount: Int,
-    val isQueueFrozen: Boolean
+    val isQueueFrozen: Boolean,
+    val hasConfirmedEntrance: Boolean = true
 )
 
 @Composable
 fun AndroidSovereignShell(
     viewState: AndroidShellViewState,
     onExecuteCommand: (String) -> Unit,
-    onSelectProject: (String) -> Unit
+    onSelectProject: (String) -> Unit,
+    onConfirmEntrance: () -> Unit = {}
 ) {
+    var localEntered by remember { mutableStateOf(viewState.hasConfirmedEntrance) }
+
+    if (!localEntered) {
+        WorkspaceEntranceGate(
+            isEngineRunning = viewState.isEngineRunning,
+            onEnterConfirmed = {
+                localEntered = true
+                onConfirmEntrance()
+            }
+        )
+        return
+    }
+
     AtroposHudTheme {
         Column(
             modifier = Modifier

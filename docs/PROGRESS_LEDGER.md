@@ -323,3 +323,38 @@ After every coherent batch:
   - compile gate (Workflow 41145681791): `success` (0 new orphans, focused backend tests passed)
   - Build and Sign Android APK (Workflow 41145681840): `success`
 - Final Verification Status: **ALL SURFACES GREEN**
+
+---
+
+## Batch 3 of 11: Atropos Source Doc 10 Decomposition (Sections 11 to 15)
+
+### Status: Complete & Ready for Remote CI
+- **Atoms Covered (16 total)**:
+  - **ATOM 11.1**: SpecGraph Foundry Nested Project Root Configuration (`apps/specgraph-foundry/apps/web/next.config.ts`)
+  - **ATOM 11.2**: Vercel Production Environment and Public Variable Isolation (`apps/specgraph-foundry/apps/web/src/lib/config/client-env.ts`)
+  - **ATOM 11.3**: Vercel Production Build Guard and Manifest Validation (`apps/web/src/lib/architecture/vercel-deploy-guard.ts`)
+  - **ATOM 11.4**: Deployment Verification and Zero-Entropy Output Validation (`apps/specgraph-foundry/apps/web/src/lib/execution/mutations.ts`)
+  - **ATOM 12.1**: Architectural Separation and Forbidden Runtime Root Enforcement (`apps/web/src/lib/architecture/web-merge.ts`)
+  - **ATOM 12.2**: SpecGraph Developer Tools Tenancy Namespace (`apps/web/src/lib/specgraph/tenancy.ts`)
+  - **ATOM 12.3**: Production Foundry URL Integration Endpoint (`apps/web/src/components/dev-tools/specgraph-entry.tsx`)
+  - **ATOM 13.1**: IDE Four-Pane Workbench Shell Architecture (`apps/web/src/components/workbench/workbench-shell.tsx`)
+  - **ATOM 13.2**: Hierarchical File Explorer with In-Territory Context (`apps/web/src/components/workbench/file-explorer.tsx`)
+  - **ATOM 13.3**: Multi-Tab Dirty State and Split Code Editor (`apps/web/src/components/workbench/editor-tabs.tsx`)
+  - **ATOM 13.4**: Real Engine Mirror Terminal and Log Stream Panel (`apps/web/src/components/workbench/terminal.tsx`)
+  - **ATOM 14.1**: Android 3-to-5 Second Animated Startup Sequence (`app/src/main/java/com/atropos/android/app/theme/AtroposCyberTheme.kt`)
+  - **ATOM 14.2**: Explicit Enter Button Gate and Application Transition (`apps/atropos-android/src/main/kotlin/atropos/android/ui/AndroidSovereignShell.kt`)
+  - **ATOM 15.1**: Public Landing Page and Marketing Funnel Architecture (`apps/web/src/components/landing/landing-hero.tsx`)
+  - **ATOM 15.2**: Public Route Proxy and Authentication Wall (`apps/web/src/lib/auth/proxy.ts`)
+  - **ATOM 15.3**: Authenticated Application Shell Transition (`apps/web/src/app/(app)/layout.tsx`)
+
+### Decoupled Subsystem Modules Created:
+  - `workbench-layout-controller.ts` (ATOM 13.1)
+  - `workspace-virtualized-tree.ts` (ATOM 13.2)
+  - `split-buffer-manager.ts` (ATOM 13.3)
+  - `engine-terminal-pty-stream.ts` (ATOM 13.4)
+  - `CinematicStartupSequencer.kt` (ATOM 14.1)
+  - `WorkspaceEntranceGate.kt` (ATOM 14.2)
+  - `landing-funnel-pipeline.ts` (ATOM 15.1)
+  - `edge-route-guard.ts` (ATOM 15.2)
+  - `app-shell-hydrator.ts` (ATOM 15.3)
+

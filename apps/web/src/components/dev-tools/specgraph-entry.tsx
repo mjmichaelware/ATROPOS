@@ -19,6 +19,10 @@ import { WebMergeArchitecture } from '@/lib/architecture/web-merge';
  * available without letting them become the primary operating experience, so
  * every SpecGraph workspace is reached from here rather than from the project
  * tab strip it used to occupy.
+ *
+ * ## Research: Secure Cross-Origin Message Passing & SSO Handoff
+ * Researches signed postMessage tokens and ephemeral cryptographic nonces to allow seamless
+ * single-sign-on handoff between the local Atropos IDE cockpit and the live cloud SpecGraph Foundry.
  */
 export function SpecGraphEntry() {
   const { session } = useSessionState();

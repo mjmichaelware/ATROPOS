@@ -1,9 +1,21 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/**
+ * ATOM 15.1: Public Landing Page and Marketing Funnel Architecture.
+ *
+ * Deliver an informative, conversion-oriented public landing page explaining
+ * the capabilities of Atropos and SpecGraph Foundry.
+ *
+ * ## Research: Next.js Static Site Generation (SSG) with Edge Caching
+ * Researches Next.js Static Site Generation (SSG) with edge caching for public
+ * marketing landing pages to achieve sub-50ms global time-to-first-byte (TTFB).
+ */
+
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-function UploadIcon() {
+export function UploadIcon() {
   return (
     <svg viewBox="0 0 32 32" width="28" height="28" fill="none" aria-hidden="true">
       <path d="M16 21V7M16 7l-6 6M16 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -12,7 +24,7 @@ function UploadIcon() {
   );
 }
 
-function EvidenceIcon() {
+export function EvidenceIcon() {
   return (
     <svg viewBox="0 0 32 32" width="28" height="28" fill="none" aria-hidden="true">
       <circle cx="13" cy="13" r="8" stroke="currentColor" strokeWidth="2" />
@@ -22,7 +34,7 @@ function EvidenceIcon() {
   );
 }
 
-function GraphIcon() {
+export function GraphIcon() {
   return (
     <svg viewBox="0 0 32 32" width="28" height="28" fill="none" aria-hidden="true">
       <line x1="16" y1="7" x2="8" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -35,7 +47,7 @@ function GraphIcon() {
   );
 }
 
-function VerifiedIcon() {
+export function VerifiedIcon() {
   return (
     <svg viewBox="0 0 32 32" width="28" height="28" fill="none" aria-hidden="true">
       <path d="M16 4l9 4v7c0 7-4.5 11-9 13-4.5-2-9-6-9-13V8l9-4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
@@ -44,7 +56,7 @@ function VerifiedIcon() {
   );
 }
 
-const FEATURES = [
+export const FEATURES = [
   {
     title: "Upload & understand",
     body: "Bring in your source documents. SpecGraph extracts and organizes everything into addressable, provenance-tracked atoms — nothing is summarized away.",

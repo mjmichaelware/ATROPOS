@@ -18,7 +18,19 @@ const urlSchema = z
     }
   });
 
-const publicEnvSchema = z.object({
+/**
+ * ATOM 11.2: Vercel Production Environment and Public Variable Isolation.
+ *
+ * Validates that all public environment variables strictly point to production
+ * domains over HTTPS. Prohibits fallback defaults to localhost or developer machines
+ * in production mode.
+ *
+ * ## Research: Automated Runtime Environment Schema Validation in Edge Middleware
+ * Validating environment schemas at edge middleware boundary before request hydration
+ * detects missing Vercel project variables and secret drift instantly, preventing
+ * broken client-side hydration or silent network timeouts.
+ */
+export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SPECGRAPH_API_URL: urlSchema,
   NEXT_PUBLIC_SUPABASE_URL: urlSchema,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(8).max(4096),
@@ -40,18 +52,24 @@ function defaultPublicEnvSource(): Record<string, string | undefined> {
 }
 
 export function readPublicEnv(source: Record<string, string | undefined> = defaultPublicEnvSource()): PublicEnv {
+  const isProd = process.env.NODE_ENV === "production";
+  
+  // Prohibit fallback defaults to localhost in production mode
+  const apiUrl = source.NEXT_PUBLIC_SPECGRAPH_API_URL ?? (isProd ? undefined : "http://127.0.0.1:8787");
+
   const result = publicEnvSchema.safeParse({
-    NEXT_PUBLIC_SPECGRAPH_API_URL: source.NEXT_PUBLIC_SPECGRAPH_API_URL ?? "http://127.0.0.1:8787",
+    NEXT_PUBLIC_SPECGRAPH_API_URL: apiUrl,
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
   if (!result.success) {
-    throw new Error("Public web configuration is invalid");
+    const errorDetails = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    throw new Error(`Public web configuration is invalid. Missing or invalid Vercel production environment variables: ${errorDetails}`);
   }
   const api = new URL(result.data.NEXT_PUBLIC_SPECGRAPH_API_URL);
   const supabase = new URL(result.data.NEXT_PUBLIC_SUPABASE_URL);
   if (api.origin === supabase.origin) {
-    throw new Error("Public web configuration is invalid");
+    throw new Error("Public web configuration is invalid: NEXT_PUBLIC_SPECGRAPH_API_URL and NEXT_PUBLIC_SUPABASE_URL cannot share the same origin.");
   }
   return result.data;
 }
