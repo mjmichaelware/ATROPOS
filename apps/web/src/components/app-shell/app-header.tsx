@@ -8,6 +8,8 @@ import { NavLinks } from "@/components/navigation/nav-links";
 import { globalRoutes } from "@/components/navigation/routes";
 import { useNavItems } from "@/components/navigation/use-nav-items";
 import { CommandPalette } from "@/components/ui/command-palette";
+export { WindowTitleBarStyleCustomizer, WindowStyleManager } from './WindowTitleBarStyleCustomizer';
+export type { TitleBarStyle } from './WindowTitleBarStyleCustomizer';
 
 export function AppHeader({
   userEmail,

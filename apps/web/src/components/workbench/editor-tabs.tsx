@@ -22,6 +22,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useWorkbenchTabs } from '@/lib/contexts/workbench-tabs-context';
 import { writeWorkspaceFile } from '@/lib/workspace/client';
 import { SplitOrientation, computeLineNumbers } from './split-buffer-manager';
+export { EditorTabSizingController } from './EditorTabSizingController';
+export type { TabSizingMode } from './EditorTabSizingController';
 
 export function openTab(tabs: ReturnType<typeof useWorkbenchTabs>, path: string) {
   tabs.open(path);

@@ -27,6 +27,8 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+export { IntegratedPanelLocationSelector } from './IntegratedPanelLocationSelector';
+export type { PanelLocation } from './IntegratedPanelLocationSelector';
 import {
   DEFAULT_SPLITTER_DIMENSIONS,
   DEFAULT_WORKBENCH_PANE_VISIBILITY,

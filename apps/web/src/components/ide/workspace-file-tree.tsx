@@ -19,6 +19,7 @@ import { HierarchicalExplorerPane, type ExplorerFileNode, type GitStatusBadge } 
 
 export { HierarchicalExplorerPane };
 export type { ExplorerFileNode, GitStatusBadge };
+export { FileIconThemeEngine, getFileIconForExtension } from './FileIconThemeEngine';
 
 export interface FileTreeItem {
   id?: string;

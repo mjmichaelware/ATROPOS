@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.sp
  */
 object AtroposTypography {
     val unifiedHighContrast = UnifiedHighContrastSyntaxTypography
+    val fontLigaturesController = FontLigaturesTypographyController
     val monoCode = TextStyle(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Normal,

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+export { ContextualCodeLensProvider } from './ContextualCodeLensProvider';
+export type { CodeLensItem } from './ContextualCodeLensProvider';
 import {
   Code2,
   ChevronRight,

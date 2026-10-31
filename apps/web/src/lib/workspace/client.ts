@@ -14,6 +14,9 @@ import { DecoupledDiskMutationPipeline, type DiskMutationReceipt } from './Decou
 
 export { DecoupledDiskMutationPipeline };
 export type { DiskMutationReceipt };
+export { TrailingWhitespaceTrimmer, defaultTrailingWhitespaceTrimmer } from './TrailingWhitespaceTrimmer';
+export { DestructiveFileDeletionGate, defaultDestructiveFileDeletionGate } from './DestructiveFileDeletionGate';
+export type { DeletionConfirmationState, DeletionRequest } from './DestructiveFileDeletionGate';
 
 export interface WorkspaceTreeNode {
   name: string;

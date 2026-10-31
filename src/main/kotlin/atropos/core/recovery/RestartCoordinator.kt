@@ -40,7 +40,8 @@ class RestartCoordinator(
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val dagNodeRestorer: DagNodeRestorer = DagNodeRestorer(dagStore),
     private val clock: () -> Instant = { Instant.now() },
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    val hotExitBufferRestorer: PersistentHotExitBufferRestorer = PersistentHotExitBufferRestorer(repoRoot)
 ) {
     /**
      * SD7-T2-025 & SD7-ADV-005: Exact-hash restart continuity vector.

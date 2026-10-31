@@ -12,7 +12,8 @@ data class AgentRepoStatusResult(
 
 class AgentRunRepoStatus(
     private val repoRoot: Path,
-    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
+    val watcherExclusionPolicy: FileSystemWatcherExclusionPolicy = FileSystemWatcherExclusionPolicy.defaultPolicy()
 ) {
     /** One porcelain row: the two-character status code and the path it names. */
     data class RepoStatusLine(val code: String, val path: String) {

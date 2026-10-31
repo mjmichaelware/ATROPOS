@@ -6,7 +6,8 @@ import java.nio.file.Path
 
 class AgentPatchDiffNormalizer(
     private val repoRoot: Path,
-    private val extractor: AgentPatchExtractor = AgentPatchExtractor()
+    private val extractor: AgentPatchExtractor = AgentPatchExtractor(),
+    val newlineEnforcementService: FinalNewlineEnforcementService = FinalNewlineEnforcementService
 ) {
     fun normalize(diffText: String): String {
         val extraction = extractor.extract(diffText) ?: return diffText.trimEnd() + "\n"

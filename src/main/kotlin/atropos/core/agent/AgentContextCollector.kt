@@ -48,7 +48,8 @@ class AgentContextCollector(
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
     private val importedInstructionPacks: ImportedInstructionPackStore = ImportedInstructionPackStore(repoRoot),
     private val commandTimeoutMillis: Long = 5_000L,
-    private val commandOutputLines: Int = 256
+    private val commandOutputLines: Int = 256,
+    val searchDirectoryExclusionGate: GlobalSearchDirectoryExclusionGate = GlobalSearchDirectoryExclusionGate.defaultGate()
 ) {
     companion object {
         fun resolveProfileContextCapBytes(): Int {

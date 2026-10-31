@@ -16,6 +16,19 @@ import {
 } from 'lucide-react';
 
 import { EditorGroupTabController, type EditorTabModel, type SplitDirection } from './EditorGroupTabController';
+export { EditorFormatOnSaveAutomation, defaultFormatOnSaveAutomation } from './EditorFormatOnSaveAutomation';
+export { EditorWordWrapController, defaultWordWrapController } from './EditorWordWrapController';
+export { EditorOverviewMinimapOverlay } from './EditorOverviewMinimapOverlay';
+export { BracketPairColorizationEngine, defaultBracketColorizer } from './BracketPairColorizationEngine';
+export { StickyScrollSignaturePinning } from './StickyScrollSignaturePinning';
+export { MultiCursorModifierController, defaultMultiCursorController } from './MultiCursorModifierController';
+export { SnippetSuggestionPrioritizer, defaultSnippetPrioritizer } from './SnippetSuggestionPrioritizer';
+export { AutoClosingBracketsEngine, defaultAutoClosingBracketsEngine } from './AutoClosingBracketsEngine';
+export { LinkedTagPairEditor, defaultLinkedTagPairEditor } from './LinkedTagPairEditor';
+export { WhitespaceGlyphRenderer, defaultWhitespaceRenderer } from './WhitespaceGlyphRenderer';
+export { TabSizeSpecificationController, defaultTabSizeController } from './TabSizeSpecificationController';
+export { TabToSpacesConversionEngine, defaultTabConverter } from './TabToSpacesConversionEngine';
+export { SmoothCaretAnimationController, defaultCaretAnimationController } from './SmoothCaretAnimationController';
 
 export { EditorGroupTabController };
 export type { EditorTabModel, SplitDirection };

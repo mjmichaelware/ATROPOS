@@ -90,4 +90,6 @@ object ContextPathExclusions {
     private val SOURCE_SUFFIXES = listOf(".kt", ".kts")
 
     private const val ENV_FILE = ".env"
+
+    val explorerFilter = ExplorerPathExclusionFilter
 }

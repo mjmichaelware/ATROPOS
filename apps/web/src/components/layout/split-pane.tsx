@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactNode, useRef, useState, useEffect } from 'react';
+export { SidebarLocationSwitcher } from './SidebarLocationSwitcher';
+export type { SidebarLocation } from './SidebarLocationSwitcher';
 
 interface SplitPaneProps {
   left: ReactNode;

@@ -23,6 +23,9 @@ import { useWorkbenchTabs } from '@/lib/contexts/workbench-tabs-context';
 import { readEngine } from '@/lib/engine/client';
 import { readWorkspaceTree, readWorkspaceFile, writeWorkspaceFile } from '@/lib/workspace/client';
 import { classifyFileNode, isPathInTerritory } from './workspace-virtualized-tree';
+export { CompactDirectoryMerger, defaultCompactDirectoryMerger } from './CompactDirectoryMerger';
+export type { CompactFolderNode, DirectoryNode } from './CompactDirectoryMerger';
+export { ActiveFileAutoRevealController, defaultActiveFileAutoRevealController } from './ActiveFileAutoRevealController';
 
 export interface FilesPayload {
   ok: true;

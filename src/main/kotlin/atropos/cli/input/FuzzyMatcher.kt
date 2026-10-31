@@ -28,6 +28,8 @@ class FuzzyMatcher(
 
         fun sanitizeInput(raw: String): String =
             BracketedPasteHandler.sanitizeInput(raw)
+
+        val smartCaseSearchHeuristic = SmartCaseSearchHeuristic
     }
 
     /**

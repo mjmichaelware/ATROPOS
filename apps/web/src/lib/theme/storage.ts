@@ -1,3 +1,6 @@
+export { UiAccessibilityZoomController, defaultUiAccessibilityZoomController } from './UiAccessibilityZoomController';
+export type { ZoomConfiguration } from './UiAccessibilityZoomController';
+
 export type ThemeChoice = "dark" | "light" | "system" | "high-contrast";
 
 const STORAGE_KEY = "specgraph.theme";

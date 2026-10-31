@@ -142,5 +142,7 @@ enum class ProjectLanguage(
             is Detection.Unsupported -> KOTLIN
             Detection.Unstated -> KOTLIN
         }
+
+        val extensionAssociator: FileExtensionLanguageAssociator = FileExtensionLanguageAssociator.defaultAssociator()
     }
 }

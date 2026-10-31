@@ -78,5 +78,6 @@ class StartupContinuationDecider(
 
     private companion object {
         const val AUTO_CONTINUE_NOTE = "ATROPOS_AUTO_CONTINUE is set"
+        val windowRestorationLifecycle: WorkspaceWindowRestorationLifecycle = WorkspaceWindowRestorationLifecycle
     }
 }
