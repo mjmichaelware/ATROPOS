@@ -713,3 +713,9 @@ After every coherent batch:
   - Category Parity: Identical 8 categories to Android APK (`agent`, `providers`, `code`, `workspace`, `git`, `mcp`, `diagnostics`, `specgraph`) with Right/Left arrow trie drill-down (ATOM 6.3).
   - Detailed Command Card: Right-arrow on leaf command expands floating specification card without polluting scrollback (ATOM 6.4).
   - Buffer Insertion: Selecting a command on Enter injects command text into prompt buffer without auto-execution (ATOM 6.5).
+- **Certified Commit**: `1ccf1e521d66d0ecf66c2dc7e7f1caf963a5df9f`
+- **Release JAR**: Run 41223939207 (`success`) — JVM fat JAR, web standalone, and Android release APK verified
+- **Factory CI**: Run 41223939227 (`success`) — Clean runner contract and `./gradlew clean jar`
+- **compile gate**: Run 41223939190 (`success`) — Governed compile verification & focused backend tests (0 orphans)
+- **Build and Sign Android APK**: Run 41223939205 (`success`) — Android release APK compilation and signature
+- **CI Certification State**: **100% Certified Green Across All Surfaces**
