@@ -143,8 +143,14 @@ object InteractiveCliRunner {
                         )
                     }
 
+                    var floatingLineCount = 0
+
                     fun redraw() {
                         try {
+                            if (floatingLineCount > 0) {
+                                ui.clearFloatingOverlay(floatingLineCount)
+                                floatingLineCount = 0
+                            }
                             paintPrompt()
                         } catch (failure: Exception) {
                             ui.renderError("prompt redraw failed (${failure.javaClass.simpleName})")
@@ -158,18 +164,58 @@ object InteractiveCliRunner {
                         if (commands.hasExited()) break@inputLoop
                         val key = keys.readKey() ?: break
 
+                        // ATOM 6.1: Keystroke Interception on '/' without echo to standard output
+                        if (!modalStateMachine.isModalActive()) {
+                            if (key is KeyEvent.Printable && key.text == "/" && prompt.isEmpty()) {
+                                modalStateMachine.openCategorizedTrie()
+                                if (floatingLineCount > 0) {
+                                    ui.clearFloatingOverlay(floatingLineCount)
+                                    floatingLineCount = 0
+                                }
+                                val lines = modalStateMachine.render(ui.viewportWidth)
+                                ui.renderFloatingOverlay(lines)
+                                floatingLineCount = lines.size
+                                continue@inputLoop
+                            }
+                        }
+
                         if (modalStateMachine.isModalActive()) {
                             when (val outcome = modalStateMachine.handleKey(key, ui.viewportWidth)) {
                                 is atropos.cli.ui.CliModalStateMachine.ModalOutcome.Redraw -> {
-                                    ui.renderBlock(modalStateMachine.render(ui.viewportWidth))
+                                    if (floatingLineCount > 0) {
+                                        ui.clearFloatingOverlay(floatingLineCount)
+                                        floatingLineCount = 0
+                                    }
+                                    val lines = modalStateMachine.render(ui.viewportWidth)
+                                    ui.renderFloatingOverlay(lines)
+                                    floatingLineCount = lines.size
                                     continue@inputLoop
                                 }
                                 is atropos.cli.ui.CliModalStateMachine.ModalOutcome.Dismiss -> {
+                                    if (floatingLineCount > 0) {
+                                        ui.clearFloatingOverlay(floatingLineCount)
+                                        floatingLineCount = 0
+                                    }
                                     prompt.clear()
                                     redraw()
                                     continue@inputLoop
                                 }
+                                is atropos.cli.ui.CliModalStateMachine.ModalOutcome.InsertBuffer -> {
+                                    if (floatingLineCount > 0) {
+                                        ui.clearFloatingOverlay(floatingLineCount)
+                                        floatingLineCount = 0
+                                    }
+                                    prompt.clear()
+                                    val insertion = outcome.command.trimEnd() + " "
+                                    prompt.insert(insertion)
+                                    redraw()
+                                    continue@inputLoop
+                                }
                                 is atropos.cli.ui.CliModalStateMachine.ModalOutcome.Execute -> {
+                                    if (floatingLineCount > 0) {
+                                        ui.clearFloatingOverlay(floatingLineCount)
+                                        floatingLineCount = 0
+                                    }
                                     prompt.clear()
                                     ui.commitPrompt(outcome.command, prompt.mode.name)
                                     commands.submit(outcome.command)
@@ -264,8 +310,18 @@ object InteractiveCliRunner {
 
                                 else -> {
                                     if (modalStateMachine.checkAutoTrigger(prompt.text)) {
-                                        ui.renderBlock(modalStateMachine.render(ui.viewportWidth))
+                                        if (floatingLineCount > 0) {
+                                            ui.clearFloatingOverlay(floatingLineCount)
+                                            floatingLineCount = 0
+                                        }
+                                        val lines = modalStateMachine.render(ui.viewportWidth)
+                                        ui.renderFloatingOverlay(lines)
+                                        floatingLineCount = lines.size
                                     } else {
+                                        if (floatingLineCount > 0) {
+                                            ui.clearFloatingOverlay(floatingLineCount)
+                                            floatingLineCount = 0
+                                        }
                                         redraw()
                                     }
                                 }

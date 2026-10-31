@@ -11,29 +11,37 @@ class HierarchicalCommandTaxonomyTest {
     private val taxonomy = HierarchicalCommandTaxonomy()
 
     @Test
-    fun `default taxonomy registers 7 domains`() {
+    fun `default taxonomy registers all eight android apk categories`() {
         val rootNodes = taxonomy.stepInto(emptyList())
-        val domains = rootNodes.map { it.token }.toSet()
-        assertTrue(domains.contains("repo"))
-        assertTrue(domains.contains("factory"))
-        assertTrue(domains.contains("agent"))
-        assertTrue(domains.contains("memory"))
-        assertTrue(domains.contains("governance"))
-        assertTrue(domains.contains("toolchain"))
-        assertTrue(domains.contains("system"))
+        val categories = rootNodes.map { it.token }.toSet()
+        assertEquals(8, categories.size)
+        assertTrue(categories.contains("agent"))
+        assertTrue(categories.contains("providers"))
+        assertTrue(categories.contains("code"))
+        assertTrue(categories.contains("workspace"))
+        assertTrue(categories.contains("git"))
+        assertTrue(categories.contains("mcp"))
+        assertTrue(categories.contains("diagnostics"))
+        assertTrue(categories.contains("specgraph"))
     }
 
     @Test
-    fun `stepping into repo returns actions`() {
-        val repoActions = taxonomy.stepInto(listOf("repo"))
-        val actionTokens = repoActions.map { it.token }
-        assertTrue(actionTokens.contains("rollback"))
-        assertTrue(actionTokens.contains("status"))
-        assertTrue(actionTokens.contains("diff"))
+    fun `stepping into agent returns subcategories`() {
+        val agentSubcats = taxonomy.stepInto(listOf("agent"))
+        val subcatTokens = agentSubcats.map { it.token }
+        assertTrue(subcatTokens.contains("Trajectory & Work"))
+        assertTrue(subcatTokens.contains("Queue & Hierarchy"))
     }
 
     @Test
-    fun `repo rollback resolves to deterministic explanation string`() {
+    fun `agent goal resolves to deterministic explanation string`() {
+        val resolution = taxonomy.resolveLeaf(listOf("agent", "Trajectory & Work", "/goal"))
+        assertNotNull(resolution)
+        assertTrue(resolution.contains("autonomous task trajectory", ignoreCase = true))
+    }
+
+    @Test
+    fun `repo rollback backward compatibility resolves deterministically`() {
         val resolution = taxonomy.resolveLeaf(listOf("repo", "rollback", "<hash>"))
         assertNotNull(resolution)
         assertTrue(resolution.contains("Rolls back repository workspace"))
@@ -41,11 +49,11 @@ class HierarchicalCommandTaxonomyTest {
     }
 
     @Test
-    fun `cheatsheet modal renders formatted table with all domains`() {
+    fun `cheatsheet modal renders formatted table with all categories`() {
         val cheatsheet = taxonomy.cheatsheet()
         assertTrue(cheatsheet.contains("COMMAND TAXONOMY CHEATSHEET"))
-        assertTrue(cheatsheet.contains("DOMAIN: /repo"))
-        assertTrue(cheatsheet.contains("DOMAIN: /system"))
+        assertTrue(cheatsheet.contains("CATEGORY: ⚡ /agent"))
+        assertTrue(cheatsheet.contains("CATEGORY: 🌿 /git"))
     }
 
     @Test

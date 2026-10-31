@@ -20,23 +20,27 @@ import kotlin.test.assertTrue
 class OmniSurfaceContractTest {
 
     @Test
-    fun taxonomy_resolves_all_seven_domains_consistently() {
+    fun taxonomy_resolves_all_eight_android_categories_consistently() {
         val taxonomy = HierarchicalCommandTaxonomy()
         val domains = taxonomy.root.keys
 
-        val expectedDomains = setOf("agent", "repo", "memory", "governance", "toolchain", "session", "system")
-        assertEquals(expectedDomains, domains, "Taxonomy must strictly declare the 7 canonical domains")
+        val expectedCategories = setOf("agent", "providers", "code", "workspace", "git", "mcp", "diagnostics", "specgraph")
+        assertEquals(expectedCategories, domains, "Taxonomy must strictly declare the 8 Android APK categories")
 
         // Check Tier 4 leaf resolution across surfaces
-        val agentStart = taxonomy.resolveLeaf(listOf("agent", "lifecycle", "start"))
-        assertNotNull(agentStart, "agent lifecycle start must resolve to a valid leaf")
-        assertTrue(agentStart.contains("autonomous", ignoreCase = true))
+        val agentGoal = taxonomy.resolveLeaf(listOf("agent", "Trajectory & Work", "/goal"))
+        assertNotNull(agentGoal, "agent goal must resolve to a valid leaf")
+        assertTrue(agentGoal.contains("autonomous", ignoreCase = true))
 
-        val repoDiff = taxonomy.resolveLeaf(listOf("repo", "inspection", "diff"))
-        assertNotNull(repoDiff, "repo inspection diff must resolve to a valid leaf")
+        val gitDiff = taxonomy.resolveLeaf(listOf("git", "Status & Diffs", "/git diff"))
+        assertNotNull(gitDiff, "git diff must resolve to a valid leaf")
 
-        val sysConfig = taxonomy.resolveLeaf(listOf("system", "environment", "config"))
-        assertNotNull(sysConfig, "system environment config must resolve to a valid leaf")
+        val diagDoctor = taxonomy.resolveLeaf(listOf("diagnostics", "Diagnostics & Health", "/doctor"))
+        assertNotNull(diagDoctor, "diagnostics doctor must resolve to a valid leaf")
+
+        // Verify legacy resolution backward compatibility
+        val legacyRepoDiff = taxonomy.resolveLeaf(listOf("repo", "inspection", "diff"))
+        assertNotNull(legacyRepoDiff, "legacy repo diff must resolve")
     }
 
     @Test

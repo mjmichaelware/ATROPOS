@@ -315,6 +315,34 @@ class AnsiTerminalEngine(
         if (state.reactive) requestFrameLocked()
     }
 
+    /**
+     * ATOM 6.2: Zero-Scrollback Floating Modal Overlay.
+     *
+     * Renders floating modal box strictly *above* prompt using ANSI save/restore
+     * cursor sequences, preventing scrollback history spam.
+     */
+    fun renderFloatingOverlay(lines: List<String>) {
+        if (lines.isEmpty()) return
+        val ansi = AnsiFloatingOverlay.composeFloatingBox(lines)
+        synchronized(plainOutput.lock) {
+            plainOutput.out.print(ansi)
+            plainOutput.out.flush()
+        }
+    }
+
+    /**
+     * Wipes previously rendered floating modal box completely using ANSI erase
+     * commands, restoring clean terminal scrollback state.
+     */
+    fun clearFloatingOverlay(lineCount: Int) {
+        if (lineCount <= 0) return
+        val ansi = AnsiFloatingOverlay.composeEraseBox(lineCount)
+        synchronized(plainOutput.lock) {
+            plainOutput.out.print(ansi)
+            plainOutput.out.flush()
+        }
+    }
+
     @Synchronized
     fun renderNotice(message: String) {
         val safeMessage = redactionFilter.redact(message)

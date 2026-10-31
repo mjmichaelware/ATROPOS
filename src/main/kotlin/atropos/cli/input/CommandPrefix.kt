@@ -58,6 +58,12 @@ object CommandPrefix {
         ImmediateSlashTriggerInterceptor.isImmediateSlashTrigger(input)
 
     /**
+     * Checks if a single keystroke at the beginning of an empty buffer is an immediate slash trigger.
+     */
+    fun isImmediateSlashTrigger(char: Char, currentBufferLength: Int): Boolean =
+        ImmediateSlashTriggerInterceptor.interceptKeystroke(char, currentBufferLength) is ImmediateSlashTriggerInterceptor.InterceptionResult.LaunchPalette
+
+    /**
      * Classification of input for deterministic routing.
      */
     sealed class InputClassification {

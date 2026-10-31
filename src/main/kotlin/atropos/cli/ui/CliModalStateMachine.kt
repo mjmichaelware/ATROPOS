@@ -28,6 +28,7 @@ class CliModalStateMachine(
         data object None : ModalOutcome
         data object Redraw : ModalOutcome
         data object Dismiss : ModalOutcome
+        data class InsertBuffer(val command: String) : ModalOutcome
         data class Execute(val command: String) : ModalOutcome
     }
 
@@ -39,6 +40,10 @@ class CliModalStateMachine(
     var questionIsExpanded: Boolean = false
 
     var trieNavState: CategorizedTrieModalRenderer.TrieNavState = CategorizedTrieModalRenderer.TrieNavState()
+    private val canonicalCategories = listOf(
+        "agent", "providers", "code", "workspace", "git", "mcp", "diagnostics", "specgraph"
+    )
+
     private val rotatingHints = listOf(
         "Hint: Type ? anytime for shortcuts and commands cheatsheet",
         "Hint: Use @<filename> to reference workspace files",
@@ -59,6 +64,11 @@ class CliModalStateMachine(
     private val costPeekRenderer = CostPeekModalRenderer(theme)
     private val settingsRenderer = SettingsModalRenderer(theme)
     private val unifiedConfig = AtroposUnifiedConfig.load()
+
+    fun openCategorizedTrie() {
+        activeModal = ModalType.CATEGORIZED_TRIE
+        resetModalState()
+    }
 
     fun checkAutoTrigger(buffer: String): Boolean {
         val trimmed = buffer.trim()
@@ -136,11 +146,31 @@ class CliModalStateMachine(
                     }
                     ModalType.CATEGORIZED_TRIE -> {
                         trieNavState = when (trieNavState.level) {
-                            CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS ->
-                                trieNavState.copy(level = CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES_OR_ACTIONS)
-                            CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES_OR_ACTIONS ->
-                                trieNavState.copy(level = CategorizedTrieModalRenderer.DrillLevel.DOMAINS, selectedIndex = 0)
-                            CategorizedTrieModalRenderer.DrillLevel.DOMAINS -> trieNavState
+                            CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS -> {
+                                trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.COMMANDS
+                                )
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.COMMANDS -> {
+                                trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES,
+                                    selectedCommand = null,
+                                    selectedIndex = 0
+                                )
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES -> {
+                                val catIdx = canonicalCategories.indexOf(trieNavState.selectedCategory).coerceAtLeast(0)
+                                trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.CATEGORIES,
+                                    selectedSubcategory = null,
+                                    selectedCommand = null,
+                                    selectedIndex = catIdx
+                                )
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.CATEGORIES -> {
+                                dismiss()
+                                return ModalOutcome.Dismiss
+                            }
                         }
                         return ModalOutcome.Redraw
                     }
@@ -175,13 +205,40 @@ class CliModalStateMachine(
                     }
                     ModalType.CATEGORIZED_TRIE -> {
                         trieNavState = when (trieNavState.level) {
-                            CategorizedTrieModalRenderer.DrillLevel.DOMAINS -> {
-                                val domains = listOf("agent", "governance", "memory", "repo", "session", "system", "toolchain")
-                                val domain = domains.getOrElse(trieNavState.selectedIndex) { "agent" }
-                                trieNavState.copy(level = CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES_OR_ACTIONS, selectedDomain = domain, selectedIndex = 0)
+                            CategorizedTrieModalRenderer.DrillLevel.CATEGORIES -> {
+                                val cat = canonicalCategories.getOrElse(trieNavState.selectedIndex) { "agent" }
+                                trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES,
+                                    selectedCategory = cat,
+                                    selectedSubcategory = null,
+                                    selectedCommand = null,
+                                    selectedIndex = 0
+                                )
                             }
-                            CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES_OR_ACTIONS ->
-                                trieNavState.copy(level = CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS)
+                            CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES -> {
+                                val domainNode = trieRenderer.taxonomy.root[trieNavState.selectedCategory]
+                                val subcategories = domainNode?.children?.keys?.toList() ?: emptyList()
+                                val subcat = subcategories.getOrNull(trieNavState.selectedIndex)
+                                trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.COMMANDS,
+                                    selectedSubcategory = subcat,
+                                    selectedCommand = null,
+                                    selectedIndex = 0
+                                )
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.COMMANDS -> {
+                                val domainNode = trieRenderer.taxonomy.root[trieNavState.selectedCategory]
+                                val cmds = if (trieNavState.selectedSubcategory != null) {
+                                    domainNode?.children?.get(trieNavState.selectedSubcategory)?.children?.keys?.toList() ?: emptyList()
+                                } else {
+                                    domainNode?.children?.values?.flatMap { it.children.keys }?.toList() ?: emptyList()
+                                }
+                                val chosenCmd = cmds.getOrNull(trieNavState.selectedIndex) ?: "/goal"
+                                trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS,
+                                    selectedCommand = chosenCmd
+                                )
+                            }
                             CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS -> trieNavState
                         }
                         return ModalOutcome.Redraw
@@ -235,7 +292,25 @@ class CliModalStateMachine(
                         return ModalOutcome.Redraw
                     }
                     ModalType.CATEGORIZED_TRIE -> {
-                        trieNavState = trieNavState.copy(selectedIndex = trieNavState.selectedIndex + 1)
+                        val maxIdx = when (trieNavState.level) {
+                            CategorizedTrieModalRenderer.DrillLevel.CATEGORIES -> canonicalCategories.size - 1
+                            CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES -> {
+                                val domainNode = trieRenderer.taxonomy.root[trieNavState.selectedCategory]
+                                (domainNode?.children?.size ?: 1) - 1
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.COMMANDS -> {
+                                val domainNode = trieRenderer.taxonomy.root[trieNavState.selectedCategory]
+                                val count = if (trieNavState.selectedSubcategory != null) {
+                                    domainNode?.children?.get(trieNavState.selectedSubcategory)?.children?.size ?: 1
+                                } else {
+                                    domainNode?.children?.values?.sumOf { it.children.size } ?: 1
+                                }
+                                count - 1
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS -> 0
+                        }.coerceAtLeast(0)
+
+                        trieNavState = trieNavState.copy(selectedIndex = (trieNavState.selectedIndex + 1).coerceAtMost(maxIdx))
                         return ModalOutcome.Redraw
                     }
                     ModalType.CATEGORY_INFO -> {
@@ -256,9 +331,9 @@ class CliModalStateMachine(
             }
 
             KeyEvent.Enter -> {
-                val outcome = when (activeModal) {
+                when (activeModal) {
                     ModalType.QUESTION_MARK -> {
-                        if (questionActiveView == ActiveView.COMMANDS) {
+                        val outcome = if (questionActiveView == ActiveView.COMMANDS) {
                             val cmds = listOf(
                                 "/agent", "/repo", "/memory", "/governance", "/toolchain",
                                 "/session", "/system", "/verify", "/help", "/plan", "/architect",
@@ -269,23 +344,69 @@ class CliModalStateMachine(
                         } else {
                             ModalOutcome.Dismiss
                         }
+                        dismiss()
+                        return outcome
                     }
                     ModalType.CATEGORIZED_TRIE -> {
-                        val domains = listOf("agent", "governance", "memory", "repo", "session", "system", "toolchain")
-                        val domain = domains.getOrElse(trieNavState.selectedIndex) { "agent" }
-                        ModalOutcome.Execute("/$domain")
+                        when (trieNavState.level) {
+                            CategorizedTrieModalRenderer.DrillLevel.CATEGORIES -> {
+                                // Drill into subcategories
+                                val cat = canonicalCategories.getOrElse(trieNavState.selectedIndex) { "agent" }
+                                trieNavState = trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES,
+                                    selectedCategory = cat,
+                                    selectedIndex = 0
+                                )
+                                return ModalOutcome.Redraw
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.SUBCATEGORIES -> {
+                                // Drill into commands
+                                val domainNode = trieRenderer.taxonomy.root[trieNavState.selectedCategory]
+                                val subcategories = domainNode?.children?.keys?.toList() ?: emptyList()
+                                val subcat = subcategories.getOrNull(trieNavState.selectedIndex)
+                                trieNavState = trieNavState.copy(
+                                    level = CategorizedTrieModalRenderer.DrillLevel.COMMANDS,
+                                    selectedSubcategory = subcat,
+                                    selectedIndex = 0
+                                )
+                                return ModalOutcome.Redraw
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.COMMANDS -> {
+                                // Select command -> Buffer Insertion without auto-execution (ATOM 6.5)
+                                val domainNode = trieRenderer.taxonomy.root[trieNavState.selectedCategory]
+                                val cmds = if (trieNavState.selectedSubcategory != null) {
+                                    domainNode?.children?.get(trieNavState.selectedSubcategory)?.children?.keys?.toList() ?: emptyList()
+                                } else {
+                                    domainNode?.children?.values?.flatMap { it.children.keys }?.toList() ?: emptyList()
+                                }
+                                val selectedCmd = cmds.getOrNull(trieNavState.selectedIndex) ?: "/goal"
+                                dismiss()
+                                return ModalOutcome.InsertBuffer(selectedCmd)
+                            }
+                            CategorizedTrieModalRenderer.DrillLevel.LEAF_DOCS -> {
+                                // Select command -> Buffer Insertion without auto-execution (ATOM 6.5)
+                                val selectedCmd = trieNavState.selectedCommand ?: "/goal"
+                                dismiss()
+                                return ModalOutcome.InsertBuffer(selectedCmd)
+                            }
+                        }
                     }
                     ModalType.INTERRUPT -> {
-                        ModalOutcome.Execute("+ ${interruptSelectedIndex + 1}")
+                        val outcome = ModalOutcome.Execute("+ ${interruptSelectedIndex + 1}")
+                        dismiss()
+                        return outcome
                     }
                     ModalType.SETTINGS -> {
                         unifiedConfig.save()
-                        ModalOutcome.Execute("/config")
+                        val outcome = ModalOutcome.Execute("/config")
+                        dismiss()
+                        return outcome
                     }
-                    else -> ModalOutcome.Dismiss
+                    else -> {
+                        dismiss()
+                        return ModalOutcome.Dismiss
+                    }
                 }
-                dismiss()
-                return outcome
             }
 
             else -> Unit

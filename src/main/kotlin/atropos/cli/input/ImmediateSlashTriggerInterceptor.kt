@@ -59,6 +59,12 @@ object ImmediateSlashTriggerInterceptor {
     }
 
     /**
+     * Predicate for immediate zero-latency keystroke interception on empty buffers.
+     */
+    fun shouldInterceptRawKeystroke(char: Char, currentBufferLength: Int): Boolean =
+        currentBufferLength == 0 && char == '/'
+
+    /**
      * Classifies a full or partial input buffer into an [InterceptionResult].
      */
     fun classify(input: String): InterceptionResult {

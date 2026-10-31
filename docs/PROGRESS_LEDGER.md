@@ -691,3 +691,25 @@ After every coherent batch:
 - **compile gate**: Run 41218804440 (`success`) — Governed compile verification & focused backend test suite (0 orphaned files)
 - **Build and Sign Android APK**: Run 41218804368 (`success`) — Android ARM64 APK compilation and signature
 - **CI Certification State**: **100% Certified Green Across All Surfaces**
+
+## 2026-10-31 — Critical Architecture Correction: CLI Slash Command UX & Android APK Category Parity
+- Agent: Antigravity Deepmind Agent
+- Scope: Atoms 6.1 through 6.5 (CLI Slash Command Palette Refactoring)
+- Files touched:
+  - `src/main/kotlin/atropos/cli/input/CommandPrefix.kt` (+6/-0)
+  - `src/main/kotlin/atropos/cli/input/ImmediateSlashTriggerInterceptor.kt` (+6/-0)
+  - `src/main/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomy.kt` (Full rewrite to 8 Android APK categories)
+  - `src/main/kotlin/atropos/cli/ui/CategorizedTrieModalRenderer.kt` (Full rewrite to ANSI floating overlay)
+  - `src/main/kotlin/atropos/cli/help/CommandLeafDocumentation.kt` (Expanded comprehensive command specs)
+  - `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+28/-0)
+  - `src/main/kotlin/atropos/cli/ui/CliModalStateMachine.kt` (4-tier navigation & InsertBuffer outcome)
+  - `src/main/kotlin/atropos/cli/InteractiveCliRunner.kt` (Immediate keystroke interception & floating rendering)
+  - `src/test/kotlin/atropos/cli/OmniSurfaceContractTest.kt` (Assert 8 Android APK categories)
+  - `src/test/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomyTest.kt` (Assert 8 categories)
+  - `src/test/kotlin/atropos/cli/ui/CliModalStateMachineTest.kt` (Assert 4-tier navigation & ANSI floating sequences)
+- Predicate moved:
+  - Keystroke Interception: '/' on empty buffer intercepted instantly with zero stdout echo (ATOM 6.1).
+  - Floating ANSI Overlay: Rendered strictly *above* prompt via `\u001b[s`, `\u001b[<N>A`, `\u001b[2K`, `\u001b[1G`, `\u001b[u` with zero scrollback pollution (ATOM 6.2).
+  - Category Parity: Identical 8 categories to Android APK (`agent`, `providers`, `code`, `workspace`, `git`, `mcp`, `diagnostics`, `specgraph`) with Right/Left arrow trie drill-down (ATOM 6.3).
+  - Detailed Command Card: Right-arrow on leaf command expands floating specification card without polluting scrollback (ATOM 6.4).
+  - Buffer Insertion: Selecting a command on Enter injects command text into prompt buffer without auto-execution (ATOM 6.5).
