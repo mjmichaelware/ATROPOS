@@ -77,10 +77,10 @@ class NeurodevelopmentalSubstrateWiring {
     val localModelConnector = LocalModelDevConnector.defaultConnector
     val sovereignMcpBridge = SovereignWorkspaceMcpBridge.defaultBridge
     val agentToolchainEngine = AutonomousAgentToolchainEngine.defaultToolchain
-    val completionCascadeRouter = ReasoningCompletionCascadeRouter.defaultRouter
-    val searchReasonerAdapter = SearchOptimizedReasonerAdapter.defaultReasoner
-    val multiRepoGraphNavigator = MultiRepoGraphNavigator.defaultNavigator
-    val predictiveEngine = UltraLowLatencyPredictiveEngine.defaultEngine
+    val completionCascadeRouter = ReasoningCompletionCascadeRouter.defaultRouter()
+    val searchReasonerAdapter = SearchOptimizedReasonerAdapter.defaultReasoner()
+    val multiRepoGraphNavigator = MultiRepoGraphNavigator.defaultNavigator()
+    val predictiveEngine = UltraLowLatencyPredictiveEngine.defaultEngine()
 
     fun verifyTypesAreBound(): Boolean {
         // Explicitly touch data classes to guarantee reachable production symbols
