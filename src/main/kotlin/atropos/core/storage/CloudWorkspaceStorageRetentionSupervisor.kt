@@ -12,14 +12,14 @@ import java.time.Instant
  * Archives persistent workspace volumes to cold storage and purges unreferenced
  * environments after the retention window expires to enforce storage ceilings.
  */
-data class StorageRetentionRule(
+data class CloudWorkspaceRetentionRule(
     val workspaceId: String,
     val maxRetentionDays: Long = 30L,
     val archiveAfterDays: Long = 7L,
     val coldStorageTier: String = "cold-archive"
 )
 
-data class GcWatermark(
+data class CloudStorageWatermark(
     val totalAllocatedBytes: Long,
     val softLimitBytes: Long,
     val hardLimitBytes: Long
@@ -49,13 +49,13 @@ class CloudWorkspaceStorageRetentionSupervisor(
     fun evaluateWorkspaceRetention(
         workspaceId: String,
         lastAccessed: Instant,
-        customRule: StorageRetentionRule? = null,
-        watermark: GcWatermark? = null
+        customRule: CloudWorkspaceRetentionRule? = null,
+        watermark: CloudStorageWatermark? = null
     ): RetentionAuditResult {
         val now = clock()
         val age = Duration.between(lastAccessed, now)
         val ageDays = age.toDays()
-        val rule = customRule ?: StorageRetentionRule(workspaceId, defaultRetentionDays)
+        val rule = customRule ?: CloudWorkspaceRetentionRule(workspaceId, defaultRetentionDays)
 
         // Hard watermark ceiling forces aggressive pruning
         if (watermark != null && watermark.isHardExceeded && ageDays >= rule.archiveAfterDays) {

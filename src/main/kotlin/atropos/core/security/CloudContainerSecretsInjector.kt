@@ -13,7 +13,7 @@ import java.nio.file.attribute.PosixFilePermissions
  * environments at boot time. Ensures credentials reside purely in memory (tmpfs)
  * and are never baked into container images or committed into Git history.
  */
-enum class SecretSinkKind {
+enum class ContainerSecretSinkKind {
     TMPFS_FILE,
     PROCESS_ENVIRONMENT,
     RESTRICTED_FD
@@ -25,8 +25,8 @@ data class DecryptedSecret(
     val isSensitive: Boolean = true
 )
 
-data class VaultReadResult(
-    val sink: SecretSinkKind,
+data class ContainerSecretInjectionResult(
+    val sink: ContainerSecretSinkKind,
     val injectedCount: Int,
     val destinationPath: Path?,
     val success: Boolean,
@@ -39,10 +39,10 @@ class CloudContainerSecretsInjector(
 ) {
     fun injectSecrets(
         secrets: List<DecryptedSecret>,
-        sinkKind: SecretSinkKind = SecretSinkKind.TMPFS_FILE
-    ): VaultReadResult {
+        sinkKind: ContainerSecretSinkKind = ContainerSecretSinkKind.TMPFS_FILE
+    ): ContainerSecretInjectionResult {
         if (!secretsEnabled) {
-            return VaultReadResult(
+            return ContainerSecretInjectionResult(
                 sink = sinkKind,
                 injectedCount = 0,
                 destinationPath = null,
@@ -52,18 +52,18 @@ class CloudContainerSecretsInjector(
         }
 
         return when (sinkKind) {
-            SecretSinkKind.TMPFS_FILE -> writeToTmpfs(secrets)
-            SecretSinkKind.PROCESS_ENVIRONMENT -> {
+            ContainerSecretSinkKind.TMPFS_FILE -> writeToTmpfs(secrets)
+            ContainerSecretSinkKind.PROCESS_ENVIRONMENT -> {
                 // Environment delivery verified without persisting to disk
-                VaultReadResult(
+                ContainerSecretInjectionResult(
                     sink = sinkKind,
                     injectedCount = secrets.size,
                     destinationPath = null,
                     success = true
                 )
             }
-            SecretSinkKind.RESTRICTED_FD -> {
-                VaultReadResult(
+            ContainerSecretSinkKind.RESTRICTED_FD -> {
+                ContainerSecretInjectionResult(
                     sink = sinkKind,
                     injectedCount = secrets.size,
                     destinationPath = null,
@@ -73,7 +73,7 @@ class CloudContainerSecretsInjector(
         }
     }
 
-    private fun writeToTmpfs(secrets: List<DecryptedSecret>): VaultReadResult {
+    private fun writeToTmpfs(secrets: List<DecryptedSecret>): ContainerSecretInjectionResult {
         val root = tmpfsMountRoot ?: Path.of("/dev/shm/.atropos-secrets")
         return try {
             Files.createDirectories(root)
@@ -87,15 +87,15 @@ class CloudContainerSecretsInjector(
                 Files.setPosixFilePermissions(secretsFile, perms)
             }
 
-            VaultReadResult(
-                sink = SecretSinkKind.TMPFS_FILE,
+            ContainerSecretInjectionResult(
+                sink = ContainerSecretSinkKind.TMPFS_FILE,
                 injectedCount = secrets.size,
                 destinationPath = secretsFile,
                 success = true
             )
         } catch (ex: Exception) {
-            VaultReadResult(
-                sink = SecretSinkKind.TMPFS_FILE,
+            ContainerSecretInjectionResult(
+                sink = ContainerSecretSinkKind.TMPFS_FILE,
                 injectedCount = 0,
                 destinationPath = null,
                 success = false,

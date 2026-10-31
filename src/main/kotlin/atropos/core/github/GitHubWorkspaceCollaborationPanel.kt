@@ -12,7 +12,7 @@ import java.time.Instant
  * Dedicated sidebar model to inspect, browse, review, and comment on open repository
  * pull requests and issues without switching to external web browsers.
  */
-data class PullRequestRecord(
+data class CollaborationPullRequest(
     val number: Int,
     val title: String,
     val author: String,
@@ -35,8 +35,8 @@ data class IssueCommentRecord(
 class GitHubWorkspaceCollaborationPanel(
     private val tokenProvider: () -> String? = { System.getenv("GITHUB_TOKEN") }
 ) {
-    fun parsePullRequests(jsonArrayString: String): List<PullRequestRecord> {
-        val list = mutableListOf<PullRequestRecord>()
+    fun parsePullRequests(jsonArrayString: String): List<CollaborationPullRequest> {
+        val list = mutableListOf<CollaborationPullRequest>()
         val array = try { JSONArray(jsonArrayString) } catch (_: Exception) { return emptyList() }
         for (i in 0 until array.length()) {
             val obj = array.optJSONObject(i) ?: continue
@@ -52,7 +52,7 @@ class GitHubWorkspaceCollaborationPanel(
             val draft = obj.optBoolean("draft", false)
 
             list.add(
-                PullRequestRecord(
+                CollaborationPullRequest(
                     number = num,
                     title = title,
                     author = user,
