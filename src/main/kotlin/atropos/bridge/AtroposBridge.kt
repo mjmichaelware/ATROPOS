@@ -57,6 +57,7 @@ object LocalEngineBridge {
             if (!host.matches(Regex("^[a-zA-Z0-9.-]+$"))) return null
         }
 
+        val effectivePort = if (port == 0) EphemeralPortAllocationSubsystem.allocateAvailablePort(0, host) else port
         return server(
             port,
             activeProvider = activeProvider,

@@ -15,6 +15,11 @@ import {
   Layers
 } from 'lucide-react';
 
+import { HierarchicalExplorerPane, type ExplorerFileNode, type GitStatusBadge } from './HierarchicalExplorerPane';
+
+export { HierarchicalExplorerPane };
+export type { ExplorerFileNode, GitStatusBadge };
+
 export interface FileTreeItem {
   id?: string;
   path: string;

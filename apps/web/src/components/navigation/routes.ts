@@ -1,4 +1,8 @@
 import type { Route } from "next";
+import { DOCS_PORTAL_TAXONOMY, type DocsArticleDescriptor, type DocsSectionGroup } from "./DocsPortalRouteSpine";
+
+export { DOCS_PORTAL_TAXONOMY };
+export type { DocsArticleDescriptor, DocsSectionGroup };
 
 /**
  * Single source of truth for every application route. No component should

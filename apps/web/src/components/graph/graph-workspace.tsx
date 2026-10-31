@@ -36,6 +36,10 @@ import { GraphLayoutControl } from "./graph-layout-control";
 import { GraphLoadingState } from "./graph-loading-state";
 import { GraphOfflineState } from "./graph-offline-state";
 import { GraphSearchPanel } from "./graph-search-panel";
+import { CyclicalCodebaseDagVisualizer, type DagNodeMetadata, type CyclicDependencyReport } from "./CyclicalCodebaseDagVisualizer";
+
+export { CyclicalCodebaseDagVisualizer };
+export type { DagNodeMetadata, CyclicDependencyReport };
 
 function contentKey(content: RendererGraphContent): string {
   return `${content.nodes.map((node) => node.id).sort().join(",")}|${content.edges.map((edge) => edge.id).sort().join(",")}`;

@@ -460,6 +460,56 @@ After every coherent batch:
   - **Release JAR**: Run 41161127388 (`success`)
   - **Status**: **100% Complete & Certified Green**
 
+---
+
+## Batch 6 of 11: Atropos Source Doc 10 Decomposition (5 Major Sections from V2)
+
+### Status: Complete & Ready for Remote CI
+- **Atoms Covered (20 total)**:
+  - **ATOM M1.1**: Activity Bar and Primary View Container Switcher (`apps/web/src/components/app-shell/app-sidebar.tsx`)
+  - **ATOM M1.2**: Explorer Hierarchical File Pane (`apps/web/src/components/ide/workspace-file-tree.tsx`)
+  - **ATOM M1.3**: Editor Group with Split Views and Tabs (`apps/web/src/components/ide/monaco-code-editor.tsx`)
+  - **ATOM M1.4**: Collapsible Bottom Panel for Terminal, Output, and Problems (`apps/web/src/components/workbench/log-panel.tsx`)
+  - **ATOM M1.5**: High-Contrast Semantic Syntax Highlighting and Unified Typography (`app/src/main/java/com/atropos/android/app/theme/AtroposTypography.kt`)
+  - **ATOM M2.1**: Independent Local IDE Web Server Substrate (`src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt`)
+  - **ATOM M2.2**: Ephemeral Mock Data Engine Initialization (`src/main/kotlin/atropos/core/welcome/WelcomeArtifact.kt`)
+  - **ATOM M2.3**: Cyclical Codebase DAG Visualizer and Import-Export Mapper (`apps/web/src/components/graph/graph-workspace.tsx`)
+  - **ATOM M2.4**: Full CRUD Disk Mutation and Commit Pipeline (`apps/web/src/lib/workspace/client.ts`)
+  - **ATOM M2.5**: Dense Hierarchical Workspace and User Settings Engine (`src/main/kotlin/atropos/core/config/AtroposUnifiedConfig.kt`)
+  - **ATOM M2.6**: Supabase Authentication and Dashboard Screen Gatekeeper (`apps/web/src/components/auth/sign-in-form.tsx`)
+  - **ATOM M3.1**: Touch-Optimized ARM64 IDE Parity Engine (`apps/atropos-android/src/main/kotlin/atropos/android/ui/SovereignWorkstationScreen.kt`)
+  - **ATOM M3.2**: Cross-Surface Preference and Session Token Sync (`apps/web/src/lib/contexts/session-state-context.tsx`)
+  - **ATOM M3.3**: Non-Intrusive Bottom Sheet Terminal Overlays (`app/src/main/java/com/atropos/android/app/ui/ToolsTimelineSheet.kt`)
+  - **ATOM M4.1**: Hardware-Agnostic Standalone JAR Release Engine (`src/main/kotlin/atropos/core/BuildStamp.kt`)
+  - **ATOM M4.2**: Dynamic Ephemeral Localhost Port Binding Subsystem (`src/main/kotlin/atropos/bridge/LocalEngineBridge.kt`)
+  - **ATOM M4.3**: Tree-Sitter AST Multi-Wave DAG and Dopamine Dataset Sync (`src/main/kotlin/atropos/core/telemetry/WaveOrchestratorTelemetryWiring.kt`)
+  - **ATOM M5.1**: Globally Indexed Vercel Marketing Platform (`apps/web/src/components/landing/landing-hero.tsx`)
+  - **ATOM M5.2**: GitHub Docs-Structured Documentation Portal (`apps/web/src/components/navigation/routes.ts`)
+  - **ATOM M5.3**: Supabase-Authenticated Cloud Project and Billing Portal (`apps/web/src/components/projects/project-directory.tsx`)
+
+### Decoupled Subsystem Modules Created (20 brand new files):
+  - `ActivityBarContainerSwitcher.tsx` (ATOM M1.1)
+  - `HierarchicalExplorerPane.tsx` (ATOM M1.2)
+  - `EditorGroupTabController.tsx` (ATOM M1.3)
+  - `CollapsibleBottomDockPanel.tsx` (ATOM M1.4)
+  - `UnifiedHighContrastSyntaxTypography.kt` (ATOM M1.5)
+  - `IndependentLocalIdeWebSubstrate.kt` (ATOM M2.1)
+  - `EphemeralMockDataEngine.kt` (ATOM M2.2)
+  - `CyclicalCodebaseDagVisualizer.tsx` (ATOM M2.3)
+  - `DecoupledDiskMutationPipeline.ts` (ATOM M2.4)
+  - `HierarchicalWorkspaceSettingsEngine.kt` (ATOM M2.5)
+  - `SupabaseDashboardGatekeeper.tsx` (ATOM M2.6)
+  - `TouchOptimizedIdeParityEngine.kt` (ATOM M3.1)
+  - `CrossSurfacePreferenceSyncEngine.ts` (ATOM M3.2)
+  - `DecoupledBottomSheetTerminalOverlay.kt` (ATOM M3.3)
+  - `StandaloneJarReleaseEngine.kt` (ATOM M4.1)
+  - `EphemeralPortAllocationSubsystem.kt` (ATOM M4.2)
+  - `TreeSitterAstMultiWaveTelemetrySync.kt` (ATOM M4.3)
+  - `VercelMarketingFunnelHero.tsx` (ATOM M5.1)
+  - `DocsPortalRouteSpine.ts` (ATOM M5.2)
+  - `CloudProjectBillingPortal.tsx` (ATOM M5.3)
+
+
 
 
 

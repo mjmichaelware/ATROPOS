@@ -10,6 +10,10 @@
  */
 
 import { readEngine, writeEngine, engineBaseUrl } from '@/lib/engine/client';
+import { DecoupledDiskMutationPipeline, type DiskMutationReceipt } from './DecoupledDiskMutationPipeline';
+
+export { DecoupledDiskMutationPipeline };
+export type { DiskMutationReceipt };
 
 export interface WorkspaceTreeNode {
   name: string;

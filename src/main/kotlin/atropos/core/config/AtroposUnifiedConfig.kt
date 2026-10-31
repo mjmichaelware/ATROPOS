@@ -13,6 +13,7 @@ import java.nio.file.Path
 class AtroposUnifiedConfig(
     val values: MutableMap<String, String> = defaultValues().toMutableMap()
 ) {
+    val hierarchicalEngine: HierarchicalWorkspaceSettingsEngine by lazy { HierarchicalWorkspaceSettingsEngine() }
     companion object {
         val ALLOWED_OPTIONS: Map<String, List<String>> = linkedMapOf(
             "Agent_Mode" to listOf("autonomous", "supervised", "plan-only"),

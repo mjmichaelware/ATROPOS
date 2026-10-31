@@ -18,6 +18,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { subscribeActivity, type ActivityEvent as EventActivityEvent } from '@/lib/events/client';
+import { CollapsibleBottomDockPanel, type DockTabKind } from './CollapsibleBottomDockPanel';
+
+export { CollapsibleBottomDockPanel };
+export type { DockTabKind };
 
 export function LogPanel() {
   const [events, setEvents] = useState<EventActivityEvent[]>([]);

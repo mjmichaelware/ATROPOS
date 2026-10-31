@@ -37,6 +37,11 @@ object BuildStamp {
     val version: String get() = properties["version"] ?: UNKNOWN
     val commit: String get() = properties["commit"] ?: UNKNOWN
 
+    fun releaseProvenance(jarPath: java.nio.file.Path? = null): StandaloneProvenanceDescriptor {
+        return jarPath?.let { StandaloneJarReleaseEngine.inspectReleaseArtifact(it) }
+            ?: StandaloneProvenanceDescriptor(version, commit, artifactSha256, true, StandaloneJarReleaseEngine.CANONICAL_ENTRYPOINT)
+    }
+
     /** SHA-256 of the running release jar, or unknown while running from classes. */
     val artifactSha256: String
         get() {

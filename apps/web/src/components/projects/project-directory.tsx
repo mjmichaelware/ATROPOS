@@ -9,6 +9,10 @@ import { ProjectCard } from "./project-card";
 import { ProjectEmptyState } from "./project-empty-state";
 import { ProjectErrorState } from "./project-error-state";
 import { ProjectPagination } from "./project-pagination";
+import { CloudProjectBillingPortal, type BillingQuotaDescriptor } from "./CloudProjectBillingPortal";
+
+export { CloudProjectBillingPortal };
+export type { BillingQuotaDescriptor };
 
 export function ProjectDirectory() {
   const [cursorStack, setCursorStack] = useState<string[]>([]);

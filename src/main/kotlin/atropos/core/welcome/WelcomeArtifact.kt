@@ -55,4 +55,6 @@ class WelcomeArtifact(
         val digest = MessageDigest.getInstance("SHA-256").digest(render().toByteArray())
         return digest.joinToString("") { "%02x".format(it) }
     }
+
+    fun ephemeralMockNodes(): List<SyntheticProjectNode> = EphemeralMockDataEngine.synthesizeDemoProject()
 }

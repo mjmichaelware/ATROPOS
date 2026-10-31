@@ -11,6 +11,7 @@ package atropos.core.telemetry
 class WaveOrchestratorTelemetryWiring(
     private val ringBuffer: TelemetryRingBuffer? = null
 ) {
+    val astSyncEngine: TreeSitterAstMultiWaveTelemetrySync by lazy { TreeSitterAstMultiWaveTelemetrySync(ringBuffer) }
     enum class OrchestrationWave {
         WAVE_0_CONTRACTS,
         WAVE_1_TEST_SUITE,

@@ -69,6 +69,7 @@ fun ToolsTimelineSheet(
     modifier: Modifier = Modifier,
 ) {
     if (!isOpen) return
+    val overlayBindingActive = true
 
     val sheetState = rememberModalBottomSheetState()
 

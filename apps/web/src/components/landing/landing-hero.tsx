@@ -14,6 +14,10 @@ import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { VercelMarketingFunnelHero, COMPETITIVE_BENCHMARKS, type BenchmarkComparisonItem } from "./VercelMarketingFunnelHero";
+
+export { VercelMarketingFunnelHero, COMPETITIVE_BENCHMARKS };
+export type { BenchmarkComparisonItem };
 
 export function UploadIcon() {
   return (

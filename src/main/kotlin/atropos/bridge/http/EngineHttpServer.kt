@@ -78,6 +78,7 @@ class EngineHttpServer(
     private val workers = Executors.newFixedThreadPool(MAX_WORKERS) { task ->
         Thread(task, "atropos-bridge").apply { isDaemon = true }
     }
+    val webSubstrate: IndependentLocalIdeWebSubstrate by lazy { IndependentLocalIdeWebSubstrate(port) }
 
     fun isRunning(): Boolean = running.get()
 

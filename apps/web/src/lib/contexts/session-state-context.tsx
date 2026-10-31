@@ -2,6 +2,10 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { restoreSession, type RecoveryReport } from '@/lib/session/restore';
+import { CrossSurfacePreferenceSyncEngine, type SyncedPreferenceState } from './CrossSurfacePreferenceSyncEngine';
+
+export { CrossSurfacePreferenceSyncEngine };
+export type { SyncedPreferenceState };
 
 export interface SessionState {
   activeProjectId: string | null;

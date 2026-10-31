@@ -2,6 +2,10 @@
 
 import { NavLinks } from "@/components/navigation/nav-links";
 import { useNavItems } from "@/components/navigation/use-nav-items";
+import { ActivityBarContainerSwitcher, ACTIVITY_BAR_TABS, type ActivityBarTabId } from "./ActivityBarContainerSwitcher";
+
+export { ActivityBarContainerSwitcher, ACTIVITY_BAR_TABS };
+export type { ActivityBarTabId };
 
 export function AppSidebar() {
   const { global, project, engineState, developer } = useNavItems();

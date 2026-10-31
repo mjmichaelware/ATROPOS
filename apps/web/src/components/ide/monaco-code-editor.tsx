@@ -15,6 +15,11 @@ import {
   Minimize2
 } from 'lucide-react';
 
+import { EditorGroupTabController, type EditorTabModel, type SplitDirection } from './EditorGroupTabController';
+
+export { EditorGroupTabController };
+export type { EditorTabModel, SplitDirection };
+
 export interface MonacoCodeEditorProps {
   filePath?: string;
   initialContent?: string;

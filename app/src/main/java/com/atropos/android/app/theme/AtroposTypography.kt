@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.sp
  * AST symbol inspection, and dense telemetry visualization.
  */
 object AtroposTypography {
+    val unifiedHighContrast = UnifiedHighContrastSyntaxTypography
     val monoCode = TextStyle(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Normal,

@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { createSupabaseBrowserClient } from "@/lib/auth/browser";
 import { sanitizeReturnPath } from "@/lib/auth/redirects";
+import { SupabaseDashboardGatekeeper, type AuthRolePermission } from "./SupabaseDashboardGatekeeper";
+
+export { SupabaseDashboardGatekeeper };
+export type { AuthRolePermission };
 
 const schema = z.object({
   email: z.string().email(),
