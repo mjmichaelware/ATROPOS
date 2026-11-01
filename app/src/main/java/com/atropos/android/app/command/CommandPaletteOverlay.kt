@@ -8,7 +8,9 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,13 +25,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -37,18 +44,27 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -86,9 +102,136 @@ fun CommandPaletteOverlay(
     val colors = LocalCyberHudColors.current
     var navState by remember { mutableStateOf<PaletteNavState>(PaletteNavState.Categories) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedIndex by remember(navState, searchQuery) { mutableIntStateOf(0) }
+
+    val categories = remember { CommandCategory.values().toList() }
+    val searchResults = remember(searchQuery) {
+        if (searchQuery.isNotBlank()) CommandCatalogRegistry.search(searchQuery) else emptyList()
+    }
+
+    val currentSubcategories = remember(navState) {
+        when (val s = navState) {
+            is PaletteNavState.Subcategories -> CommandCatalogRegistry.getSubcategories(s.category)
+            else -> emptyList()
+        }
+    }
+
+    val currentCommands = remember(navState) {
+        when (val s = navState) {
+            is PaletteNavState.Commands -> {
+                if (s.subcategory != null) {
+                    CommandCatalogRegistry.getBySubcategory(s.category, s.subcategory)
+                } else {
+                    CommandCatalogRegistry.getByCategory(s.category)
+                }
+            }
+            else -> emptyList()
+        }
+    }
+
+    val currentCount = when {
+        searchQuery.isNotBlank() -> searchResults.size
+        navState is PaletteNavState.Categories -> categories.size
+        navState is PaletteNavState.Subcategories -> currentSubcategories.size
+        navState is PaletteNavState.Commands -> currentCommands.size
+        else -> 0
+    }
+
+    fun navigateBack() {
+        navState = when (val current = navState) {
+            is PaletteNavState.Detail -> current.previousState
+            is PaletteNavState.Commands -> {
+                if (current.subcategory != null) {
+                    PaletteNavState.Subcategories(current.category)
+                } else {
+                    PaletteNavState.Categories
+                }
+            }
+            is PaletteNavState.Subcategories -> PaletteNavState.Categories
+            PaletteNavState.Categories -> {
+                onClose()
+                PaletteNavState.Categories
+            }
+        }
+    }
+
+    fun activateCategory(cat: CommandCategory) {
+        val commands = CommandCatalogRegistry.getByCategory(cat)
+        if (commands.size <= 8) {
+            navState = PaletteNavState.Commands(cat)
+        } else {
+            val subs = CommandCatalogRegistry.getSubcategories(cat)
+            if (subs.isNotEmpty()) {
+                navState = PaletteNavState.Subcategories(cat)
+            } else {
+                navState = PaletteNavState.Commands(cat)
+            }
+        }
+    }
+
+    fun activateCurrentSelection() {
+        if (searchQuery.isNotBlank()) {
+            if (selectedIndex in searchResults.indices) {
+                onSelectCommand(searchResults[selectedIndex].name)
+                onClose()
+            }
+        } else {
+            when (val s = navState) {
+                PaletteNavState.Categories -> {
+                    if (selectedIndex in categories.indices) {
+                        activateCategory(categories[selectedIndex])
+                    }
+                }
+                is PaletteNavState.Subcategories -> {
+                    if (selectedIndex in currentSubcategories.indices) {
+                        navState = PaletteNavState.Commands(s.category, currentSubcategories[selectedIndex])
+                    }
+                }
+                is PaletteNavState.Commands -> {
+                    if (selectedIndex in currentCommands.indices) {
+                        onSelectCommand(currentCommands[selectedIndex].name)
+                        onClose()
+                    }
+                }
+                is PaletteNavState.Detail -> {
+                    onSelectCommand(s.command.name)
+                    onClose()
+                }
+            }
+        }
+    }
 
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .focusable()
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown) {
+                    when (keyEvent.key) {
+                        Key.DirectionDown -> {
+                            if (currentCount > 0) {
+                                selectedIndex = (selectedIndex + 1).coerceAtMost(currentCount - 1)
+                            }
+                            true
+                        }
+                        Key.DirectionUp -> {
+                            if (currentCount > 0) {
+                                selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
+                            }
+                            true
+                        }
+                        Key.DirectionRight, Key.Enter -> {
+                            activateCurrentSelection()
+                            true
+                        }
+                        Key.DirectionLeft, Key.Back, Key.Escape -> {
+                            navigateBack()
+                            true
+                        }
+                        else -> false
+                    }
+                } else false
+            },
         color = colors.voidAbyss.copy(alpha = 0.95f)
     ) {
         Column(
@@ -106,22 +249,7 @@ fun CommandPaletteOverlay(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (navState !is PaletteNavState.Categories) {
-                        IconButton(
-                            onClick = {
-                                navState = when (val current = navState) {
-                                    is PaletteNavState.Detail -> current.previousState
-                                    is PaletteNavState.Commands -> {
-                                        if (current.subcategory != null) {
-                                            PaletteNavState.Subcategories(current.category)
-                                        } else {
-                                            PaletteNavState.Categories
-                                        }
-                                    }
-                                    is PaletteNavState.Subcategories -> PaletteNavState.Categories
-                                    PaletteNavState.Categories -> PaletteNavState.Categories
-                                }
-                            }
-                        ) {
+                        IconButton(onClick = { navigateBack() }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
@@ -132,7 +260,7 @@ fun CommandPaletteOverlay(
 
                     Text(
                         text = when (val state = navState) {
-                            PaletteNavState.Categories -> "Command Categories"
+                            PaletteNavState.Categories -> "Command Categories (/)"
                             is PaletteNavState.Subcategories -> state.category.title
                             is PaletteNavState.Commands -> state.subcategory ?: state.category.title
                             is PaletteNavState.Detail -> state.command.name
@@ -157,7 +285,7 @@ fun CommandPaletteOverlay(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 12.dp),
                 placeholder = {
                     Text(
                         text = "Filter commands or search across categories...",
@@ -200,11 +328,9 @@ fun CommandPaletteOverlay(
                     .weight(1f)
             ) {
                 if (searchQuery.isNotBlank()) {
-                    val searchResults = remember(searchQuery) {
-                        CommandCatalogRegistry.search(searchQuery)
-                    }
                     CommandSearchResultsView(
                         results = searchResults,
+                        selectedIndex = selectedIndex,
                         onSelect = {
                             onSelectCommand(it)
                             onClose()
@@ -223,40 +349,25 @@ fun CommandPaletteOverlay(
                         when (state) {
                             PaletteNavState.Categories -> {
                                 CategoryPickerList(
-                                    categories = CommandCategory.values().toList(),
-                                    onSelectCategory = { cat ->
-                                        val commands = CommandCatalogRegistry.getByCategory(cat)
-                                        if (commands.size <= 8) {
-                                            navState = PaletteNavState.Commands(cat)
-                                        } else {
-                                            val subs = CommandCatalogRegistry.getSubcategories(cat)
-                                            if (subs.isNotEmpty()) {
-                                                navState = PaletteNavState.Subcategories(cat)
-                                            } else {
-                                                navState = PaletteNavState.Commands(cat)
-                                            }
-                                        }
-                                    }
+                                    categories = categories,
+                                    selectedIndex = selectedIndex,
+                                    onSelectCategory = { cat -> activateCategory(cat) }
                                 )
                             }
                             is PaletteNavState.Subcategories -> {
-                                val subs = CommandCatalogRegistry.getSubcategories(state.category)
                                 SubcategoryPickerList(
                                     category = state.category,
-                                    subcategories = subs,
+                                    subcategories = currentSubcategories,
+                                    selectedIndex = selectedIndex,
                                     onSelectSubcategory = { sub ->
                                         navState = PaletteNavState.Commands(state.category, sub)
                                     }
                                 )
                             }
                             is PaletteNavState.Commands -> {
-                                val list = if (state.subcategory != null) {
-                                    CommandCatalogRegistry.getBySubcategory(state.category, state.subcategory)
-                                } else {
-                                    CommandCatalogRegistry.getByCategory(state.category)
-                                }
                                 CommandItemsList(
-                                    commands = list,
+                                    commands = currentCommands,
+                                    selectedIndex = selectedIndex,
                                     onSelect = {
                                         onSelectCommand(it)
                                         onClose()
@@ -281,28 +392,99 @@ fun CommandPaletteOverlay(
                     }
                 }
             }
+
+            // Cyber-HUD On-Screen Directional Pad Bar (Touch & Keyboard Hybrid)
+            if (navState !is PaletteNavState.Detail && currentCount > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                        .background(colors.cardSurface.copy(alpha = 0.95f), RoundedCornerShape(10.dp))
+                        .border(1.dp, colors.accentCyan.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { if (selectedIndex > 0) selectedIndex-- },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.accentCyan),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colors.accentCyan.copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.KeyboardArrowUp, contentDescription = "Up", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("UP ▲", style = AtroposTypography.badgeLabel)
+                        }
+
+                        OutlinedButton(
+                            onClick = { if (selectedIndex < currentCount - 1) selectedIndex++ },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.accentCyan),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colors.accentCyan.copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.KeyboardArrowDown, contentDescription = "Down", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("DOWN ▼", style = AtroposTypography.badgeLabel)
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { activateCurrentSelection() },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = colors.accentCyan.copy(alpha = 0.2f),
+                                contentColor = colors.accentCyan
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colors.accentCyan),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Check, contentDescription = "Select", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("SELECT ↵", style = AtroposTypography.badgeLabel, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
     }
 }
-
 @Composable
 private fun CategoryPickerList(
     categories: List<CommandCategory>,
+    selectedIndex: Int,
     onSelectCategory: (CommandCategory) -> Unit
 ) {
     val colors = LocalCyberHudColors.current
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex in categories.indices) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
 
     LazyColumn(
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        items(categories) { cat ->
+        itemsIndexed(categories) { index, cat ->
             val count = CommandCatalogRegistry.getByCategory(cat).size
+            val isSelected = index == selectedIndex
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onSelectCategory(cat) }
-                    .cyberGlass(backgroundColor = colors.cardSurface, borderColor = colors.borderDim),
+                    .then(
+                        if (isSelected) Modifier.border(2.dp, colors.accentCyan, RoundedCornerShape(12.dp))
+                        else Modifier.border(1.dp, colors.borderDim, RoundedCornerShape(12.dp))
+                    )
+                    .background(
+                        if (isSelected) colors.accentCyan.copy(alpha = 0.22f) else colors.cardSurface,
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable { onSelectCategory(cat) },
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
                 Row(
@@ -311,10 +493,19 @@ private fun CategoryPickerList(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (isSelected) {
+                        Text(
+                            text = "❯❯ ",
+                            color = colors.accentCyan,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
+
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .background(colors.panelSurface, CircleShape),
+                            .background(if (isSelected) colors.accentCyan.copy(alpha = 0.25f) else colors.panelSurface, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -330,7 +521,8 @@ private fun CategoryPickerList(
                             Text(
                                 text = cat.title,
                                 style = AtroposTypography.hudSubhead,
-                                color = colors.textPrimary
+                                color = if (isSelected) colors.accentCyan else colors.textPrimary,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(
@@ -358,7 +550,7 @@ private fun CategoryPickerList(
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Open",
-                        tint = colors.textMuted
+                        tint = if (isSelected) colors.accentCyan else colors.textMuted
                     )
                 }
             }
@@ -370,11 +562,20 @@ private fun CategoryPickerList(
 private fun SubcategoryPickerList(
     category: CommandCategory,
     subcategories: List<String>,
+    selectedIndex: Int,
     onSelectSubcategory: (String) -> Unit
 ) {
     val colors = LocalCyberHudColors.current
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex in subcategories.indices) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
 
     LazyColumn(
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
@@ -387,13 +588,22 @@ private fun SubcategoryPickerList(
             )
         }
 
-        items(subcategories) { sub ->
+        itemsIndexed(subcategories) { index, sub ->
             val count = CommandCatalogRegistry.getBySubcategory(category, sub).size
+            val isSelected = index == selectedIndex
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onSelectSubcategory(sub) }
-                    .cyberGlass(backgroundColor = colors.cardSurface, borderColor = colors.borderDim),
+                    .then(
+                        if (isSelected) Modifier.border(2.dp, colors.accentCyan, RoundedCornerShape(12.dp))
+                        else Modifier.border(1.dp, colors.borderDim, RoundedCornerShape(12.dp))
+                    )
+                    .background(
+                        if (isSelected) colors.accentCyan.copy(alpha = 0.22f) else colors.cardSurface,
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable { onSelectSubcategory(sub) },
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
                 Row(
@@ -403,23 +613,34 @@ private fun SubcategoryPickerList(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text(
-                            text = sub,
-                            style = AtroposTypography.hudSubhead,
-                            color = colors.textPrimary
-                        )
-                        Text(
-                            text = "$count commands in this category",
-                            style = AtroposTypography.hudCaption,
-                            color = colors.accentCyan
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isSelected) {
+                            Text(
+                                text = "❯❯ ",
+                                color = colors.accentCyan,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = sub,
+                                style = AtroposTypography.hudSubhead,
+                                color = if (isSelected) colors.accentCyan else colors.textPrimary,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "$count commands in this category",
+                                style = AtroposTypography.hudCaption,
+                                color = colors.accentCyan
+                            )
+                        }
                     }
 
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Open",
-                        tint = colors.accentCyan
+                        tint = if (isSelected) colors.accentCyan else colors.textMuted
                     )
                 }
             }
@@ -430,20 +651,39 @@ private fun SubcategoryPickerList(
 @Composable
 private fun CommandItemsList(
     commands: List<AtroposCommandSpec>,
+    selectedIndex: Int,
     onSelect: (String) -> Unit,
     onInspect: (AtroposCommandSpec) -> Unit
 ) {
     val colors = LocalCyberHudColors.current
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex in commands.indices) {
+            listState.animateScrollToItem(selectedIndex)
+        }
+    }
 
     LazyColumn(
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        items(commands) { cmd ->
+        itemsIndexed(commands) { index, cmd ->
+            val isSelected = index == selectedIndex
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .cyberGlass(backgroundColor = colors.cardSurface, borderColor = colors.borderDim),
+                    .then(
+                        if (isSelected) Modifier.border(2.dp, colors.accentCyan, RoundedCornerShape(12.dp))
+                        else Modifier.border(1.dp, colors.borderDim, RoundedCornerShape(12.dp))
+                    )
+                    .background(
+                        if (isSelected) colors.accentCyan.copy(alpha = 0.22f) else colors.cardSurface,
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable { onSelect(cmd.name) },
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
                 Column(
@@ -456,12 +696,22 @@ private fun CommandItemsList(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = cmd.name,
-                            style = AtroposTypography.commandPrompt,
-                            color = colors.accentCyan,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (isSelected) {
+                                Text(
+                                    text = "❯❯ ",
+                                    color = colors.accentCyan,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
+                            }
+                            Text(
+                                text = cmd.name,
+                                style = AtroposTypography.commandPrompt,
+                                color = colors.accentCyan,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
 
                         SafetyBadge(tier = cmd.safetyTier)
                     }
@@ -525,6 +775,7 @@ private fun CommandItemsList(
 @Composable
 private fun CommandSearchResultsView(
     results: List<AtroposCommandSpec>,
+    selectedIndex: Int,
     onSelect: (String) -> Unit,
     onInspect: (AtroposCommandSpec) -> Unit
 ) {
@@ -544,6 +795,7 @@ private fun CommandSearchResultsView(
     } else {
         CommandItemsList(
             commands = results,
+            selectedIndex = selectedIndex,
             onSelect = onSelect,
             onInspect = onInspect
         )

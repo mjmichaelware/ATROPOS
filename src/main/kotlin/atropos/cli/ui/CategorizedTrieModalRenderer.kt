@@ -188,7 +188,7 @@ class CategorizedTrieModalRenderer(
         categories.forEachIndexed { index, cat ->
             val isSelected = index == state.selectedIndex ||
                 (state.selectedIndex !in categories.indices && cat.id == state.selectedCategory)
-            val cursor = if (isSelected) "❯ " else "  "
+            val cursor = if (isSelected) "❯❯ " else "   "
             val glyph = cat.glyph
             val prefix = "$cursor$glyph /${cat.id}".padEnd(18)
             val prefixStyled = if (isSelected) theme.paint(Role.ACCENT_FOCUS, prefix) else theme.paint(Role.TEXT_PRIMARY, prefix)
@@ -197,7 +197,9 @@ class CategorizedTrieModalRenderer(
             val desc = cat.title + countNote
             val descStyled = if (isSelected) theme.strong(desc) else theme.subdued(desc)
             val row = "$prefixStyled $descStyled"
-            lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
+            val rowFinal = if (isSelected) "\u001B[7m\u001B[1m" + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + "\u001B[0m"
+                           else TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth)
+            lines.add("│ $rowFinal │")
         }
     }
 
@@ -221,14 +223,16 @@ class CategorizedTrieModalRenderer(
 
         subcategories.forEachIndexed { index, subcat ->
             val isSelected = index == state.selectedIndex
-            val cursor = if (isSelected) "❯ " else "  "
+            val cursor = if (isSelected) "❯❯ " else "   "
             val subNode = domainNode?.children?.get(subcat)
             val cmdCount = subNode?.children?.size ?: 0
             val subStyled = if (isSelected) theme.paint(Role.ACCENT_FOCUS, subcat.padEnd(24)) else theme.paint(Role.TEXT_PRIMARY, subcat.padEnd(24))
             val detail = "[$cmdCount commands] ${subNode?.description ?: ""}"
             val detailStyled = if (isSelected) theme.strong(detail) else theme.subdued(detail)
             val row = "$cursor$subStyled $detailStyled"
-            lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
+            val rowFinal = if (isSelected) "\u001B[7m\u001B[1m" + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + "\u001B[0m"
+                           else TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth)
+            lines.add("│ $rowFinal │")
         }
     }
 
@@ -256,12 +260,14 @@ class CategorizedTrieModalRenderer(
 
         commands.forEachIndexed { index, (cmd, node) ->
             val isSelected = index == state.selectedIndex
-            val cursor = if (isSelected) "❯ " else "  "
+            val cursor = if (isSelected) "❯❯ " else "   "
             val cmdStyled = if (isSelected) theme.paint(Role.ACCENT_FOCUS, cmd.padEnd(20)) else theme.paint(Role.TEXT_PRIMARY, cmd.padEnd(20))
             val desc = node.leafResolution ?: node.description
             val descStyled = if (isSelected) theme.strong(desc) else theme.subdued(desc)
             val row = "$cursor$cmdStyled $descStyled"
-            lines.add("│ " + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + " │")
+            val rowFinal = if (isSelected) "\u001B[7m\u001B[1m" + TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth) + "\u001B[0m"
+                           else TerminalText.ellipsize(row, innerWidth).padEnd(innerWidth)
+            lines.add("│ $rowFinal │")
         }
     }
 

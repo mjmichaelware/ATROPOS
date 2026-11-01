@@ -522,7 +522,7 @@ export function CommandCategoryPalette({
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex((prev) => (currentItemCount > 0 ? (prev - 1 + currentItemCount) % currentItemCount : 0));
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
         e.preventDefault();
         if (searchQuery.trim().length > 0) {
           if (filteredCommands[selectedIndex]) {
@@ -541,12 +541,28 @@ export function CommandCategoryPalette({
             setDetailCommand(filteredCommands[selectedIndex]);
           }
         }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (selectedSubcategory) {
+          setSelectedSubcategory(null);
+        } else if (selectedCategory) {
+          setSelectedCategory(null);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, detailCommand, selectedSubcategory, selectedCategory, searchQuery, currentItemCount, selectedIndex, filteredCommands, availableSubcategories, onClose]);
+
+  // Auto-scroll selected element into view
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = document.querySelector('[data-palette-selected="true"]');
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selectedIndex, selectedCategory, selectedSubcategory, isOpen]);
 
   if (!isOpen) return null;
 
@@ -759,21 +775,27 @@ export function CommandCategoryPalette({
                 return (
                   <button
                     key={cat.id}
+                    data-palette-selected={isSelected ? "true" : "false"}
                     onClick={() => {
                       setSelectedCategory(cat.id);
                     }}
                     className={`flex items-start gap-4 p-4 rounded-xl border transition-all text-left group ${
                       isSelected
-                        ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400 shadow-lg shadow-cyan-500/10'
+                        ? 'border-2 border-cyan-400 bg-cyan-950/60 ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/25'
                         : 'border-sg-border-dim bg-sg-card-surface/70 hover:bg-sg-panel-surface hover:border-cyan-500/40'
                     }`}
                   >
+                    {isSelected && (
+                      <span className="font-mono text-cyan-400 font-bold self-center text-sm">❯❯</span>
+                    )}
                     <div className="p-2.5 rounded-lg bg-sg-gutter-bg border border-sg-border-dim group-hover:border-cyan-400/40 transition-colors">
                       <IconComponent className={`h-5 w-5 ${cat.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-white group-hover:text-cyan-300 transition-colors font-mono">
+                        <span className={`font-bold text-sm font-mono transition-colors ${
+                          isSelected ? 'text-cyan-300' : 'text-white group-hover:text-cyan-300'
+                        }`}>
                           {cat.id}
                         </span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
@@ -784,7 +806,9 @@ export function CommandCategoryPalette({
                         {cat.desc}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-sg-text-muted group-hover:text-cyan-400 self-center" />
+                    <ChevronRight className={`h-4 w-4 self-center transition-colors ${
+                      isSelected ? 'text-cyan-400' : 'text-sg-text-muted group-hover:text-cyan-400'
+                    }`} />
                   </button>
                 );
               })}
@@ -804,18 +828,24 @@ export function CommandCategoryPalette({
                   return (
                     <button
                       key={sub}
+                      data-palette-selected={isSelected ? "true" : "false"}
                       onClick={() => setSelectedSubcategory(sub)}
                       className={`flex items-center justify-between p-4 rounded-xl border transition-colors text-left ${
                         isSelected
-                          ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400'
+                          ? 'border-2 border-cyan-400 bg-cyan-950/60 ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/25'
                           : 'border-sg-border-dim bg-sg-card-surface hover:border-cyan-400'
                       }`}
                     >
-                      <div>
-                        <p className="font-bold text-sm text-white font-mono">{sub}</p>
-                        <p className="text-xs text-cyan-400 font-mono mt-0.5">{count} commands</p>
+                      <div className="flex items-center gap-2">
+                        {isSelected && (
+                          <span className="font-mono text-cyan-400 font-bold text-sm">❯❯</span>
+                        )}
+                        <div>
+                          <p className={`font-bold text-sm font-mono ${isSelected ? 'text-cyan-300' : 'text-white'}`}>{sub}</p>
+                          <p className="text-xs text-cyan-400 font-mono mt-0.5">{count} commands</p>
+                        </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-sg-text-muted" />
+                      <ChevronRight className={`h-4 w-4 ${isSelected ? 'text-cyan-400' : 'text-sg-text-muted'}`} />
                     </button>
                   );
                 })}
@@ -839,6 +869,71 @@ export function CommandCategoryPalette({
             </div>
           )}
         </div>
+
+        {/* On-Screen Arrow / D-Pad Navigation Bar */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-sg-border-dim bg-sg-card-surface/80">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (currentItemCount > 0) {
+                  setSelectedIndex((prev) => (prev - 1 + currentItemCount) % currentItemCount);
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-950/30 text-cyan-400 hover:bg-cyan-900/40 text-xs font-mono font-bold transition-colors"
+            >
+              ▲ UP
+            </button>
+            <button
+              onClick={() => {
+                if (currentItemCount > 0) {
+                  setSelectedIndex((prev) => (prev + 1) % currentItemCount);
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-950/30 text-cyan-400 hover:bg-cyan-900/40 text-xs font-mono font-bold transition-colors"
+            >
+              ▼ DOWN
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {(selectedCategory || selectedSubcategory || detailCommand) && (
+              <button
+                onClick={() => {
+                  if (detailCommand) setDetailCommand(null);
+                  else if (selectedSubcategory) setSelectedSubcategory(null);
+                  else setSelectedCategory(null);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-sg-border-dim bg-sg-card-surface text-sg-text-secondary hover:text-white text-xs font-mono transition-colors"
+              >
+                ◀ BACK
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (searchQuery.trim().length > 0) {
+                  if (filteredCommands[selectedIndex]) {
+                    setDetailCommand(filteredCommands[selectedIndex]);
+                  }
+                } else if (!selectedCategory) {
+                  if (CATEGORIES_METADATA[selectedIndex]) {
+                    setSelectedCategory(CATEGORIES_METADATA[selectedIndex].id);
+                  }
+                } else if (availableSubcategories.length > 0 && !selectedSubcategory) {
+                  if (availableSubcategories[selectedIndex]) {
+                    setSelectedSubcategory(availableSubcategories[selectedIndex]);
+                  }
+                } else {
+                  if (filteredCommands[selectedIndex]) {
+                    setDetailCommand(filteredCommands[selectedIndex]);
+                  }
+                }
+              }}
+              className="flex items-center gap-1 px-4 py-1.5 rounded-lg bg-cyan-400 text-black text-xs font-mono font-bold hover:bg-cyan-300 transition-colors shadow-md shadow-cyan-500/20"
+            >
+              SELECT ↵
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -856,14 +951,20 @@ function CommandRow({
   onInspect: () => void;
 }) {
   return (
-    <div className={`flex items-center justify-between p-3.5 rounded-xl border transition-all font-mono ${
-      isSelected
-        ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400'
-        : 'border-sg-border-dim bg-sg-card-surface/70 hover:bg-sg-panel-surface'
-    }`}>
+    <div
+      data-palette-selected={isSelected ? "true" : "false"}
+      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all font-mono ${
+        isSelected
+          ? 'border-2 border-cyan-400 bg-cyan-950/70 ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/25'
+          : 'border-sg-border-dim bg-sg-card-surface/70 hover:bg-sg-panel-surface'
+      }`}
+    >
       <div className="flex-1 min-w-0 pr-4">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-cyan-400 text-sm">{command.name}</span>
+          {isSelected && (
+            <span className="font-mono text-cyan-400 font-bold text-sm">❯❯</span>
+          )}
+          <span className={`font-bold text-sm ${isSelected ? 'text-cyan-300' : 'text-cyan-400'}`}>{command.name}</span>
           <span className="text-[10px] text-sg-text-muted px-1.5 py-0.5 rounded bg-sg-gutter-bg border border-sg-border-dim">
             {command.safetyTier}
           </span>
@@ -882,7 +983,11 @@ function CommandRow({
         </button>
         <button
           onClick={onSelect}
-          className="px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-400/10 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-colors"
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+            isSelected
+              ? 'bg-cyan-400 text-black font-bold shadow-md shadow-cyan-500/30'
+              : 'bg-cyan-400/10 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400 hover:text-black'
+          }`}
         >
           Use
         </button>

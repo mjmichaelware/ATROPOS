@@ -56,6 +56,9 @@ import com.atropos.android.app.specgraph.SpecGraphMobileViewer
 import com.atropos.android.app.theme.AtroposCyberTheme
 import com.atropos.android.app.theme.AtroposTypography
 import com.atropos.android.app.theme.LocalCyberHudColors
+import com.atropos.android.app.theme.StartupPhase
+import com.atropos.android.app.theme.StartupSequenceState
+import androidx.compose.material3.LinearProgressIndicator
 import com.atropos.android.app.ui.MobileAppIntent
 import com.atropos.android.app.ui.MobileAppMviStore
 import com.atropos.android.app.ui.MobileMessage
@@ -105,6 +108,74 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
     // Active Navigation Tab
     var currentTab by remember { mutableStateOf(0) }
     var isCommandPaletteOpen by remember { mutableStateOf(false) }
+    var startupSequence by remember { mutableStateOf(StartupSequenceState()) }
+
+    LaunchedEffect(Unit) {
+        if (!startupSequence.isComplete) {
+            delay(400)
+            startupSequence = startupSequence.copy(
+                phase = StartupPhase.PULSE_NEON_CORE,
+                progress = 0.40f,
+                statusText = "INITIALIZING NEURAL RUNTIME..."
+            )
+            delay(450)
+            startupSequence = startupSequence.copy(
+                phase = StartupPhase.MOUNT_ENGINE_SUBSYSTEMS,
+                progress = 0.80f,
+                statusText = "MOUNTING SOVEREIGN COCKPIT..."
+            )
+            delay(400)
+            startupSequence = startupSequence.copy(
+                phase = StartupPhase.COMPLETED,
+                progress = 1.0f,
+                statusText = "SOVEREIGN RUNTIME ONLINE"
+            )
+        }
+    }
+
+    if (!startupSequence.isComplete) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colors.voidAbyss),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(32.dp)
+            ) {
+                Text(
+                    text = "ATROPOS",
+                    style = AtroposTypography.hudHeader,
+                    color = colors.accentCyan,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "SOVEREIGN AUTONOMOUS OPERATING RUNTIME",
+                    style = AtroposTypography.badgeLabel,
+                    color = colors.textSecondary
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LinearProgressIndicator(
+                    progress = { startupSequence.progress },
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .height(4.dp),
+                    color = colors.accentCyan,
+                    trackColor = colors.borderDim
+                )
+                Text(
+                    text = startupSequence.statusText,
+                    style = AtroposTypography.monoCode,
+                    color = colors.accentCyan,
+                    fontSize = 11.sp
+                )
+            }
+        }
+        return
+    }
 
     // Sovereign Mobile IDE Editor State
     var activeFilePath by remember { mutableStateOf("src/main/kotlin/atropos/Main.kt") }
@@ -309,6 +380,9 @@ fun main(args: Array<String>) {
                         onClose = { currentTab = 0 },
                         onSelectCommand = { cmd ->
                             currentTab = 0
+                            scope.launch(Dispatchers.IO) {
+                                repository.send(cmd)
+                            }
                         },
                         onExecuteCommand = { cmd ->
                             currentTab = 0
@@ -396,11 +470,18 @@ fun main(args: Array<String>) {
                 onClose = { isCommandPaletteOpen = false },
                 onSelectCommand = { cmd ->
                     isCommandPaletteOpen = false
+                    scope.launch(Dispatchers.IO) {
+                        repository.send(cmd)
+                    }
                 },
                 onExecuteCommand = { cmd ->
                     isCommandPaletteOpen = false
                     scope.launch(Dispatchers.IO) {
-                        repository.runCommand(cmd, DECIDED_BY)
+                        when (val outcome = repository.runCommand(cmd, DECIDED_BY)) {
+                            is CommandOutcome.Ran -> mvi.dispatch(MobileAppIntent.Notice(localNotice(outcome.output)))
+                            is CommandOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Refused: ${outcome.detail}")))
+                            CommandOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Bridge unreachable")))
+                        }
                     }
                 }
             )

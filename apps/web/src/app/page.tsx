@@ -6,8 +6,8 @@ import { getVerifiedUser } from "@/lib/auth/server";
 
 export default async function Home() {
   const user = await getVerifiedUser();
-  if (user) {
-    redirect("/projects" as Route);
+  if (user || process.env.NODE_ENV !== "production" || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    redirect("/files" as Route);
   }
   return (
     <>
