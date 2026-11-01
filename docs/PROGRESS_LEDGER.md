@@ -750,3 +750,33 @@ After every coherent batch:
 - **compile gate**: Run 41229420326 (`success`) — Governed compile verification & focused backend test suite (0 new orphans)
 - **Build and Sign Android APK**: Run 41229420363 (`success`) — Android release APK compilation and signature
 - **CI Certification State**: **100% Certified Green Across All Surfaces**
+
+
+## 2026-11-01 — Critical Architecture Correction: Slash Command Palette Arrow Navigation & Live IDE Surface Mounting
+- Agent: Antigravity Deepmind Agent
+- Scope: Slash (/) Command Navigation Hierarchy, Visible Selection Highlights, and Live IDE Workstation Mounting
+- Items Addressed:
+  1. Slash Command Arrow Navigation across Categories & Subcategories:
+     - Android APK: In `CommandPaletteOverlay.kt`, implemented stateful `selectedIndex` tracking across categories, subcategories, commands, and search results. Added hardware keyboard listener (`DirectionUp`, `DirectionDown`, `DirectionRight`/`Enter` drill-down, `DirectionLeft`/`Back` ascend), auto-scrolling with `LazyListState`, glowing cyan selection borders (`2.dp`), cyan background highlights (`colors.accentCyan.copy(alpha = 0.22f)`), and `❯❯ ` cursor prefix. Integrated on-screen Cyber-HUD touch D-pad navigation toolbar (`UP ▲`, `DOWN ▼`, `SELECT ↵`, `BACK ◀`) for mobile usability.
+     - Web UI: In `command-category-palette.tsx`, added `ArrowUp`, `ArrowDown`, `ArrowRight` (drill in), and `ArrowLeft` (ascend) key handlers, `scrollIntoView` auto-scrolling, high-contrast cyan selection highlights (`border-2 border-cyan-400 bg-cyan-950/60 ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/25`), `❯❯ ` cursor indicator, and on-screen D-pad navigation buttons.
+     - CLI Terminal: In `CategorizedTrieModalRenderer.kt`, added ANSI inverted video background highlights (`\u001B[7m\u001B[1m ... \u001B[0m`) and `❯❯ ` cursors across categories, subcategories, and command rows.
+  2. Live Web Server Transformation:
+     - In `apps/web/src/app/page.tsx`, configured local/development cold launch to redirect directly into the sovereign IDE workspace (`/files`) rather than a static splash screen.
+     - In `apps/web/src/app/(app)/files/page.tsx`, directly mounted `SovereignIdeWorkstation` (interactive file tree, Monaco code editor, unified diff editor, AST visualizer, and terminal emulator) alongside `ExportPanel`.
+  3. Live Android APK Visual Transformation & Wiring:
+     - In `MainActivity.kt`, integrated `CinematicStartupSequencer` so cold launch presents the animated cyber HUD runtime boot sequence with progress telemetry and phase transitions (`INIT_MATRIX_GRID` → `PULSE_NEON_CORE` → `MOUNT_ENGINE_SUBSYSTEMS` → `COMPLETED`).
+     - Wired command selection in `CommandPaletteOverlay` (both Tab 2 and floating overlay) to actively dispatch commands to the engine bridge and conversation stream.
+- Files touched:
+  - `app/src/main/java/com/atropos/android/app/MainActivity.kt`
+  - `app/src/main/java/com/atropos/android/app/command/CommandPaletteOverlay.kt`
+  - `apps/web/src/app/(app)/files/page.tsx`
+  - `apps/web/src/app/page.tsx`
+  - `apps/web/src/components/commands/command-category-palette.tsx`
+  - `src/main/kotlin/atropos/cli/ui/CategorizedTrieModalRenderer.kt`
+  - `.atropos/ledger/events.jsonl`
+- **Certified Commits**: `d6c76226` and `e25ac237`
+- **Release JAR**: Run 41255515979 (`success`) — JVM fat JAR, web frontend, and Android release APK verified
+- **Factory CI**: Run 41255516054 (`success`) — Clean runner contract and `./gradlew clean jar`
+- **compile gate**: Run 41255516073 (`success`) — Governed compile verification & focused backend test suite (0 new orphans)
+- **Build and Sign Android APK**: Run 41255516059 (`success`) — Android release APK compilation and signature
+- **CI Certification State**: **100% Certified Green Across All Surfaces**
