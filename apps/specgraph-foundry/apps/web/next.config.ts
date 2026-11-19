@@ -4,9 +4,10 @@ import path from "path";
 /**
  * ATOM 11.1: SpecGraph Foundry Nested Project Root Configuration.
  *
- * Configures the nested Next.js build root so Vercel resolves dependencies, assets,
- * and route manifests strictly within apps/specgraph-foundry/apps/web without traversing
- * to the parent repository root or colliding with the Atropos cockpit web workspace.
+ * Configures the nested Next.js build root so that Vercel resolves dependencies, assets,
+ * and route manifests strictly within apps/specgraph-foundry/apps/web.
+ * Enforces boundary isolation so build commands, output asset directories, and tracing
+ * do not search the parent repository root or overwrite the Atropos web workspace.
  *
  * ## Research: Vercel Monorepo Project Root & Turborepo Filter Caching
  * Researches Vercel Monorepo Project Root settings and Turborepo workspace filter caching
@@ -36,12 +37,22 @@ export const securityHeaders = [
 export const nextConfig: NextConfig = {
   distDir: ".next",
   outputFileTracingRoot: path.resolve(__dirname),
+  outputFileTracingExcludes: {
+    "*": [
+      "../../web/**",
+      "../../../src/**",
+      "../../../apps/web/**",
+    ],
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,
   productionBrowserSourceMaps: false,
   images: {
     remotePatterns: [],
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@tanstack/react-query"],
   },
   async headers() {
     return [

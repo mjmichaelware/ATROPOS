@@ -10,10 +10,24 @@ const urlSchema = z
     if (url.username || url.password || url.hash) {
       context.addIssue({ code: "custom", message: "URL cannot contain credentials or fragments" });
     }
-    if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
-      context.addIssue({ code: "custom", message: "production URLs must use HTTPS" });
-    }
-    if (process.env.NODE_ENV !== "production" && !["http:", "https:"].includes(url.protocol)) {
+    const isProduction =
+      process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+
+    if (isProduction) {
+      if (url.protocol !== "https:") {
+        context.addIssue({ code: "custom", message: "Production URLs must use HTTPS" });
+      }
+      if (
+        url.hostname === "localhost" ||
+        url.hostname === "127.0.0.1" ||
+        url.hostname.endsWith(".local")
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Production URLs cannot point to localhost or developer machines",
+        });
+      }
+    } else if (!["http:", "https:"].includes(url.protocol)) {
       context.addIssue({ code: "custom", message: "URL protocol is unsupported" });
     }
   });
@@ -23,25 +37,28 @@ const urlSchema = z
  *
  * Validates that all public environment variables strictly point to production
  * domains over HTTPS. Prohibits fallback defaults to localhost or developer machines
- * in production mode.
+ * in production mode. Throws informative validation errors if required Vercel
+ * project secrets are missing.
  *
  * ## Research: Automated Runtime Environment Schema Validation in Edge Middleware
- * Validating environment schemas at edge middleware boundary before request hydration
+ * Validating environment schemas at edge middleware boundaries before request hydration
  * detects missing Vercel project variables and secret drift instantly, preventing
  * broken client-side hydration or silent network timeouts.
  */
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SPECGRAPH_API_URL: urlSchema,
   NEXT_PUBLIC_SUPABASE_URL: urlSchema,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(8).max(4096),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+    .string()
+    .min(8, "NEXT_PUBLIC_SUPABASE_ANON_KEY must be at least 8 characters")
+    .max(4096),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 
 // Next.js only inlines NEXT_PUBLIC_* variables into the browser bundle where
 // `process.env.NEXT_PUBLIC_X` appears as a literal, static member expression
-// in source. Reading through an indirect variable (as the old
-// `source = process.env` default parameter did) is not guaranteed to be
+// in source. Reading through an indirect variable is not guaranteed to be
 // replaced at build time, so each key is listed explicitly here.
 function defaultPublicEnvSource(): Record<string, string | undefined> {
   return {
@@ -51,25 +68,39 @@ function defaultPublicEnvSource(): Record<string, string | undefined> {
   };
 }
 
-export function readPublicEnv(source: Record<string, string | undefined> = defaultPublicEnvSource()): PublicEnv {
-  const isProd = process.env.NODE_ENV === "production";
-  
+export function readPublicEnv(
+  source: Record<string, string | undefined> = defaultPublicEnvSource()
+): PublicEnv {
+  const isProd =
+    process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+
   // Prohibit fallback defaults to localhost in production mode
-  const apiUrl = source.NEXT_PUBLIC_SPECGRAPH_API_URL ?? (isProd ? undefined : "http://127.0.0.1:8787");
+  const apiUrl =
+    source.NEXT_PUBLIC_SPECGRAPH_API_URL ?? (isProd ? undefined : "http://127.0.0.1:8787");
 
   const result = publicEnvSchema.safeParse({
     NEXT_PUBLIC_SPECGRAPH_API_URL: apiUrl,
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
+
   if (!result.success) {
-    const errorDetails = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
-    throw new Error(`Public web configuration is invalid. Missing or invalid Vercel production environment variables: ${errorDetails}`);
+    const errorDetails = result.error.issues
+      .map((i) => `${i.path.join(".")}: ${i.message}`)
+      .join("; ");
+    throw new Error(
+      `Public web configuration is invalid. Missing or invalid Vercel production environment variables: ${errorDetails}`
+    );
   }
+
   const api = new URL(result.data.NEXT_PUBLIC_SPECGRAPH_API_URL);
   const supabase = new URL(result.data.NEXT_PUBLIC_SUPABASE_URL);
+
   if (api.origin === supabase.origin) {
-    throw new Error("Public web configuration is invalid: NEXT_PUBLIC_SPECGRAPH_API_URL and NEXT_PUBLIC_SUPABASE_URL cannot share the same origin.");
+    throw new Error(
+      "Public web configuration is invalid: NEXT_PUBLIC_SPECGRAPH_API_URL and NEXT_PUBLIC_SUPABASE_URL cannot share the same origin."
+    );
   }
+
   return result.data;
 }

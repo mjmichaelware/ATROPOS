@@ -51,15 +51,14 @@ fun ComposerScreen(
     /**
      * Asks the engine to build what was typed, rather than answer it.
      */
-    onBuild: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onBuild: (() -> Unit)? = null
 ) {
     val density = OneHandDensity()
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
 
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp
     ) {

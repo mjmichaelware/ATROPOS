@@ -24,6 +24,18 @@ export interface DeploymentVerificationReceipt {
   assetDigest: string;
   verifiedAt: string;
   status: "verified" | "unverified";
+  tamperEvidenceSignature?: string;
+}
+
+export function validateDeploymentReceipt(
+  receipt: DeploymentVerificationReceipt
+): boolean {
+  return (
+    receipt.status === "verified" &&
+    Boolean(receipt.commitSha && receipt.commitSha.length >= 7) &&
+    Boolean(receipt.manifestHash && receipt.manifestHash.length >= 16) &&
+    Boolean(receipt.assetDigest && receipt.assetDigest.length >= 16)
+  );
 }
 
 export function useVerifyExecutionRunMutation(
@@ -37,11 +49,17 @@ export function useVerifyExecutionRunMutation(
       const client = createProjectApiClient();
       onProgress?.("Execution run verification queued — waiting for a worker to pick it up.");
       const accepted = await verifyExecutionRun(client, runId, client.createIdempotencyKey());
-      return accepted.location
-        ? client.pollOperation<{ operation: OperationLike & FreeformRecord }>(accepted.location, {
-            onProgress: (operation) => onProgress?.(describeOperationProgress("Execution run verification", operation)),
-          })
+      const result = accepted.location
+        ? await client.pollOperation<{ operation: OperationLike & FreeformRecord }>(
+            accepted.location,
+            {
+              onProgress: (operation) =>
+                onProgress?.(describeOperationProgress("Execution run verification", operation)),
+            }
+          )
         : accepted;
+
+      return result;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.executionRunDetail(runId) });
