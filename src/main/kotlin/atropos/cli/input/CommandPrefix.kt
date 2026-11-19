@@ -30,7 +30,7 @@ object CommandPrefix {
     /**
      * Returns the first non-whitespace character of the input, or null if none exists.
      */
-    fun firstNonWhitespace(input: String): Char? {
+    fun firstNonWhitespace(input: CharSequence): Char? {
         var index = 0
         while (index < input.length) {
             val ch = input[index]
@@ -40,16 +40,20 @@ object CommandPrefix {
         return null
     }
 
+    fun firstNonWhitespace(input: String): Char? = firstNonWhitespace(input as CharSequence)
+
     /**
      * Determines whether the input is explicitly prefixed as a command.
      *
      * @param input The input string to check.
      * @return true if the first non-whitespace character is in Σ_cmd, false otherwise.
      */
-    fun isCommandPrefixed(input: String): Boolean {
+    fun isCommandPrefixed(input: CharSequence): Boolean {
         val first = firstNonWhitespace(input)
         return first != null && first in COMMAND_PREFIX_CHARS
     }
+
+    fun isCommandPrefixed(input: String): Boolean = isCommandPrefixed(input as CharSequence)
 
     /**
      * Checks if input is an immediate raw slash trigger intended to launch the palette.

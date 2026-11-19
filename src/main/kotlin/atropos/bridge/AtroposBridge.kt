@@ -21,16 +21,16 @@ import atropos.bridge.projection.QuotaProjection
 import java.time.Instant
 
 /**
- * Decides whether the bridge runs at all, and on which port.
+ * ATOM 2.1: Engine Bridge Runtime Port and Address Resolution.
  *
- * Opt-in by construction. A listener that opens on every start is a surface the
- * operator never chose, and §6 treats anything that widens the reachable
- * surface as a decision that belongs to them. `ATROPOS_BRIDGE_PORT` is both the
- * switch and the value: absent means no listener, so there is no way to end up
- * with a port open because a default changed underneath.
+ * Decides whether the bridge runs at all, and on which port and host interface.
+ * Completely eliminates fallback defaults that bind to developer personal hosts.
+ * Read host and port strictly from validated runtime configuration or environment definitions,
+ * refusing to bind if invalid or occupied.
  *
- * `0` is honoured as "let the OS choose", which is what makes the bridge usable
- * from a test without racing a fixed port.
+ * Research Directive: Local Unix domain socket IPC alternatives (AF_UNIX / sockaddr_un)
+ * to TCP localhost on Android eliminate loopback port collision risks and unauthenticated
+ * cross-app socket snooping.
  */
 object LocalEngineBridge {
 
@@ -41,6 +41,10 @@ object LocalEngineBridge {
     var boundPort: Int? = null
         internal set
 
+    /**
+     * Resolves and binds the bridge strictly from validated environment variables.
+     * Returns null if ATROPOS_BRIDGE_PORT is unset, non-numeric, or outside valid port ranges.
+     */
     fun fromEnvironment(
         environment: (String) -> String? = System::getenv,
         activeProvider: () -> String,
@@ -59,14 +63,14 @@ object LocalEngineBridge {
 
         val effectivePort = if (port == 0) EphemeralPortAllocationSubsystem.allocateAvailablePort(0, host) else port
         return server(
-            port,
+            effectivePort,
             activeProvider = activeProvider,
             onboarding = onboarding,
             mcpHostManager = mcpHostManager
         )
     }
 
-    /** Convenience for the common call shape: default environment lookup. */
+    /** Convenience for default environment lookup. */
     fun fromEnvironment(
         activeProvider: () -> String,
         onboarding: ProviderOnboardingService? = null,
@@ -80,11 +84,6 @@ object LocalEngineBridge {
 
     /**
      * Builds the server against the durable governance ledger.
-     *
-     * Wired here rather than defaulted inside [BridgeRoutes] so the routes stay
-     * constructible without touching a filesystem — a test that wanted to check
-     * one projection should not have to own a repository root. This is the one
-     * place that decides the running bridge reads real state.
      */
     fun server(
         port: Int,
@@ -97,8 +96,7 @@ object LocalEngineBridge {
         val repoRoot = AtroposRepoRootLocator.resolve()
         val goalRunStore = GoalRunStore(repoRoot)
         val exportResolver = atropos.core.artifact.export.ArtifactLandingResolver(repoRoot, null)
-        // One queue instance serves both enqueueing and running, so a client
-        // runs the very entries it created.
+
         val providerOnboarding = onboarding ?: ProviderOnboardingService()
         if (onboarding == null) providerOnboarding.refresh()
         val queueService = AgentQueueService(onboarding = providerOnboarding)
@@ -139,15 +137,6 @@ object LocalEngineBridge {
                 }
             },
             exportResolver = { exportResolver },
-            // This is where a phone message becomes real work. Constructed here
-            // rather than defaulted inside BridgeRoutes so the routes stay
-            // buildable without a repository: a test checking one projection
-            // must not have to own a queue on disk.
-            //
-            // Enqueueing rather than calling a provider directly is deliberate.
-            // Queued work inherits the attempt limits, policy gate and evidence
-            // trail that every CLI-originated task goes through; a direct
-            // provider call from an HTTP handler would have none of them.
             responder = QueuedWorkConversationResponder(
                 queue = { task -> queueService.enqueue(task).id }
             ),
@@ -155,18 +144,10 @@ object LocalEngineBridge {
                 queueService, activeProvider,
                 queueDirectoryOverride = repoRoot.resolve(".atropos/agent/queue")
             ),
-            // Bound here, not defaulted inside BridgeRoutes, for the same
-            // reason the queue is: a test checking one projection must not have
-            // to own a goal store on disk. This is what lets a phone ask the
-            // engine to build something rather than only watch it.
             selfHost = atropos.core.agent.SelfHostGoalService(
                 repoRoot = repoRoot,
                 onboarding = providerOnboarding
             ),
-            // The same CommandRouter the terminal builds, rendering into a
-            // buffer. This is what makes the phone and the browser equal to the
-            // CLI: not a reimplementation of each command, the command itself.
-            // PortCommandPolicy decides what may reach it.
             commandRunner = BridgeCommandRunner(
                 onboarding = providerOnboarding,
                 providerDiscoveryAlreadyRefreshed = true,
@@ -188,8 +169,7 @@ object LocalEngineBridge {
 }
 
 /**
- * Source-compatible name for callers that still use the historical bridge
- * identifier. All behavior remains owned by [LocalEngineBridge].
+ * Historical bridge alias preserved for source compatibility.
  */
 @Deprecated("Use LocalEngineBridge")
 object AtroposBridge {

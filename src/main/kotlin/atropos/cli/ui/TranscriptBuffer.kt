@@ -7,11 +7,16 @@ sealed interface TranscriptEntry {
 }
 
 /**
- * Transcript buffer maintaining rendered entries, scroll offset clamping, and tail following.
+ * ATOM 9.2: Bounded Inertial Scrolling and Spin Termination.
  *
- * ## Research: Exponential Deceleration Friction Physics
- * Research smooth exponential deceleration friction physics for mobile terminal viewports
- * to eliminate abrupt stop artifacts during high-velocity fling and touch scrolls.
+ * Transcript buffer maintaining rendered entries, scroll offset clamping, and tail following.
+ * Clamps scroll offsets strictly between zero and the maximum buffered output lines.
+ * Terminates touch fling inertia cleanly when reaching boundary edges, avoiding infinite
+ * scroll loops or unresponsive touch states.
+ *
+ * ## Further Research Directive: Decayed Velocity Physics Models
+ * Research decayed velocity physics models for touch scroll fling gestures to ensure
+ * natural deceleration curves in software-rendered terminal viewports.
  */
 class TranscriptBuffer(
     private val maximumBlocks: Int = 600
@@ -97,6 +102,27 @@ class TranscriptBuffer(
         blocks.clear()
         scrollOffset = 0
         pendingNewOutput = 0
+    }
+
+    private var inertialVelocity: Double = 0.0
+
+    fun terminateInertia() {
+        inertialVelocity = 0.0
+    }
+
+    fun applyInertialScroll(velocityDelta: Double) {
+        inertialVelocity = (inertialVelocity + velocityDelta).coerceIn(-100.0, 100.0)
+        val deltaLines = inertialVelocity.toInt()
+        if (deltaLines > 0) {
+            scrollUp(deltaLines)
+            if (scrollOffset >= maxScrollOffset()) terminateInertia()
+        } else if (deltaLines < 0) {
+            scrollDown(-deltaLines)
+            if (scrollOffset <= 0) terminateInertia()
+        }
+        // Exponential decay model: 0.85 per step
+        inertialVelocity *= 0.85
+        if (kotlin.math.abs(inertialVelocity) < 0.1) terminateInertia()
     }
 
     fun followTail() {

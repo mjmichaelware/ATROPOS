@@ -7,11 +7,16 @@ import java.security.MessageDigest
 import java.time.Instant
 
 /**
- * Deterministic UTF-8 edit matcher for misspelled command input with terminal input defense.
+ * ATOM 8.1: Instant Mobile Paste Ingestion and Deterministic Edit Matcher.
  *
- * ## Research: Zero-Latency Character Chunking
- * Zero-latency character chunking in high-baud PTY streams prevents buffer starvation
- * and surrogate pair splitting across asynchronous mobile soft keyboard burst events.
+ * Ingests pasted text streams immediately upon arrival via bracketed paste markers.
+ * Eliminates all requirements for secondary keyboard events (such as arrow down presses)
+ * to trigger prompt buffer rendering or paste ingestion.
+ *
+ * ## Research: High-Throughput Terminal Escape Sequence Buffering
+ * Researches terminal escape sequence buffering behaviors under high-throughput paste operations
+ * to prevent ring buffer overrun, surrogate pair splitting, and dropped newline bytes on
+ * high-baud PTY and mobile soft keyboard streams.
  */
 class FuzzyMatcher(
     private val maximumDistance: Int = 2
@@ -30,18 +35,25 @@ class FuzzyMatcher(
             BracketedPasteHandler.sanitizeInput(raw)
 
         val smartCaseSearchHeuristic = SmartCaseSearchHeuristic
+
+        /**
+         * Instantly ingests pasted text without requiring trailing key events.
+         */
+        fun ingestInstantPaste(raw: String): Pair<String, BlobObject?> =
+            FuzzyMatcher().processPaste(BracketedPasteHandler.sanitizeInput(raw))
     }
 
     /**
-     * SD7-T3-005: Bracketed paste defense.
+     * SD7-T3-005 / ATOM 8.1: Bracketed paste defense and instant mobile ingestion.
      * Prevents CR injection by collapsing pastes >20 lines into bounded CAS BlobObject handles.
      */
     fun processPaste(rawPaste: String): Pair<String, BlobObject?> {
-        val lines = rawPaste.lines()
+        val sanitized = BracketedPasteHandler.sanitizeInput(rawPaste)
+        val lines = sanitized.lines()
         if (lines.size <= MAX_UNCOLLAPSED_PASTE_LINES) {
-            return rawPaste to null
+            return sanitized to null
         }
-        val bytes = rawPaste.toByteArray(StandardCharsets.UTF_8)
+        val bytes = sanitized.toByteArray(StandardCharsets.UTF_8)
         val hash = MessageDigest.getInstance("SHA-256").digest(bytes)
             .joinToString("") { "%02x".format(it) }
         val blob = BlobObject(
@@ -120,7 +132,7 @@ object BracketedPasteHandler {
 }
 
 /**
- * SD7-R-083: Searchable ring buffer and UTF-8 key decoder completing terminal input substrate.
+ * SD7-R-083 / ATOM 8.1: Searchable ring buffer and UTF-8 key decoder completing terminal input substrate.
  */
 class Utf8RingBufferDecoder(val capacity: Int = 1024) {
     private val buffer = ByteArray(capacity)
@@ -172,6 +184,21 @@ class Utf8RingBufferDecoder(val capacity: Int = 1024) {
             if (matches) return i
         }
         return -1
+    }
+
+    /**
+     * Extracts bracketed paste immediately from ring buffer if start and end markers are present.
+     */
+    @Synchronized
+    fun extractBracketedPaste(): String? {
+        val str = decodeString()
+        val startIdx = str.indexOf(FuzzyMatcher.BRACKETED_PASTE_START)
+        if (startIdx == -1) return null
+        val endIdx = str.indexOf(FuzzyMatcher.BRACKETED_PASTE_END, startIdx + FuzzyMatcher.BRACKETED_PASTE_START.length)
+        if (endIdx == -1) return null
+        val pasteContent = str.substring(startIdx + FuzzyMatcher.BRACKETED_PASTE_START.length, endIdx)
+        clear()
+        return pasteContent
     }
 
     @Synchronized

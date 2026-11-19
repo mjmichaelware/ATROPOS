@@ -8,14 +8,19 @@ import atropos.cli.ui.chrome.StickyRegionSolver
 import atropos.core.recovery.RestartCoordinator
 
 /**
+ * ATOM 9.3: Gesture-Safe Viewport Layout and Focus Lock.
+ *
+ * Enforces rigid separation between pinned header chrome, transcript viewport, and input composer.
+ * Ensures scrolling gestures within the transcript area never alter the layout boundaries or push
+ * the composer off-screen.
+ *
+ * ## Further Research Directive: Sub-Window Clipping Optimizations
+ * Research sub-window clipping optimizations in ANSI terminal drivers to repaint only
+ * modified scroll lines rather than re-rendering the full screen buffer.
+ *
  * HOE-B01: Sticky chrome persists project/status bar during resize.
  * HOE-B02: Session tab bar with density support.
  * HOE-B04: Trust indicators (attest/health) per project.
- *
- * ## Research: SIGWINCH Debouncing Techniques
- * Research terminal SIGWINCH debouncing techniques using token-bucket or sliding time windows
- * (e.g. 50ms trailing edge) to prevent geometry recalculation storms and redraw flicker
- * during continuous window resizing or device orientation flips.
  */
 class ViewportLayout(
     private val theme: TerminalTheme,

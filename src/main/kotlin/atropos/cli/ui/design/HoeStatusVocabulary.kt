@@ -2,6 +2,16 @@
 package atropos.cli.ui.design
 
 /**
+ * ATOM 10.2: Unified Status and State Presentation Mapping.
+ *
+ * Maps engine states to unified canonical terms across mobile, web, and CLI interfaces.
+ * Disallows client-specific state renaming that obscures true operational status.
+ *
+ * ## Further Research Directive: WCAG 2.1 Non-Color State Indicator Compliance Testing
+ * Research WCAG 2.1 non-color state indicator compliance testing to ensure status signals
+ * remain completely distinguishable under full color blindness conditions (protanopia,
+ * deuteranopia, tritanopia, and achromatopsia).
+ *
  * The nine status terms Source Doc 4 requires, and the single place where they
  * are tied to [RunState].
  *

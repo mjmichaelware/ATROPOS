@@ -13,6 +13,11 @@ data class TerminalGeometry(
     val columns: Int
 )
 
+data class CanvasCoordinateFrame(
+    val width: Int,
+    val height: Int
+)
+
 fun interface TerminalGeometryProvider {
     fun read(): TerminalGeometry?
 }
@@ -47,11 +52,17 @@ class SttyTerminalGeometryProvider :
 }
 
 /**
- * Terminal canvas orchestrating geometry detection, alternate screens, and ANSI diff rendering.
+ * ATOM 9.1: Input-Isolated Output Gesture Decoupling.
  *
- * ## Research: DECSET 1000, 1002, 1006 SGR Mouse Protocol Variations
- * Research DECSET 1000, 1002, 1006 SGR mouse protocol variations across mobile terminal multiplexers
- * (tmux, screen, termux-x11) to isolate native touch-scroll gestures from mouse tracking bursts.
+ * Terminal canvas orchestrating geometry detection, alternate screens, and ANSI diff rendering.
+ * Decouples mouse tracking and touch-swipe escape sequences originating in the scrollback area
+ * from the active prompt input buffer, preventing scroll gestures from emitting accidental
+ * control characters into the composer.
+ *
+ * ## Research: SGR Mouse Mode Protocol & DECSET Protocol Handling
+ * Researches SGR mouse mode protocol (DECSET 1000, 1002, 1006) handling in terminal emulators
+ * to cleanly differentiate drag gestures and touch scrolls from click and cursor repositioning
+ * events on mobile terminal multiplexers (tmux, screen, termux-x11).
  */
 class TerminalCanvas(
     private val capabilities:
@@ -73,6 +84,9 @@ class TerminalCanvas(
 
     val mouseController: DecoupledTerminalCanvasController =
         DecoupledTerminalCanvasController(out, outputLock) { capabilities.isInteractiveTerminal }
+
+    fun currentCoordinateFrame(): CanvasCoordinateFrame =
+        CanvasCoordinateFrame(width = width, height = height)
 
     fun refreshGeometry(): Boolean {
         if (!capabilities.isInteractiveTerminal || BoundedRenderingController.isPasteSuspended()) {
@@ -114,6 +128,8 @@ class TerminalCanvas(
         // are not captured or corrupted by unsolicited SGR mouse reporting escapes
         if (enableMouse) {
             enableMouseTracking()
+        } else {
+            disableMouseTracking()
         }
         out.print("\u001B[H\u001B[2J")
         out.flush()
@@ -163,7 +179,7 @@ class TerminalCanvas(
         renderer.restoreCursor()
 
         // Disable SGR mouse tracking
-        out.print("\u001B[?1006l\u001B[?1002l\u001B[?1000l")
+        disableMouseTracking()
 
         if (alternateScreen) {
             out.print("\u001B[?1049l")

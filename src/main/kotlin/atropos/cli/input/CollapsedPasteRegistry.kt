@@ -1,33 +1,20 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import java.util.LinkedHashMap
+
 /**
- * Keeps a large paste out of the prompt line while keeping it in the request.
+ * ATOM 8.2: Bracketed Paste Demuxing and Large Paste Management.
  *
- * Pasting a Source Document into the terminal used to scroll the whole thing
- * through the composer: three thousand words of it, redrawn on every keystroke
- * after, with the operator's own question somewhere above the fold. The text
- * has to arrive intact — it is the entire point of pasting it — but it does not
- * have to be *shown*.
+ * Keeps large multiline paste events out of the terminal prompt line while keeping them
+ * in the active request payload. Replaces large pastes with interactive single-line token
+ * placeholders (e.g. `[#1 pasted 412 lines, 3081 words]`) to preserve viewport space.
+ * Allows the operator to expand, edit, or submit pasted content seamlessly.
  *
- * So the line holds a placeholder and this holds the text. The placeholder is
- * ordinary characters in the buffer, which is what makes the behaviour
- * predictable: it can be moved, and deleting it deletes the paste, because to
- * an operator looking at `[#1 pasted 412 lines, 3081 words]` that is plainly
- * what deleting it should do.
- *
- * ## Why the registry is cleared on commit
- *
- * A placeholder that outlived its line could be recalled from history into a
- * session where its text no longer existed, and would then expand to nothing —
- * silently sending a prompt with the document missing, which is the failure
- * this whole mechanism exists to prevent. Expansion happens at commit and the
- * store empties, so a placeholder never refers to text that is gone.
- *
- * ## Research: Ephemeral In-Memory Encryption of Cached Paste Buffers
- * Evaluates AES-GCM or ChaCha20-Poly1305 ephemeral encryption for cached in-memory
- * paste buffers with key zeroing on commit to protect sensitive credentials, API keys,
- * or environment variables from heap dumps and memory inspection.
+ * ## Research: Memory-Mapped Temporary Storage Backing
+ * Researches memory-mapped temporary storage (mmap / ByteBuffer) backing for multi-megabyte
+ * clipboard insertions to prevent JVM garbage collection spikes and out-of-memory errors
+ * on low-memory mobile hardware.
  */
 class CollapsedPasteRegistry(
     /** A paste of at least this many lines is collapsed. */
@@ -53,7 +40,7 @@ class CollapsedPasteRegistry(
 
     val pillRegistry: PastePillTokenRegistry = PastePillTokenRegistry(lineThreshold, wordThreshold, maxRetainedChars)
 
-    private val stored = LinkedHashMap<String, String>()
+    private val stored: LinkedHashMap<String, String> = LinkedHashMap()
     private var retained = 0
     private var nextToken = 1
 
@@ -119,6 +106,9 @@ class CollapsedPasteRegistry(
     /** True when a line still refers to stored text. */
     fun hasCollapsedText(line: String): Boolean = stored.keys.any { it in line }
 
+    /** Returns the underlying map of token to pasted text. */
+    fun activeTokens(): Map<String, String> = LinkedHashMap(stored)
+
     fun clear() {
         stored.clear()
         retained = 0
@@ -133,7 +123,7 @@ class CollapsedPasteRegistry(
     private fun plural(count: Int, noun: String): String =
         "$count $noun" + if (count == 1) "" else "s"
 
-    private companion object {
+    companion object {
         const val DEFAULT_LINE_THRESHOLD = 8
         const val DEFAULT_WORD_THRESHOLD = 250
         const val DEFAULT_MAX_RETAINED_CHARS = 4 * 1024 * 1024

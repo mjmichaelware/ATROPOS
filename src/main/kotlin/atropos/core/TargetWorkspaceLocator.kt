@@ -6,12 +6,16 @@ import java.nio.file.Path
 import java.util.UUID
 
 /**
- * ATOM-ISO-001: Isolated Target Workspace Locator.
+ * ATOM-ISO-001 / ATOM 1.3: Isolated Target Workspace Locator.
  *
  * Enforces strict mathematical domain decoupling:
  * Cap(P_theta) ∩ Cap(A_write) = ∅ ; Cap(Engine_Write) ∩ Cap(Target_Write) = ∅.
  * Guarantees that target workspaces reside exclusively in isolated external
  * directories and can never resolve to or mutate the engine installation root.
+ *
+ * Research Directive: Android Storage Access Framework (SAF) URI tree permission
+ * persistence (via takePersistableUriPermission across Intent flags) provides headless
+ * background service access without prompting users repeatedly for filesystem grants.
  */
 object TargetWorkspaceLocator {
     private const val WORKSPACE_PREFIX = "atropos-target-workspace-"
@@ -28,6 +32,9 @@ object TargetWorkspaceLocator {
         }
     }
 
+    /**
+     * Resolves an isolated target workspace decoupled from developer repository roots.
+     */
     fun resolveTargetWorkspace(targetHint: Path? = null): Path {
         val engineRoot = AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()
 

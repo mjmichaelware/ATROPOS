@@ -1,17 +1,20 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.parity
 
-import kotlin.test.Test
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Automated parity test verifying cross-surface spine contract and status vocabulary integrity.
+ * ATOM 10.3: Engine Capability Parity Verification.
  *
- * ## Research: Automated Screenshot Diffing and Headless DOM Snapshots
- * Research automated screenshot diffing and headless DOM snapshot assertions in GitHub Actions CI
- * using Playwright/Puppeteer to catch visual layout drift, font metric shifts, and padding divergences.
+ * Automated test suites that verify primary navigation spine identity, command routing tables,
+ * and completion claims between Android Compose and CLI surfaces. Fails builds on semantic drift.
+ *
+ * ## Further Research Directive: Automated AST Symbol Diffing Tools
+ * Research automated AST symbol diffing tools that compare Kotlin Compose screen hierarchies
+ * against CLI ANSI view tree models to detect unmapped surface components.
  */
 class SurfaceContractParityTest {
 

@@ -21,13 +21,16 @@ interface PlatformAdapter {
         val pathEntries = pathEnv.split(java.io.File.pathSeparator).filter { it.isNotBlank() }.toMutableList()
         val extraSearchDirs = listOfNotNull(
             System.getenv("PREFIX")?.let { "$it/bin" },
+            "/data/data/com.termux/files/usr/bin",
             "/system/bin",
             "/system/xbin",
             "/apex/com.android.runtime/bin",
+            "/apex/com.android.art/bin",
             "/usr/local/bin",
             "/usr/bin",
             "/bin",
-            "/opt/homebrew/bin"
+            "/opt/homebrew/bin",
+            System.getenv("HOME")?.let { "$it/bin" }
         )
         for (extra in extraSearchDirs) {
             if (extra !in pathEntries && java.io.File(extra).isDirectory) {
@@ -54,9 +57,15 @@ interface PlatformAdapter {
         val candidate = listOfNotNull(
             System.getProperty("user.home"),
             System.getenv("HOME"),
+            System.getenv("ANDROID_DATA")?.let { "$it/data/com.atropos.android/files" },
             System.getenv("EXTERNAL_STORAGE"),
             "."
-        ).firstOrNull { it.isNotBlank() } ?: "."
+        ).firstOrNull { pathStr ->
+            runCatching {
+                val f = java.io.File(pathStr)
+                f.exists() && f.canRead()
+            }.getOrDefault(false)
+        } ?: System.getenv("HOME") ?: "."
         return Path.of(candidate).toAbsolutePath().normalize()
     }
 
